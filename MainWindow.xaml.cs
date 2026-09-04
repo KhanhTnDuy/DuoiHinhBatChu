@@ -19,5 +19,13 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+
+        // --- Kiểm tra tạm Phần 1: đọc câu đố. Sẽ xóa ở Phần 2. ---
+        var puzzles = new Services.PuzzleRepository().LoadAll();
+        MessageBox.Show(
+            $"Đọc được {puzzles.Count} câu.\n" +
+            $"Câu đầu (dễ nhất): {puzzles[0].Answer}\n" +
+            $"Câu cuối (khó nhất): {puzzles[^1].Answer}",
+            "Test PuzzleRepository");
     }
 }
