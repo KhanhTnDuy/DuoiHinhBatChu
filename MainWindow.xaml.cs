@@ -14,6 +14,11 @@ public partial class MainWindow : Window
     private int _index;
     private bool _solved;   // câu hiện tại đã trả lời đúng chưa (chặn bấm tiếp)
 
+    // Bộ đếm — Phần 4 sẽ dùng để tính điểm
+    private int _solvedCount;
+    private int _wrongCount;
+    private int _skippedCount;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -40,8 +45,12 @@ public partial class MainWindow : Window
         TxtAnswer.Clear();
         TxtAnswer.Focus();
 
+        RefreshCounters();
         ShowImage(p);
     }
+
+    private void RefreshCounters()
+        => TxtScore.Text = $"Đúng {_solvedCount}  ·  Sai {_wrongCount}  ·  Bỏ qua {_skippedCount}";
 
     /// <summary>Có file ảnh thì hiện ảnh; chưa có thì hiện mô tả để vẫn chơi được.</summary>
     private void ShowImage(Puzzle p)
@@ -77,34 +86,22 @@ public partial class MainWindow : Window
         string guess = TxtAnswer.Text.Trim();
         if (guess.Length == 0) return;
 
-        if (IsCorrect(guess, Current))
+        if (AnswerChecker.IsCorrect(guess, Current))
         {
             _solved = true;
+            _solvedCount++;
+            RefreshCounters();
             TxtFeedback.Foreground = System.Windows.Media.Brushes.LightGreen;
             TxtFeedback.Text = $"✔ Chính xác!  Đáp án: {Current.Answer}";
             AdvanceAfterDelay();
         }
         else
         {
+            _wrongCount++;
+            RefreshCounters();
             TxtFeedback.Foreground = System.Windows.Media.Brushes.Salmon;
             TxtFeedback.Text = "✘ Chưa đúng, thử lại!";
         }
-    }
-
-    /// <summary>
-    /// So khớp đáp án. Bản này chỉ chuẩn hóa nhẹ (viết thường + gộp khoảng trắng).
-    /// Phần 3 sẽ nâng cấp: bỏ dấu tiếng Việt, "đ" -> "d"...
-    /// </summary>
-    private static bool IsCorrect(string guess, Puzzle p)
-    {
-        static string Norm(string s) => string.Join(
-            ' ', s.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries));
-
-        string g = Norm(guess);
-        if (g == Norm(p.Answer)) return true;
-        foreach (string a in p.AcceptedAnswers)
-            if (g == Norm(a)) return true;
-        return false;
     }
 
     /// <summary>Sau 1,2 giây tự chuyển câu kế tiếp.</summary>
@@ -137,7 +134,15 @@ public partial class MainWindow : Window
 
     private void BtnSubmit_Click(object sender, RoutedEventArgs e) => SubmitAnswer();
 
-    private void BtnSkip_Click(object sender, RoutedEventArgs e) => GoNext();
+    private void BtnSkip_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_solved)
+        {
+            _skippedCount++;
+            RefreshCounters();
+        }
+        GoNext();
+    }
 
     // Phần 5 sẽ đổi thành lộ dần chữ cái + trừ điểm.
     private void BtnHint_Click(object sender, RoutedEventArgs e)
