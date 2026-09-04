@@ -1,12 +1,100 @@
-﻿<Window x:Class="DuoiHinhBatChu.MainWindow"
+<Window x:Class="DuoiHinhBatChu.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        mc:Ignorable="d"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:DuoiHinhBatChu"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="Đuổi hình bắt chữ"
+        WindowStyle="None"
+        WindowState="Maximized"
+        ResizeMode="NoResize"
+        Background="#1E1E2E"
+        FontFamily="Segoe UI"
+        KeyDown="Window_KeyDown">
 
+    <Window.Resources>
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#ECECEC"/>
+            <Setter Property="FontSize" Value="22"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="Padding" Value="22,10"/>
+            <Setter Property="Margin" Value="6,0"/>
+            <Setter Property="Foreground" Value="#ECECEC"/>
+            <Setter Property="Background" Value="#45475A"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#585B70"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="48">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Thanh trạng thái -->
+        <Grid Grid.Row="0">
+            <TextBlock x:Name="TxtProgress" HorizontalAlignment="Left" Foreground="#A6ADC8"/>
+            <TextBlock x:Name="TxtDifficulty" HorizontalAlignment="Center" Foreground="#F9E2AF"/>
+            <TextBlock x:Name="TxtScore" HorizontalAlignment="Right" Foreground="#A6ADC8"
+                       Text="Điểm: 0"/>
+        </Grid>
+
+        <!-- Ảnh câu đố, hoặc mô tả nếu chưa có ảnh -->
+        <Grid Grid.Row="1" Margin="0,24">
+            <Image x:Name="ImgPuzzle" Stretch="Uniform"/>
+            <Border x:Name="PanelNoImage"
+                    Background="#313244" CornerRadius="16" Padding="48"
+                    MaxWidth="1100" VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock Text="[ Chưa có ảnh — mô tả hình cần vẽ ]"
+                               Foreground="#F38BA8" FontSize="18" Margin="0,0,0,16"/>
+                    <TextBlock x:Name="TxtDraw" TextWrapping="Wrap" FontSize="28" LineHeight="40"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Gợi ý -->
+        <TextBlock Grid.Row="2" x:Name="TxtHint" Foreground="#89B4FA"
+                   TextWrapping="Wrap" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+
+        <!-- Phản hồi đúng/sai -->
+        <TextBlock Grid.Row="3" x:Name="TxtFeedback" FontSize="26" FontWeight="SemiBold"
+                   HorizontalAlignment="Center" Margin="0,0,0,16"/>
+
+        <!-- Nhập đáp án -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center">
+            <TextBox x:Name="TxtAnswer" Width="520" KeyDown="TxtAnswer_KeyDown"/>
+            <Button Content="Trả lời"  Click="BtnSubmit_Click" Background="#A6E3A1" Foreground="#1E1E2E"/>
+            <Button Content="Gợi ý"    Click="BtnHint_Click"/>
+            <Button Content="Bỏ qua"   Click="BtnSkip_Click"/>
+        </StackPanel>
     </Grid>
 </Window>
