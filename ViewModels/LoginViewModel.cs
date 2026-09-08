@@ -102,8 +102,6 @@ public class LoginViewModel : ViewModelBase
 
     public bool IsDarkTheme => _settings.IsDarkTheme;
 
-    public string ThemeToggleText => IsDarkTheme ? "Chế độ sáng" : "Chế độ tối";
-
     // ----- Hành động -----
 
     private void Login()
@@ -148,6 +146,5 @@ public class LoginViewModel : ViewModelBase
         ThemeService.Apply(_settings.IsDarkTheme);
 
         OnPropertyChanged(nameof(IsDarkTheme));
-        OnPropertyChanged(nameof(ThemeToggleText));
     }
 }

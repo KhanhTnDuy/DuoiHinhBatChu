@@ -99,7 +99,6 @@ public class GameViewModel : ViewModelBase
         {
             _settings.IsDarkTheme = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(ThemeToggleText));
         }
     }
 
@@ -107,8 +106,6 @@ public class GameViewModel : ViewModelBase
     public string PlayerName => _account.DisplayName;
 
     public string AccountKindText => _account.IsGuest ? "Chơi khách - offline" : "Đã đăng nhập";
-
-    public string ThemeToggleText => IsDarkTheme ? "Chế độ sáng" : "Chế độ tối";
 
     private void ToggleTheme()
     {

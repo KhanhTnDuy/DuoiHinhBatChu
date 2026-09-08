@@ -84,9 +84,8 @@
                     </Button>
                 </StackPanel>
 
-                <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Right"
-                        Command="{Binding ToggleThemeCommand}"
-                        Content="{Binding ThemeToggleText}"/>
+                <Button Style="{StaticResource ThemeToggleButton}" HorizontalAlignment="Right"
+                        Command="{Binding ToggleThemeCommand}"/>
             </Grid>
 
             <!-- Ô nhập. Bọc ScrollViewer vì thẻ Đăng ký cao hơn thẻ Đăng nhập -->

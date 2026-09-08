@@ -163,6 +163,70 @@
         </Setter>
     </Style>
 
+    <!--
+        Biểu tượng nút đổi sáng/tối. Vẽ bằng đường nét (Path) chứ không dùng
+        emoji, để nét và màu ăn theo bảng màu đang dùng.
+        Cả hai hình vẽ trong khung 24x24.
+    -->
+
+    <!-- Mặt trời: vòng tròn giữa + 8 tia -->
+    <StreamGeometry x:Key="SunIcon">
+        M 12,7.5 A 4.5,4.5 0 1 1 11.99,7.5
+        M 12,3.2 L 12,5.4
+        M 12,18.6 L 12,20.8
+        M 3.2,12 L 5.4,12
+        M 18.6,12 L 20.8,12
+        M 5.78,5.78 L 7.34,7.34
+        M 16.66,16.66 L 18.22,18.22
+        M 5.78,18.22 L 7.34,16.66
+        M 16.66,7.34 L 18.22,5.78
+    </StreamGeometry>
+
+    <!-- Mặt trăng: hình lưỡi liềm -->
+    <StreamGeometry x:Key="MoonIcon">
+        M 20.5,15.1 A 8.6,8.6 0 1 1 8.9,3.5 A 6.9,6.9 0 0 0 20.5,15.1 Z
+    </StreamGeometry>
+
+    <!--
+        Nút đổi sáng/tối. Đang nền sáng thì hiện mặt trời, đang nền tối thì
+        hiện mặt trăng — biểu tượng cho biết đang ở chế độ nào.
+        Cần DataContext có thuộc tính IsDarkTheme.
+    -->
+    <Style x:Key="ThemeToggleButton" TargetType="Button">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Width" Value="40"/>
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="ToolTip" Value="Đổi giữa nền sáng và nền tối"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" CornerRadius="999"
+                            Background="{DynamicResource CardBrush}"
+                            BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
+                        <Path x:Name="Icon"
+                              Data="{StaticResource SunIcon}"
+                              Stroke="{DynamicResource TertiaryBrush}"
+                              StrokeThickness="1.6"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                            <Setter TargetName="Icon" Property="Data"
+                                    Value="{StaticResource MoonIcon}"/>
+                            <Setter TargetName="Icon" Property="Stroke"
+                                    Value="{DynamicResource SecondaryBrush}"/>
+                        </DataTrigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background"
+                                    Value="{DynamicResource PrimarySoftBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Nhãn nhỏ đặt ngay trên ô nhập -->
     <Style x:Key="FieldLabel" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
