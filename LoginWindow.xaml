@@ -98,8 +98,6 @@
 
             <!-- Tên màn hình + hai thẻ chuyển qua lại -->
             <StackPanel Grid.Row="0">
-            <TextBlock Text="LOGIN" FontSize="30" FontWeight="Bold" Margin="0,0,0,14"
-                       Foreground="{DynamicResource PrimaryBrush}"/>
             <Grid>
                 <StackPanel Orientation="Horizontal">
                     <Button Command="{Binding ShowLoginCommand}" Content="Đăng nhập"
@@ -136,6 +134,24 @@
                             Command="{Binding ToggleThemeCommand}"/>
                 </StackPanel>
             </Grid>
+
+            <!-- Tên thẻ đang mở nằm dưới hàng nút, ngay trên các ô nhập của nó -->
+            <TextBlock FontSize="30" FontWeight="Bold" Margin="0,18,0,0"
+                       Foreground="{DynamicResource PrimaryBrush}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Text" Value="ĐĂNG NHẬP"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsRegisterMode}" Value="True">
+                                <Setter Property="Text" Value="ĐĂNG KÝ"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsForgotMode}" Value="True">
+                                <Setter Property="Text" Value="QUÊN MẬT KHẨU"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
             </StackPanel>
 
             <!-- Ô nhập. Bọc ScrollViewer vì thẻ Đăng ký cao hơn thẻ Đăng nhập -->

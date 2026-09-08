@@ -194,6 +194,10 @@
     -->
     <Style x:Key="ThemeToggleButton" TargetType="Button">
         <Setter Property="Cursor" Value="Hand"/>
+        <!-- Không nhận tiêu điểm bàn phím. Nếu nhận, nút này là ô bấm được đầu
+             tiên của cửa sổ nên tự có tiêu điểm; phím Enter dùng để đăng nhập ở
+             cửa sổ trước rơi sang đây và đổi nhầm sáng/tối. -->
+        <Setter Property="Focusable" Value="False"/>
         <Setter Property="Width" Value="40"/>
         <Setter Property="Height" Value="40"/>
         <Setter Property="ToolTip" Value="Đổi giữa nền sáng và nền tối"/>
@@ -253,6 +257,9 @@
     <!-- Nút "?" mở bảng hướng dẫn. Cùng cỡ với nút đổi sáng/tối để đứng cạnh cho đều -->
     <Style x:Key="HelpButton" TargetType="Button">
         <Setter Property="Cursor" Value="Hand"/>
+        <!-- Chỉ bấm bằng chuột, giống nút đổi sáng/tối: không nhận tiêu điểm bàn
+             phím để Enter hay Space không bấm nhầm vào nó. -->
+        <Setter Property="Focusable" Value="False"/>
         <Setter Property="Width" Value="40"/>
         <Setter Property="Height" Value="40"/>
         <Setter Property="ToolTip" Value="Xem hướng dẫn chơi"/>
