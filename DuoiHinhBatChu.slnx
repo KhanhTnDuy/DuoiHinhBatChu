@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="DuoiHinhBatChu.Core/DuoiHinhBatChu.Core.csproj" />
   <Project Path="DuoiHinhBatChu.csproj" />
 </Solution>

@@ -31,8 +31,9 @@ lẫn đem lên máy chủ thật sau này.
 
 ## Việc phải làm, theo thứ tự
 
-1. **Tách phần dùng chung** thành thư viện lớp `DuoiHinhBatChu.Core`:
-   `Puzzle`, `AnswerChecker`, `Account`. Client và server cùng tham chiếu.
+1. ~~**Tách phần dùng chung** thành thư viện lớp `DuoiHinhBatChu.Core`.~~ **Xong.**
+   Nhắm `net10.0` thuần, không tham chiếu WPF. Hiện chứa `Puzzle`, `Account`,
+   `AnswerChecker`, `PuzzleRepository`, `PuzzleImageLocator`, `AccountService`.
 2. **Dựng server** `DuoiHinhBatChu.Server` (ASP.NET Core):
    - Chuyển `AccountService` lên đây, đổi lưu file sang SQLite.
    - Cấp token khi đăng nhập; client giữ token thay vì tự kiểm tra mật khẩu.
