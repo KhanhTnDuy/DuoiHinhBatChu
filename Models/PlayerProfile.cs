@@ -19,6 +19,4 @@ public class PlayerProfile
     public bool IsBgmEnabled { get; set; } = true;
     public bool IsTimerEnabled { get; set; } = true;
 
-    /// <summary>Người chơi đang dùng chế độ tối hay sáng.</summary>
-    public bool IsDarkTheme { get; set; } = false;
 }
