@@ -21,6 +21,9 @@ public class GameViewModel : ViewModelBase
     private const int MinTiles = 12;    // số phím chữ tối thiểu cho đỡ trống trải
     private const int MaxTiles = 21;
 
+    /// <summary>Bảng chữ cái tiếng Việt không dấu (không có F, J, W, Z).</summary>
+    private const string Alphabet = "ABCDEGHIKLMNOPQRSTUVXY";
+
     private readonly List<Puzzle> _puzzles;
     private readonly GameStateService _state = new();
     private readonly PlayerProfile _profile;
@@ -195,7 +198,7 @@ public class GameViewModel : ViewModelBase
         IsFeedbackGood = false;
 
         Puzzle p = Current;
-        BuildSlots(p.Answer.ToUpperInvariant());
+        BuildSlots(ToSlotText(p.Answer));
         BuildTiles();
         LoadImage(p);
 
@@ -204,6 +207,16 @@ public class GameViewModel : ViewModelBase
         OnPropertyChanged(nameof(LetterCountText));
         _state.SaveProfile(_profile);
     }
+
+    /// <summary>
+    /// Chữ hiện trên ô đáp án và trên phím: bỏ dấu, đổi "đ" thành "d", viết hoa.
+    /// Người chơi chỉ phải chọn chữ không dấu; dạng có dấu đầy đủ chỉ hiện lại
+    /// ở dòng "Chính xác: ..." sau khi trả lời đúng.
+    /// </summary>
+    private static string ToSlotText(string answer) =>
+        string.Join(' ', AnswerChecker.Normalize(answer)
+                                      .Split(' ', StringSplitOptions.RemoveEmptyEntries))
+              .ToUpperInvariant();
 
     /// <summary>Mỗi ký tự của đáp án thành một ô; khoảng trắng thành ô ngăn cách hai từ.</summary>
     private void BuildSlots(string answer)
@@ -257,12 +270,21 @@ public class GameViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Chữ nhiễu lấy từ chính các đáp án khác nên vẫn ra dáng tiếng Việt (có dấu).</summary>
-    private char[] FillerPool() => _puzzles
-        .SelectMany(p => p.Answer.ToUpperInvariant())
-        .Where(char.IsLetter)
-        .Distinct()
-        .ToArray();
+    /// <summary>
+    /// Chữ nhiễu lấy từ chính các đáp án khác cho sát chất tiếng Việt.
+    /// Bộ câu đố còn ít thì bù thêm từ bảng chữ cái để bàn phím khỏi lặp đi lặp lại.
+    /// </summary>
+    private char[] FillerPool()
+    {
+        var pool = _puzzles
+            .SelectMany(p => ToSlotText(p.Answer))
+            .Where(char.IsLetter)
+            .ToHashSet();
+
+        if (pool.Count < MinTiles) pool.UnionWith(Alphabet);
+
+        return pool.ToArray();
+    }
 
     private void LoadImage(Puzzle p)
     {
