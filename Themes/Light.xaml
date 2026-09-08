@@ -1,0 +1,44 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ===== Chế độ SÁNG - bảng màu lấy từ Assets/tongquanthietke/DESIGN.md ===== -->
+
+    <!-- Nền và mặt phẳng -->
+    <SolidColorBrush x:Key="CanvasBrush"      Color="#F1F5FB"/>
+    <SolidColorBrush x:Key="SidebarBrush"     Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="CardBrush"        Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="CardAltBrush"     Color="#EFF4FF"/>
+    <SolidColorBrush x:Key="CardBorderBrush"  Color="#E2E8F0"/>
+
+    <!-- Chữ -->
+    <SolidColorBrush x:Key="TextPrimaryBrush"   Color="#0B1C30"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#454655"/>
+    <SolidColorBrush x:Key="TextMutedBrush"     Color="#767686"/>
+
+    <!-- Màu thương hiệu -->
+    <SolidColorBrush x:Key="PrimaryBrush"      Color="#3A47D5"/>
+    <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#4A57E5"/>
+    <SolidColorBrush x:Key="OnPrimaryBrush"    Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="PrimarySoftBrush"  Color="#E8EBFF"/>
+    <SolidColorBrush x:Key="SecondaryBrush"    Color="#00A8CC"/>
+    <SolidColorBrush x:Key="TertiaryBrush"     Color="#FFAA00"/>
+    <SolidColorBrush x:Key="TertiarySoftBrush" Color="#FFF4DE"/>
+    <SolidColorBrush x:Key="ErrorBrush"        Color="#BA1A1A"/>
+    <SolidColorBrush x:Key="ErrorSoftBrush"    Color="#FFDAD6"/>
+    <SolidColorBrush x:Key="SuccessBrush"      Color="#1B7F3B"/>
+
+    <!-- Phím chữ cái -->
+    <SolidColorBrush x:Key="TileBrush"        Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="TileBevelBrush"   Color="#CBD5E1"/>
+    <SolidColorBrush x:Key="TileTextBrush"    Color="#0B1C30"/>
+    <SolidColorBrush x:Key="TileHoverBrush"   Color="#EFF4FF"/>
+
+    <!-- Ô đáp án -->
+    <SolidColorBrush x:Key="SlotEmptyBrush"       Color="#A9B4C6"/>
+    <SolidColorBrush x:Key="SlotFilledBrush"      Color="#3A47D5"/>
+    <SolidColorBrush x:Key="SlotFilledTextBrush"  Color="#FFFFFF"/>
+
+    <!-- Lớp phủ -->
+    <SolidColorBrush x:Key="ScrimBrush" Color="#0F172A" Opacity="0.72"/>
+
+</ResourceDictionary>

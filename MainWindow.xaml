@@ -11,49 +11,168 @@
         ResizeMode="NoResize"
         FontFamily="Segoe UI"
         TextOptions.TextFormattingMode="Ideal"
+        Background="{DynamicResource CanvasBrush}"
         KeyDown="Window_KeyDown"
         Closing="Window_Closing">
-
-    <Window.Background>
-        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#3B2FD6" Offset="0"/>
-            <GradientStop Color="#8B4EE8" Offset="1"/>
-        </LinearGradientBrush>
-    </Window.Background>
 
     <Window.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
         <conv:StringToVisibilityConverter x:Key="StrVis"/>
 
-        <!-- Ô ký tự trong hàng đáp án -->
+        <!-- ============ Kiểu dùng chung ============ -->
+
+        <!-- Thẻ nội dung: nền nổi trên canvas, bo góc 16, viền mảnh -->
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Padding" Value="16"/>
+        </Style>
+
+        <!-- Nhãn nhỏ in hoa phía trên mỗi khối -->
+        <Style x:Key="SectionLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontFamily" Value="Consolas, Segoe UI"/>
+        </Style>
+
+        <!-- Số liệu HUD: chữ đơn cách để con số không nhảy khi tăng -->
+        <Style x:Key="HudValue" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Consolas, Segoe UI"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Nút chính: nền đậm, bo tròn viên thuốc -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource OnPrimaryBrush}"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" CornerRadius="999" Padding="22,11"
+                                Background="{DynamicResource PrimaryBrush}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background"
+                                        Value="{DynamicResource PrimaryHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Nút phụ: nền rỗng, chỉ có viền -->
+        <Style x:Key="GhostButton" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" CornerRadius="999" Padding="16,9"
+                                Background="{DynamicResource CardBrush}"
+                                BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background"
+                                        Value="{DynamicResource PrimarySoftBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Một dòng trợ giúp trong thẻ bên phải: tên + mô tả + giá kim cương -->
+        <Style x:Key="HelpRow" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" CornerRadius="12" Padding="12,10"
+                                Background="{DynamicResource CardAltBrush}"
+                                BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="BorderBrush"
+                                        Value="{DynamicResource PrimaryBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ============ Ô ký tự trong hàng đáp án ============ -->
         <DataTemplate x:Key="SlotTemplate">
             <Button Command="{Binding DataContext.TakeBackCommand,
                               RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                     CommandParameter="{Binding}"
                     Cursor="Hand"
-                    Margin="4,6">
+                    Margin="5,6">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Box"
-                                Width="58" Height="70" CornerRadius="12"
-                                Background="#FFFFFF" BorderBrush="#FFD84D" BorderThickness="3">
-                            <TextBlock Text="{Binding DisplayText}"
-                                       FontSize="34" FontWeight="Bold" Foreground="#2A2440"
+                        <Grid x:Name="Root" Width="56" Height="64">
+                            <!-- Ô trống: viền nét đứt theo thiết kế -->
+                            <Rectangle x:Name="Dash" RadiusX="12" RadiusY="12"
+                                       Stroke="{DynamicResource SlotEmptyBrush}"
+                                       StrokeThickness="2" StrokeDashArray="4 3"/>
+                            <Border x:Name="Fill" CornerRadius="12" Background="Transparent"/>
+                            <TextBlock x:Name="Char" Text="{Binding DisplayText}"
+                                       FontSize="26" FontWeight="Bold"
+                                       Foreground="{DynamicResource SlotFilledTextBrush}"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        </Grid>
                         <ControlTemplate.Triggers>
-                            <!-- Khoảng trắng giữa hai từ: chỉ là chỗ hở, không phải ô bấm -->
-                            <DataTrigger Binding="{Binding IsSpace}" Value="True">
-                                <Setter TargetName="Box" Property="Width" Value="26"/>
-                                <Setter TargetName="Box" Property="Background" Value="Transparent"/>
-                                <Setter TargetName="Box" Property="BorderThickness" Value="0"/>
+                            <!-- Đã điền chữ: nền đặc, bỏ nét đứt -->
+                            <DataTrigger Binding="{Binding HasValue}" Value="True">
+                                <Setter TargetName="Dash" Property="Visibility" Value="Collapsed"/>
+                                <Setter TargetName="Fill" Property="Background"
+                                        Value="{DynamicResource SlotFilledBrush}"/>
                             </DataTrigger>
+                            <!-- Chữ do trợ giúp mở: tô màu hổ phách -->
                             <DataTrigger Binding="{Binding IsRevealedByHint}" Value="True">
-                                <Setter TargetName="Box" Property="Background" Value="#FFE9A8"/>
+                                <Setter TargetName="Fill" Property="Background"
+                                        Value="{DynamicResource TertiaryBrush}"/>
+                                <Setter TargetName="Char" Property="Foreground" Value="#1B1200"/>
                             </DataTrigger>
+                            <!-- Vừa trả lời sai -->
                             <DataTrigger Binding="{Binding IsWrong}" Value="True">
-                                <Setter TargetName="Box" Property="Background" Value="#FF8A8A"/>
-                                <Setter TargetName="Box" Property="BorderBrush" Value="#D62828"/>
+                                <Setter TargetName="Dash" Property="Visibility" Value="Collapsed"/>
+                                <Setter TargetName="Fill" Property="Background"
+                                        Value="{DynamicResource ErrorBrush}"/>
+                                <Setter TargetName="Char" Property="Foreground" Value="#FFFFFF"/>
+                            </DataTrigger>
+                            <!-- Khoảng trắng giữa hai từ: chỉ là chỗ hở, không bấm được -->
+                            <DataTrigger Binding="{Binding IsSpace}" Value="True">
+                                <Setter TargetName="Root" Property="Width" Value="22"/>
+                                <Setter TargetName="Dash" Property="Visibility" Value="Collapsed"/>
+                                <Setter TargetName="Fill" Property="Background" Value="Transparent"/>
                             </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -61,25 +180,28 @@
             </Button>
         </DataTemplate>
 
-        <!-- Phím chữ cái -->
+        <!-- ============ Phím chữ cái (dáng keycap có gờ dưới) ============ -->
         <DataTemplate x:Key="TileTemplate">
             <Button Command="{Binding DataContext.PlaceLetterCommand,
                               RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                     CommandParameter="{Binding}"
                     Cursor="Hand"
-                    Margin="6">
+                    Margin="5">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Key"
-                                Width="64" Height="64" CornerRadius="14"
-                                Background="#FFD84D" BorderBrush="#B8860B" BorderThickness="0,0,0,4">
+                        <Border x:Name="Key" Width="52" Height="52" CornerRadius="12"
+                                Background="{DynamicResource TileBrush}"
+                                BorderBrush="{DynamicResource TileBevelBrush}"
+                                BorderThickness="0,0,0,3">
                             <TextBlock Text="{Binding Character}"
-                                       FontSize="32" FontWeight="Bold" Foreground="#2A2440"
+                                       FontSize="24" FontWeight="Bold"
+                                       Foreground="{DynamicResource TileTextBrush}"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Key" Property="Background" Value="#FFE889"/>
+                                <Setter TargetName="Key" Property="Background"
+                                        Value="{DynamicResource TileHoverBrush}"/>
                             </Trigger>
                             <!-- Đã dùng / bị xóa: ẩn nhưng giữ chỗ để bàn phím không nhảy -->
                             <DataTrigger Binding="{Binding IsUsed}" Value="True">
@@ -93,163 +215,349 @@
                 </Button.Template>
             </Button>
         </DataTemplate>
-
-        <!-- Nút trợ giúp / điều khiển -->
-        <Style x:Key="ActionButton" TargetType="Button">
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="FontSize" Value="18"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Margin" Value="8,0"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bg" Background="#4A2FB0" CornerRadius="14"
-                                Padding="20,12" BorderBrush="#FFD84D" BorderThickness="2">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bg" Property="Background" Value="#6141D8"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </Window.Resources>
 
     <Grid>
-        <Grid Margin="40,24">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="248"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ==================== Cột trái: thương hiệu + thống kê ==================== -->
+        <Border Grid.Column="0" Background="{DynamicResource SidebarBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,0,1,0">
+            <Grid Margin="20,22">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="ĐUỔI HÌNH" FontSize="20" FontWeight="Bold"
+                               Foreground="{DynamicResource PrimaryBrush}"/>
+                    <TextBlock Text="BẮT CHỮ" FontSize="20" FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Margin="0,28,0,0">
+                    <TextBlock Text="ĐIỀU HƯỚNG" Style="{StaticResource SectionLabel}"/>
+                    <Border CornerRadius="12" Padding="14,11" Margin="0,10,0,0"
+                            Background="{DynamicResource PrimaryBrush}">
+                        <TextBlock Text="Chế độ cổ điển" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource OnPrimaryBrush}"/>
+                    </Border>
+                </StackPanel>
+
+                <!-- Thống kê đáy cột, giống khối STREAK / COINS trong thiết kế -->
+                <Border Grid.Row="3" Style="{StaticResource Card}"
+                        Background="{DynamicResource CardAltBrush}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock Text="ĐÃ GIẢI" Style="{StaticResource SectionLabel}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding SolvedText}" Style="{StaticResource HudValue}"
+                                       HorizontalAlignment="Right"
+                                       Foreground="{DynamicResource PrimaryBrush}"/>
+                        </Grid>
+                        <Grid>
+                            <TextBlock Text="KIM CƯƠNG" Style="{StaticResource SectionLabel}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding Rubies}" Style="{StaticResource HudValue}"
+                                       HorizontalAlignment="Right"
+                                       Foreground="{DynamicResource TertiaryBrush}"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ==================== Cột phải: màn chơi ==================== -->
+        <Grid Grid.Column="1" Margin="24,18">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Thanh trạng thái -->
+            <!-- === Thanh HUD === -->
             <Grid Grid.Row="0">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                    <TextBlock Text="{Binding ProgressText}" Foreground="White"
-                               FontSize="22" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding DifficultyText}" Foreground="#FFD84D"
-                               FontSize="22" Margin="18,0,0,0" VerticalAlignment="Center"/>
-                </StackPanel>
+                <Border Style="{StaticResource Card}" HorizontalAlignment="Left" Padding="18,10">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding ProgressText}" FontSize="18" FontWeight="Bold"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <Rectangle Width="1" Margin="16,2" Fill="{DynamicResource CardBorderBrush}"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="ĐỘ KHÓ" Style="{StaticResource SectionLabel}"/>
+                            <TextBlock Text="{Binding DifficultyText}"
+                                       Style="{StaticResource HudValue}" FontSize="15"
+                                       Foreground="{DynamicResource TertiaryBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <TextBlock Text="{Binding LivesText}" Foreground="#FF6B81"
-                               FontSize="26" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding Rubies, StringFormat={}💎 {0}}" Foreground="#7FE7FF"
-                               FontSize="22" Margin="24,0,0,0" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding Score, StringFormat={}⭐ {0}}" Foreground="#FFD84D"
-                               FontSize="22" Margin="24,0,0,0" VerticalAlignment="Center"/>
+                    <Border Style="{StaticResource Card}" Padding="16,10" Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="MẠNG" Style="{StaticResource SectionLabel}"
+                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="{Binding LivesText}" Style="{StaticResource HudValue}"
+                                       Foreground="{DynamicResource ErrorBrush}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}" Padding="16,10" Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="ĐIỂM" Style="{StaticResource SectionLabel}"
+                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="{Binding Score}" Style="{StaticResource HudValue}"
+                                       Foreground="{DynamicResource PrimaryBrush}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}" Padding="16,10" Margin="0,0,10,0"
+                            Background="{DynamicResource TertiarySoftBrush}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="KIM CƯƠNG" Style="{StaticResource SectionLabel}"
+                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="{Binding Rubies}" Style="{StaticResource HudValue}"
+                                       Foreground="{DynamicResource TertiaryBrush}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Nút đổi chế độ sáng / tối -->
+                    <Button Style="{StaticResource GhostButton}" Margin="0,0,8,0"
+                            Command="{Binding ToggleThemeCommand}"
+                            Content="{Binding ThemeToggleText}"
+                            ToolTip="Đổi giữa nền sáng và nền tối"/>
+                    <Button Style="{StaticResource GhostButton}" Content="Thoát"
+                            Click="Close_Click"/>
                 </StackPanel>
             </Grid>
 
-            <!-- Ảnh câu đố (hoặc mô tả khi chưa có ảnh) -->
-            <Border Grid.Row="1" Margin="0,16" CornerRadius="24" Background="#FFFFFF"
-                    HorizontalAlignment="Center" Padding="12">
-                <Grid>
-                    <Image Source="{Binding ImageSource}" Stretch="Uniform"
-                           Visibility="{Binding HasImage, Converter={StaticResource BoolVis}}"/>
-                    <StackPanel MaxWidth="900" VerticalAlignment="Center"
-                                Visibility="{Binding HasImage, Converter={StaticResource BoolVis},
-                                             ConverterParameter=Invert}">
-                        <TextBlock Text="[ Chưa có ảnh — mô tả hình cần vẽ ]"
-                                   Foreground="#D62828" FontSize="18" Margin="0,0,0,14"/>
-                        <TextBlock Text="{Binding DrawText}" TextWrapping="Wrap"
-                                   FontSize="26" LineHeight="38" Foreground="#2A2440"/>
+            <!-- === Ba cột: thông tin | ảnh | trợ giúp === -->
+            <Grid Grid.Row="1" Margin="0,18">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="280"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="280"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Thẻ trái: mô tả hình + số liệu câu đố -->
+                <Border Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="THÔNG TIN CÂU ĐỐ" Style="{StaticResource SectionLabel}"/>
+                        <!-- Khi chưa có ảnh, mô tả đã hiện to ở giữa nên ở đây ẩn đi cho khỏi lặp -->
+                        <TextBlock Text="{Binding DrawText}" TextWrapping="Wrap" Margin="0,12,0,0"
+                                   FontSize="14" LineHeight="22"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Visibility="{Binding HasImage, Converter={StaticResource BoolVis}}"/>
+
+                        <Border CornerRadius="12" Padding="12" Margin="0,14,0,0"
+                                Background="{DynamicResource CardAltBrush}">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,8">
+                                    <TextBlock Text="Số chữ cái" FontSize="13"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="{Binding LetterCountText}" FontSize="13"
+                                               FontWeight="Bold" HorizontalAlignment="Right"
+                                               Foreground="{DynamicResource PrimaryBrush}"/>
+                                </Grid>
+                                <Grid>
+                                    <TextBlock Text="Đã giải" FontSize="13"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="{Binding SolvedText}" FontSize="13"
+                                               FontWeight="Bold" HorizontalAlignment="Right"
+                                               Foreground="{DynamicResource PrimaryBrush}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Gợi ý bằng lời, chỉ hiện sau khi mua -->
+                        <Border CornerRadius="12" Padding="12" Margin="0,10,0,0"
+                                Background="{DynamicResource TertiarySoftBrush}"
+                                Visibility="{Binding HintText, Converter={StaticResource StrVis}}">
+                            <TextBlock Text="{Binding HintText}" TextWrapping="Wrap" FontSize="13"
+                                       LineHeight="20"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        </Border>
                     </StackPanel>
-                </Grid>
-            </Border>
+                </Border>
 
-            <!-- Gợi ý bằng lời -->
-            <TextBlock Grid.Row="2" Text="{Binding HintText}" Foreground="#FFE9A8"
-                       FontSize="20" TextWrapping="Wrap" HorizontalAlignment="Center"
-                       Margin="0,0,0,6"
-                       Visibility="{Binding HintText, Converter={StaticResource StrVis}}"/>
+                <!-- Khung ảnh câu đố -->
+                <Border Grid.Column="1" Margin="18,0" CornerRadius="24" Padding="10"
+                        Background="{DynamicResource CardBrush}"
+                        BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
+                    <Grid>
+                        <Image Source="{Binding ImageSource}" Stretch="Uniform"
+                               Visibility="{Binding HasImage, Converter={StaticResource BoolVis}}"/>
 
-            <!-- Phản hồi đúng/sai -->
-            <TextBlock Grid.Row="3" Text="{Binding FeedbackText}" FontSize="28" FontWeight="Bold"
-                       HorizontalAlignment="Center" Margin="0,4" Foreground="#FF8A8A">
-                <TextBlock.Style>
-                    <Style TargetType="TextBlock">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsFeedbackGood}" Value="True">
-                                <Setter Property="Foreground" Value="#9CFF9C"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBlock.Style>
-            </TextBlock>
+                        <!-- Chưa có ảnh: hiện mô tả hình cần vẽ -->
+                        <StackPanel MaxWidth="620" VerticalAlignment="Center"
+                                    HorizontalAlignment="Center"
+                                    Visibility="{Binding HasImage, Converter={StaticResource BoolVis},
+                                                 ConverterParameter=Invert}">
+                            <TextBlock Text="CHƯA CÓ ẢNH - MÔ TẢ HÌNH CẦN VẼ"
+                                       Style="{StaticResource SectionLabel}"
+                                       Foreground="{DynamicResource ErrorBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding DrawText}" TextWrapping="Wrap"
+                                       Margin="0,14,0,0" FontSize="22" LineHeight="34"
+                                       TextAlignment="Center"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
 
-            <!-- Hàng ô đáp án -->
-            <ItemsControl Grid.Row="4" ItemsSource="{Binding Slots}"
-                          ItemTemplate="{StaticResource SlotTemplate}"
-                          HorizontalAlignment="Center" Margin="0,6">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-            </ItemsControl>
+                <!-- Thẻ phải: các trợ giúp -->
+                <Border Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="TRỢ GIÚP" Style="{StaticResource SectionLabel}"
+                                   Margin="0,0,0,12"/>
 
-            <!-- Ngân hàng chữ cái + trợ giúp -->
-            <StackPanel Grid.Row="5" Margin="0,10,0,0">
-                <ItemsControl ItemsSource="{Binding Tiles}"
-                              ItemTemplate="{StaticResource TileTemplate}"
-                              HorizontalAlignment="Center">
+                        <Button Style="{StaticResource HelpRow}" Command="{Binding RevealLetterCommand}">
+                            <Grid>
+                                <StackPanel>
+                                    <TextBlock Text="Mở 1 chữ" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="Điền sẵn một ô bất kỳ" FontSize="12"
+                                               Foreground="{DynamicResource TextMutedBrush}"/>
+                                </StackPanel>
+                                <TextBlock Text="30" Style="{StaticResource HudValue}" FontSize="15"
+                                           HorizontalAlignment="Right"
+                                           Foreground="{DynamicResource TertiaryBrush}"/>
+                            </Grid>
+                        </Button>
+
+                        <Button Style="{StaticResource HelpRow}" Command="{Binding BoomCommand}">
+                            <Grid>
+                                <StackPanel>
+                                    <TextBlock Text="Xóa chữ thừa" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="Bỏ bớt phím gây nhiễu" FontSize="12"
+                                               Foreground="{DynamicResource TextMutedBrush}"/>
+                                </StackPanel>
+                                <TextBlock Text="50" Style="{StaticResource HudValue}" FontSize="15"
+                                           HorizontalAlignment="Right"
+                                           Foreground="{DynamicResource TertiaryBrush}"/>
+                            </Grid>
+                        </Button>
+
+                        <Button Style="{StaticResource HelpRow}" Command="{Binding ShowHintCommand}">
+                            <Grid>
+                                <StackPanel>
+                                    <TextBlock Text="Gợi ý" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="Xem mô tả đáp án" FontSize="12"
+                                               Foreground="{DynamicResource TextMutedBrush}"/>
+                                </StackPanel>
+                                <TextBlock Text="20" Style="{StaticResource HudValue}" FontSize="15"
+                                           HorizontalAlignment="Right"
+                                           Foreground="{DynamicResource TertiaryBrush}"/>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- === Hàng ô đáp án === -->
+            <StackPanel Grid.Row="2">
+                <TextBlock Text="ĐÁP ÁN" Style="{StaticResource SectionLabel}"
+                           HorizontalAlignment="Center"/>
+
+                <TextBlock Text="{Binding FeedbackText}" FontSize="18" FontWeight="Bold"
+                           HorizontalAlignment="Center" Margin="0,6,0,0"
+                           Visibility="{Binding FeedbackText, Converter={StaticResource StrVis}}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsFeedbackGood}" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <ItemsControl ItemsSource="{Binding Slots}"
+                              ItemTemplate="{StaticResource SlotTemplate}"
+                              HorizontalAlignment="Center" Margin="0,4,0,0">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"
-                                       MaxWidth="820"/>
+                            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
-
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
-                    <Button Style="{StaticResource ActionButton}"
-                            Command="{Binding RevealLetterCommand}" Content="🔎 Mở 1 chữ · 30💎"/>
-                    <Button Style="{StaticResource ActionButton}"
-                            Command="{Binding BoomCommand}" Content="💣 Xóa chữ thừa · 50💎"/>
-                    <Button Style="{StaticResource ActionButton}"
-                            Command="{Binding ShowHintCommand}" Content="💡 Gợi ý · 20💎"/>
-                    <Button Style="{StaticResource ActionButton}"
-                            Command="{Binding SkipCommand}" Content="⏭ Bỏ qua"/>
-                </StackPanel>
-
-                <TextBlock Text="Bấm chữ để điền · bấm lại ô để lấy ra · ESC để thoát"
-                           Foreground="#C9BFFF" FontSize="14"
-                           HorizontalAlignment="Center" Margin="0,12,0,0"/>
             </StackPanel>
+
+            <!-- === Bàn phím chữ cái === -->
+            <Border Grid.Row="3" Style="{StaticResource Card}" Margin="0,14,0,0" Padding="20,16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="200"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" VerticalAlignment="Center" TextWrapping="Wrap"
+                               FontSize="12" LineHeight="18"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Text="Bấm chữ để điền · bấm lại ô đáp án để lấy chữ ra · ESC để thoát"/>
+
+                    <ItemsControl Grid.Column="1" ItemsSource="{Binding Tiles}"
+                                  ItemTemplate="{StaticResource TileTemplate}"
+                                  HorizontalAlignment="Center">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                           MaxWidth="620"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+
+                    <Button Grid.Column="2" Style="{StaticResource PrimaryButton}"
+                            HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Command="{Binding SkipCommand}" Content="Bỏ qua"/>
+                </Grid>
+            </Border>
         </Grid>
 
-        <!-- Lớp phủ: hết mạng -->
-        <Grid Background="#CC1A1040"
+        <!-- ==================== Lớp phủ: hết mạng ==================== -->
+        <Grid Grid.ColumnSpan="2" Background="{DynamicResource ScrimBrush}"
               Visibility="{Binding IsGameOver, Converter={StaticResource BoolVis}}">
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <TextBlock Text="💔 Hết mạng rồi!" Foreground="White" FontSize="52" FontWeight="Bold"
-                           HorizontalAlignment="Center"/>
-                <TextBlock Text="{Binding Score, StringFormat=Điểm của bạn: {0}}" Foreground="#FFD84D"
-                           FontSize="26" Margin="0,16" HorizontalAlignment="Center"/>
-                <Button Style="{StaticResource ActionButton}" Command="{Binding RestartCommand}"
-                        Content="🔄 Chơi lại" HorizontalAlignment="Center" FontSize="24"/>
-            </StackPanel>
+            <Border Style="{StaticResource Card}" CornerRadius="24" Padding="48,40"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Text="Hết mạng rồi!" FontSize="34" FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="{Binding Score, StringFormat=Điểm của bạn: {0}}"
+                               FontSize="18" Margin="0,12,0,24" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <Button Style="{StaticResource PrimaryButton}" Command="{Binding RestartCommand}"
+                            Content="Chơi lại" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
         </Grid>
 
-        <!-- Lớp phủ: hết bộ câu đố -->
-        <Grid Background="#CC1A1040"
+        <!-- ==================== Lớp phủ: hết bộ câu đố ==================== -->
+        <Grid Grid.ColumnSpan="2" Background="{DynamicResource ScrimBrush}"
               Visibility="{Binding IsFinished, Converter={StaticResource BoolVis}}">
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <TextBlock Text="🎉 Bạn đã chơi hết bộ câu đố!" Foreground="White"
-                           FontSize="46" FontWeight="Bold" HorizontalAlignment="Center"/>
-                <TextBlock Text="{Binding Score, StringFormat=Tổng điểm: {0}}" Foreground="#FFD84D"
-                           FontSize="28" Margin="0,16" HorizontalAlignment="Center"/>
-                <Button Style="{StaticResource ActionButton}" Command="{Binding RestartCommand}"
-                        Content="🔄 Chơi lại từ đầu" HorizontalAlignment="Center" FontSize="24"/>
-            </StackPanel>
+            <Border Style="{StaticResource Card}" CornerRadius="24" Padding="48,40"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Text="Bạn đã chơi hết bộ câu đố!" FontSize="30" FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="{Binding Score, StringFormat=Tổng điểm: {0}}"
+                               FontSize="18" Margin="0,12,0,24" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <Button Style="{StaticResource PrimaryButton}" Command="{Binding RestartCommand}"
+                            Content="Chơi lại từ đầu" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
         </Grid>
     </Grid>
 </Window>

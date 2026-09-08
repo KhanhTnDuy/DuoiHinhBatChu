@@ -21,5 +21,7 @@ public partial class MainWindow : Window
         if (e.Key == Key.Escape) Close();
     }
 
+    private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
     private void Window_Closing(object sender, CancelEventArgs e) => _vm.Save();
 }
