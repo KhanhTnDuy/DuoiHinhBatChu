@@ -29,6 +29,52 @@
         <Border Grid.Column="0" Background="{DynamicResource SidebarBrush}"
                 BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,0,1,0">
             <StackPanel VerticalAlignment="Center" Margin="48,0">
+
+                <!-- ===== Logo: một bức tranh, mũi tên, rồi hàng ô chữ =====
+                     Vẽ hẳn bằng hình khối chứ không dùng file ảnh, để nét luôn
+                     sắc ở mọi cỡ màn hình và tự đổi màu theo nền sáng/tối. -->
+                <Border Width="200" Height="132" CornerRadius="14" Padding="0"
+                        HorizontalAlignment="Left"
+                        Background="{DynamicResource CardBrush}"
+                        BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
+                    <Grid ClipToBounds="True">
+                        <!-- Mặt trời -->
+                        <Ellipse Width="38" Height="38" Margin="0,18,26,0"
+                                 HorizontalAlignment="Right" VerticalAlignment="Top"
+                                 Fill="{DynamicResource TertiaryBrush}"/>
+                        <!-- Hai dãy núi, dãy sau nhạt hơn cho có chiều sâu -->
+                        <Path Data="M -10,132 L 70,52 L 150,132 Z" Opacity="0.45"
+                              Fill="{DynamicResource PrimaryBrush}"/>
+                        <Path Data="M 60,132 L 130,70 L 210,132 Z"
+                              Fill="{DynamicResource PrimaryBrush}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Mũi tên: từ hình ra chữ -->
+                <Path Data="M 8,0 L 8,20 M 0,12 L 8,21 L 16,12"
+                      Stroke="{DynamicResource TextMutedBrush}" StrokeThickness="2"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                      Margin="92,12,0,12" HorizontalAlignment="Left"/>
+
+                <!-- Ba ô chữ, ô cuối còn trống như đang chờ người chơi ghép nốt -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,22">
+                    <Border Width="44" Height="52" CornerRadius="10" Margin="0,0,8,0"
+                            Background="{DynamicResource SlotFilledBrush}">
+                        <TextBlock Text="C" FontSize="24" FontWeight="Bold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource SlotFilledTextBrush}"/>
+                    </Border>
+                    <Border Width="44" Height="52" CornerRadius="10" Margin="0,0,8,0"
+                            Background="{DynamicResource SlotFilledBrush}">
+                        <TextBlock Text="H" FontSize="24" FontWeight="Bold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource SlotFilledTextBrush}"/>
+                    </Border>
+                    <Rectangle Width="44" Height="52" RadiusX="10" RadiusY="10"
+                               Stroke="{DynamicResource SlotEmptyBrush}"
+                               StrokeThickness="2" StrokeDashArray="4 3"/>
+                </StackPanel>
+
                 <TextBlock Text="ĐUỔI HÌNH" FontSize="34" FontWeight="Bold"
                            Foreground="{DynamicResource PrimaryBrush}"/>
                 <TextBlock Text="BẮT CHỮ" FontSize="34" FontWeight="Bold"
