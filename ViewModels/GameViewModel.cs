@@ -18,11 +18,6 @@ public class GameViewModel : ViewModelBase
     public const int CostBoom = 50;     // xóa bớt chữ thừa
     public const int CostHint = 20;     // xem gợi ý bằng lời
 
-    private const int MinTiles = 12;    // số phím chữ tối thiểu cho đỡ trống trải
-    private const int MaxTiles = 21;
-
-    /// <summary>Bảng chữ cái tiếng Việt không dấu (không có F, J, W, Z).</summary>
-    private const string Alphabet = "ABCDEGHIKLMNOPQRSTUVXY";
 
     private readonly Account _account;
     private readonly AppSettings _settings;
@@ -211,8 +206,13 @@ public class GameViewModel : ViewModelBase
         IsFeedbackGood = false;
 
         Puzzle p = Current;
-        BuildSlots(ToSlotText(p.Answer));
-        BuildTiles();
+
+        // Cùng luật dựng lượt với máy chủ ván đấu nhiều người
+        PuzzleRound round = PuzzleRound.Create(
+            p.Answer, _puzzles.Where(x => x != p).Select(x => x.Answer), _rng);
+
+        BuildSlots(round.SlotText);
+        BuildTiles(round);
         LoadImage(p);
 
         OnPropertyChanged(nameof(ProgressText));
@@ -220,16 +220,6 @@ public class GameViewModel : ViewModelBase
         OnPropertyChanged(nameof(LetterCountText));
         _state.SaveProfile(_profile);
     }
-
-    /// <summary>
-    /// Chữ hiện trên ô đáp án và trên phím: bỏ dấu, đổi "đ" thành "d", viết hoa.
-    /// Người chơi chỉ phải chọn chữ không dấu; dạng có dấu đầy đủ chỉ hiện lại
-    /// ở dòng "Chính xác: ..." sau khi trả lời đúng.
-    /// </summary>
-    private static string ToSlotText(string answer) =>
-        string.Join(' ', AnswerChecker.Normalize(answer)
-                                      .Split(' ', StringSplitOptions.RemoveEmptyEntries))
-              .ToUpperInvariant();
 
     /// <summary>Mỗi ký tự của đáp án thành một ô; khoảng trắng thành ô ngăn cách hai từ.</summary>
     private void BuildSlots(string answer)
@@ -246,57 +236,18 @@ public class GameViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Ngân hàng chữ = chữ của đáp án + chữ nhiễu, rồi xáo trộn.</summary>
-    private void BuildTiles()
+    /// <summary>Đổ ngân hàng phím chữ mà máy chủ (hoặc PuzzleRound) đã dựng sẵn.</summary>
+    private void BuildTiles(PuzzleRound round)
     {
-        var letters = Slots.Where(s => !s.IsSpace).Select(s => s.TargetChar).ToList();
-
-        int total = Math.Clamp(letters.Count + 6, MinTiles, MaxTiles);
-        char[] pool = FillerPool();
-        while (letters.Count < total)
-            letters.Add(pool[_rng.Next(pool.Length)]);
-
-        // Xáo trộn Fisher-Yates để vị trí phím không đoán được
-        for (int i = letters.Count - 1; i > 0; i--)
+        foreach (RoundTile t in round.Tiles)
         {
-            int j = _rng.Next(i + 1);
-            (letters[i], letters[j]) = (letters[j], letters[i]);
-        }
-
-        // Đúng số lượng chữ cần cho đáp án được đánh dấu "chữ thật";
-        // phần dư là chữ nhiễu, trợ giúp Boom chỉ xóa được nhóm này.
-        var remaining = Slots.Where(s => !s.IsSpace)
-                             .GroupBy(s => s.TargetChar)
-                             .ToDictionary(g => g.Key, g => g.Count());
-
-        foreach (char c in letters)
-        {
-            bool isReal = remaining.TryGetValue(c, out int n) && n > 0;
-            if (isReal) remaining[c] = n - 1;
-
             Tiles.Add(new LetterTile
             {
                 Id = _nextTileId++,
-                Character = c,
-                IsCorrectLetter = isReal,
+                Character = t.Character,
+                IsCorrectLetter = t.IsAnswerLetter,
             });
         }
-    }
-
-    /// <summary>
-    /// Chữ nhiễu lấy từ chính các đáp án khác cho sát chất tiếng Việt.
-    /// Bộ câu đố còn ít thì bù thêm từ bảng chữ cái để bàn phím khỏi lặp đi lặp lại.
-    /// </summary>
-    private char[] FillerPool()
-    {
-        var pool = _puzzles
-            .SelectMany(p => ToSlotText(p.Answer))
-            .Where(char.IsLetter)
-            .ToHashSet();
-
-        if (pool.Count < MinTiles) pool.UnionWith(Alphabet);
-
-        return pool.ToArray();
     }
 
     private void LoadImage(Puzzle p)

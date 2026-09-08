@@ -9,14 +9,15 @@
   </PropertyGroup>
 
   <!--
-    Dự án WPF nằm ngay thư mục gốc nên mặc định nó gom cả file của thư mục con
-    DuoiHinhBatChu.Core. Phải loại ra, không thì mỗi lớp bị biên dịch hai lần.
+    Dự án WPF nằm ngay thư mục gốc nên mặc định nó gom cả file của các dự án con.
+    Phải loại ra, không thì mỗi lớp bị biên dịch hai lần.
+    Thêm dự án con mới thì nhớ thêm một dòng vào đây.
   -->
   <ItemGroup>
-    <Compile Remove="DuoiHinhBatChu.Core\**" />
-    <Page Remove="DuoiHinhBatChu.Core\**" />
-    <Content Remove="DuoiHinhBatChu.Core\**" />
-    <None Remove="DuoiHinhBatChu.Core\**" />
+    <Compile Remove="DuoiHinhBatChu.Core\**;DuoiHinhBatChu.Server\**" />
+    <Page Remove="DuoiHinhBatChu.Core\**;DuoiHinhBatChu.Server\**" />
+    <Content Remove="DuoiHinhBatChu.Core\**;DuoiHinhBatChu.Server\**" />
+    <None Remove="DuoiHinhBatChu.Core\**;DuoiHinhBatChu.Server\**" />
   </ItemGroup>
 
   <ItemGroup>

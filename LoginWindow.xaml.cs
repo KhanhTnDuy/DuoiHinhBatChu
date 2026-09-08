@@ -48,12 +48,15 @@ public partial class LoginWindow : Window
         else _vm.LoginCommand.Execute(null);
     }
 
-    /// <summary>Mở màn chơi rồi mới đóng cửa sổ này, để ứng dụng không tự thoát.</summary>
+    /// <summary>
+    /// Sang màn chọn chế độ. Mở cửa sổ mới trước rồi mới đóng cửa sổ này,
+    /// để ứng dụng không coi là đã hết cửa sổ và tự thoát.
+    /// </summary>
     private void StartGame(Account account)
     {
-        var game = new MainWindow(account, _settings);
-        Application.Current.MainWindow = game;
-        game.Show();
+        var mode = new ModeWindow(account, _settings);
+        Application.Current.MainWindow = mode;
+        mode.Show();
         Close();
     }
 }
