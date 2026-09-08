@@ -6,7 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:conv="clr-namespace:DuoiHinhBatChu.Converters"
         Title="Đuổi hình bắt chữ - Chọn chế độ chơi"
-        Width="880" Height="600"
+        Width="880" Height="720"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         FontFamily="Segoe UI"
@@ -87,10 +87,11 @@
             </Button>
         </Grid>
 
-        <!-- === Bảng nối máy chủ === -->
-        <Border Grid.Row="1" Margin="0,28,0,0" Style="{StaticResource Card}"
-                VerticalAlignment="Top"
-                Visibility="{Binding IsOnlinePanelOpen, Converter={StaticResource BoolVis}}">
+        <!-- === Bảng nối máy chủ ===
+             Cuộn được vì phần đăng nhập máy chủ dài hơn một màn hình khi cửa sổ nhỏ -->
+        <ScrollViewer Grid.Row="1" Margin="0,28,0,0" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding IsOnlinePanelOpen, Converter={StaticResource BoolVis}}">
+        <Border Style="{StaticResource Card}" VerticalAlignment="Top">
             <StackPanel Margin="8">
                 <TextBlock Text="NỐI TỚI MÁY CHỦ" Style="{StaticResource SectionLabel}"/>
                 <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20" Margin="0,8,0,16"
@@ -107,6 +108,40 @@
                             Command="{Binding CheckServerCommand}" Content="Thử kết nối"/>
                     <Button Style="{StaticResource GhostButton}" Margin="10,0,0,0"
                             Command="{Binding HideOnlineCommand}" Content="Quay lại"/>
+                </StackPanel>
+
+                <!-- Tài khoản trên máy chủ là sổ riêng, không phải tài khoản ở máy này -->
+                <TextBlock Text="TÀI KHOẢN TRÊN MÁY CHỦ" Style="{StaticResource SectionLabel}"
+                           Margin="0,22,0,0"/>
+                <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20" Margin="0,8,0,12"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           Text="Máy chủ giữ sổ tài khoản riêng của nó, vì nó mới là bên ghi điểm ván đấu. Lần đầu vào một máy chủ thì bấm Tạo tài khoản."/>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Tên đăng nhập"/>
+                        <TextBox Style="{StaticResource Field}"
+                                 Text="{Binding ServerUserName, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Mật khẩu"/>
+                        <PasswordBox x:Name="ServerPasswordBox"
+                                     Style="{StaticResource PasswordField}"
+                                     PasswordChanged="ServerPasswordBox_PasswordChanged"/>
+                    </StackPanel>
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                    <Button Style="{StaticResource PrimaryButton}"
+                            Command="{Binding ServerLoginCommand}" Content="Vào đấu"/>
+                    <Button Style="{StaticResource GhostButton}" Margin="10,0,0,0"
+                            Command="{Binding ServerRegisterCommand}" Content="Tạo tài khoản"/>
                 </StackPanel>
 
                 <Border CornerRadius="10" Padding="12,9" Margin="0,16,0,0"
@@ -137,14 +172,8 @@
                     </TextBlock>
                 </Border>
 
-                <Border CornerRadius="10" Padding="12,9" Margin="0,10,0,0"
-                        Background="{DynamicResource TertiarySoftBrush}"
-                        Visibility="{Binding IsServerOk, Converter={StaticResource BoolVis}}">
-                    <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
-                               Foreground="{DynamicResource TextPrimaryBrush}"
-                               Text="Máy chủ đã sẵn sàng. Phần tạo phòng và vào đấu đang làm dở, nên bản này mới thử được kết nối thôi."/>
-                </Border>
             </StackPanel>
         </Border>
+        </ScrollViewer>
     </Grid>
 </Window>

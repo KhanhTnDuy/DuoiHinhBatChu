@@ -1,0 +1,417 @@
+<Window x:Class="DuoiHinhBatChu.MatchWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        mc:Ignorable="d"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:conv="clr-namespace:DuoiHinhBatChu.Converters"
+        Title="Đuổi hình bắt chữ - Đấu nhiều người"
+        WindowStyle="None"
+        WindowState="Maximized"
+        ResizeMode="NoResize"
+        FontFamily="Segoe UI"
+        TextOptions.TextFormattingMode="Ideal"
+        Background="{DynamicResource CanvasBrush}"
+        KeyDown="Window_KeyDown"
+        Closing="Window_Closing">
+
+    <Window.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+        <conv:StringToVisibilityConverter x:Key="StrVis"/>
+
+        <!-- Ô ký tự trong hàng đáp án: giống màn chơi một mình, nhưng không có
+             trạng thái "mở bằng trợ giúp" vì ván đấu không bán trợ giúp -->
+        <DataTemplate x:Key="SlotTemplate">
+            <Button Command="{Binding DataContext.TakeBackCommand,
+                              RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                    CommandParameter="{Binding}"
+                    Cursor="Hand"
+                    Margin="5,6">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Grid x:Name="Root" Width="56" Height="64">
+                            <Rectangle x:Name="Dash" RadiusX="12" RadiusY="12"
+                                       Stroke="{DynamicResource SlotEmptyBrush}"
+                                       StrokeThickness="2" StrokeDashArray="4 3"/>
+                            <Border x:Name="Fill" CornerRadius="12" Background="Transparent"/>
+                            <TextBlock x:Name="Char" Text="{Binding DisplayText}"
+                                       FontSize="26" FontWeight="Bold"
+                                       Foreground="{DynamicResource SlotFilledTextBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding HasValue}" Value="True">
+                                <Setter TargetName="Dash" Property="Visibility" Value="Collapsed"/>
+                                <Setter TargetName="Fill" Property="Background"
+                                        Value="{DynamicResource SlotFilledBrush}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsWrong}" Value="True">
+                                <Setter TargetName="Dash" Property="Visibility" Value="Collapsed"/>
+                                <Setter TargetName="Fill" Property="Background"
+                                        Value="{DynamicResource ErrorBrush}"/>
+                                <Setter TargetName="Char" Property="Foreground" Value="#FFFFFF"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsSpace}" Value="True">
+                                <Setter TargetName="Root" Property="Width" Value="22"/>
+                                <Setter TargetName="Dash" Property="Visibility" Value="Collapsed"/>
+                                <Setter TargetName="Fill" Property="Background" Value="Transparent"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </DataTemplate>
+
+        <!-- Phím chữ cái -->
+        <DataTemplate x:Key="TileTemplate">
+            <Button Command="{Binding DataContext.PlaceLetterCommand,
+                              RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                    CommandParameter="{Binding}"
+                    Cursor="Hand"
+                    Margin="5">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Key" Width="52" Height="52" CornerRadius="12"
+                                Background="{DynamicResource TileBrush}"
+                                BorderBrush="{DynamicResource TileBevelBrush}"
+                                BorderThickness="0,0,0,3">
+                            <TextBlock Text="{Binding Character}"
+                                       FontSize="24" FontWeight="Bold"
+                                       Foreground="{DynamicResource TileTextBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Key" Property="Background"
+                                        Value="{DynamicResource TileHoverBrush}"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding IsUsed}" Value="True">
+                                <Setter TargetName="Key" Property="Visibility" Value="Hidden"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </DataTemplate>
+
+        <!-- Một dòng bảng điểm: tên, dấu tích khi đã trả lời đúng, điểm -->
+        <DataTemplate x:Key="ScoreTemplate">
+            <Border x:Name="Row" CornerRadius="12" Padding="12,9" Margin="0,0,0,8"
+                    Background="{DynamicResource CardAltBrush}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <TextBlock Text="{Binding DisplayName}" FontSize="15" FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis" MaxWidth="150"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="chủ phòng" FontSize="11" Margin="8,3,0,0"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   Visibility="{Binding IsHost, Converter={StaticResource BoolVis}}"/>
+                        <TextBlock Text="✓" FontSize="15" FontWeight="Bold" Margin="8,0,0,0"
+                                   Foreground="{DynamicResource SuccessBrush}"
+                                   Visibility="{Binding HasAnswered, Converter={StaticResource BoolVis}}"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Column="1" Text="{Binding Score}"
+                               Style="{StaticResource HudValue}" FontSize="16"
+                               Foreground="{DynamicResource PrimaryBrush}"/>
+                </Grid>
+            </Border>
+            <DataTemplate.Triggers>
+                <!-- Dòng của mình tô đậm lên cho dễ tìm giữa bảng -->
+                <DataTrigger Binding="{Binding IsMe}" Value="True">
+                    <Setter TargetName="Row" Property="Background"
+                            Value="{DynamicResource PrimarySoftBrush}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ==================== Cột trái: phòng + bảng điểm ==================== -->
+        <Border Grid.Column="0" Background="{DynamicResource SidebarBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,0,1,0">
+            <Grid Margin="20,22">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="ĐUỔI HÌNH" FontSize="20" FontWeight="Bold"
+                               Foreground="{DynamicResource PrimaryBrush}"/>
+                    <TextBlock Text="BẮT CHỮ - ĐẤU" FontSize="20" FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+                    <TextBlock Text="NGƯỜI CHƠI" Style="{StaticResource SectionLabel}"
+                               Margin="0,22,0,0"/>
+                    <TextBlock Text="{Binding PlayerName}" FontSize="16" FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                </StackPanel>
+
+                <!-- Mã phòng: chữ to để đọc cho người khác gõ vào -->
+                <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,18,0,0"
+                        Background="{DynamicResource CardAltBrush}"
+                        Visibility="{Binding IsInRoom, Converter={StaticResource BoolVis}}">
+                    <StackPanel>
+                        <TextBlock Text="MÃ PHÒNG" Style="{StaticResource SectionLabel}"/>
+                        <TextBlock Text="{Binding RoomCode}" FontSize="30" FontWeight="Bold"
+                                   Margin="0,4,0,0"
+                                   Foreground="{DynamicResource TertiaryBrush}"/>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Grid.Row="2" Margin="0,20,0,0">
+                    <TextBlock Text="BẢNG ĐIỂM" Style="{StaticResource SectionLabel}"
+                               Margin="0,0,0,10"/>
+                    <ItemsControl ItemsSource="{Binding Players}"
+                                  ItemTemplate="{StaticResource ScoreTemplate}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ==================== Cột phải ==================== -->
+        <Grid Grid.Column="1" Margin="24,18">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- === Thanh trên === -->
+            <Grid Grid.Row="0">
+                <Border Style="{StaticResource Card}" HorizontalAlignment="Left" Padding="18,10"
+                        Visibility="{Binding IsPlaying, Converter={StaticResource BoolVis}}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding ProgressText}" FontSize="18" FontWeight="Bold"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <Rectangle Width="1" Margin="16,2" Fill="{DynamicResource CardBorderBrush}"/>
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                            <TextBlock Text="ĐỘ KHÓ" Style="{StaticResource SectionLabel}"/>
+                            <TextBlock Text="{Binding DifficultyText}"
+                                       Style="{StaticResource HudValue}" FontSize="15"
+                                       Foreground="{DynamicResource TertiaryBrush}"/>
+                        </StackPanel>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="CÒN LẠI" Style="{StaticResource SectionLabel}"/>
+                            <TextBlock Text="{Binding SecondsLeftText}"
+                                       Style="{StaticResource HudValue}" FontSize="15"
+                                       Foreground="{DynamicResource ErrorBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Style="{StaticResource ThemeToggleButton}" Margin="0,0,8,0"
+                            Command="{Binding ToggleThemeCommand}"/>
+                    <Button Style="{StaticResource GhostButton}" Content="Rời phòng"
+                            Click="Close_Click"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- === Phòng chờ === -->
+            <Grid Grid.Row="1"
+                  Visibility="{Binding IsInLobby, Converter={StaticResource BoolVis}}">
+                <Border Style="{StaticResource Card}" Width="560"
+                        VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32,28">
+                    <StackPanel>
+                        <TextBlock Text="PHÒNG ĐẤU" Style="{StaticResource SectionLabel}"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                   Margin="0,8,0,20"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Text="Cùng một câu đố cho cả phòng. Ai ghép xong trước được nhiều điểm hơn: trả lời ngay được gần trọn điểm, sát giờ còn 20%. Cần ít nhất 2 người mới bắt đầu được."/>
+
+                        <!-- Chưa vào phòng: mở phòng mới hoặc gõ mã để vào -->
+                        <StackPanel Visibility="{Binding IsInRoom, Converter={StaticResource BoolVis},
+                                                 ConverterParameter=Invert}">
+                            <Button Style="{StaticResource PrimaryButton}"
+                                    HorizontalAlignment="Left"
+                                    Command="{Binding CreateRoomCommand}" Content="Mở phòng mới"/>
+
+                            <TextBlock Text="HOẶC VÀO PHÒNG CÓ SẴN"
+                                       Style="{StaticResource SectionLabel}" Margin="0,24,0,0"/>
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Mã phòng 6 ký tự"/>
+                            <TextBox Style="{StaticResource Field}" FontSize="20"
+                                     CharacterCasing="Upper" MaxLength="6"
+                                     Text="{Binding JoinCode, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Button Style="{StaticResource GhostButton}" Margin="0,12,0,0"
+                                    HorizontalAlignment="Left"
+                                    Command="{Binding JoinRoomCommand}" Content="Vào phòng"/>
+                        </StackPanel>
+
+                        <!-- Đã ở trong phòng: chờ đủ người rồi bắt đầu -->
+                        <StackPanel Visibility="{Binding IsInRoom, Converter={StaticResource BoolVis}}">
+                            <TextBlock Style="{StaticResource FieldLabel}"
+                                       Text="Số câu mỗi ván (1 - 20)"/>
+                            <TextBox Style="{StaticResource Field}" Width="120"
+                                     HorizontalAlignment="Left"
+                                     IsEnabled="{Binding IsHost}"
+                                     Text="{Binding Rounds, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <Button Style="{StaticResource PrimaryButton}" Margin="0,16,0,0"
+                                    HorizontalAlignment="Left"
+                                    Command="{Binding StartMatchCommand}" Content="Bắt đầu ván"/>
+
+                            <TextBlock TextWrapping="Wrap" FontSize="13" Margin="0,12,0,0"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       Text="Chỉ chủ phòng bấm bắt đầu được. Người khác chờ ở đây, thấy tên mình trong bảng điểm bên trái là vào phòng rồi."
+                                       Visibility="{Binding IsHost, Converter={StaticResource BoolVis},
+                                                    ConverterParameter=Invert}"/>
+                        </StackPanel>
+
+                        <Border CornerRadius="10" Padding="12,9" Margin="0,20,0,0"
+                                Background="{DynamicResource CardAltBrush}"
+                                Visibility="{Binding Status, Converter={StaticResource StrVis}}">
+                            <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="13"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- === Màn đấu === -->
+            <Grid Grid.Row="1" Margin="0,18,0,0"
+                  Visibility="{Binding IsPlaying, Converter={StaticResource BoolVis}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Ảnh câu đố, tải thẳng từ máy chủ -->
+                <Border Grid.Row="0" CornerRadius="24" Padding="10"
+                        Background="{DynamicResource CardBrush}"
+                        BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
+                    <Grid>
+                        <Image Source="{Binding ImageSource}" Stretch="Uniform"
+                               Visibility="{Binding HasImage, Converter={StaticResource BoolVis}}"/>
+                        <TextBlock Text="Đang tải ảnh từ máy chủ..."
+                                   VerticalAlignment="Center" HorizontalAlignment="Center"
+                                   FontSize="18"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   Visibility="{Binding HasImage, Converter={StaticResource BoolVis},
+                                                ConverterParameter=Invert}"/>
+                        <TextBlock Text="Không tải được ảnh của câu này từ máy chủ."
+                                   VerticalAlignment="Center" HorizontalAlignment="Center"
+                                   FontSize="18"
+                                   Foreground="{DynamicResource ErrorBrush}"
+                                   Visibility="{Binding IsImageBroken,
+                                                Converter={StaticResource BoolVis}}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Hàng ô đáp án -->
+                <StackPanel Grid.Row="1" Margin="0,14,0,0">
+                    <TextBlock Text="{Binding FeedbackText}" FontSize="18" FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               Visibility="{Binding FeedbackText, Converter={StaticResource StrVis}}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFeedbackGood}" Value="True">
+                                        <Setter Property="Foreground"
+                                                Value="{DynamicResource SuccessBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <!-- Đáp án chỉ lộ khi máy chủ báo hết câu -->
+                    <TextBlock Text="{Binding RevealedAnswer, StringFormat=Đáp án: {0}}"
+                               FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"
+                               Margin="0,6,0,0"
+                               Foreground="{DynamicResource TertiaryBrush}"
+                               Visibility="{Binding RevealedAnswer,
+                                            Converter={StaticResource StrVis}}"/>
+
+                    <ItemsControl ItemsSource="{Binding Slots}"
+                                  ItemTemplate="{StaticResource SlotTemplate}"
+                                  HorizontalAlignment="Center" Margin="0,4,0,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Bàn phím chữ cái -->
+                <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,12,0,0" Padding="20,16">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="220"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="220"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" VerticalAlignment="Center" TextWrapping="Wrap"
+                                   FontSize="12" LineHeight="18"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   Text="Ghép kín ô là gửi luôn, không phải bấm nút. Sai thì ghép lại, còn giờ là còn cơ hội."/>
+
+                        <ItemsControl Grid.Column="1" ItemsSource="{Binding Tiles}"
+                                      ItemTemplate="{StaticResource TileTemplate}"
+                                      HorizontalAlignment="Center">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                               MaxWidth="620"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+
+                        <TextBlock Grid.Column="2" VerticalAlignment="Center" TextWrapping="Wrap"
+                                   FontSize="12" TextAlignment="Right"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   Text="{Binding Status}"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- ==================== Lớp phủ: hết ván ==================== -->
+        <Grid Grid.ColumnSpan="2" Background="{DynamicResource ScrimBrush}"
+              Visibility="{Binding IsMatchOver, Converter={StaticResource BoolVis}}">
+            <Border Style="{StaticResource Card}" CornerRadius="24" Padding="48,40"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Width="520">
+                <StackPanel>
+                    <TextBlock Text="Hết ván!" FontSize="34" FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="{Binding WinnerText}" FontSize="18" Margin="0,12,0,20"
+                               HorizontalAlignment="Center" TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+
+                    <ItemsControl ItemsSource="{Binding Players}"
+                                  ItemTemplate="{StaticResource ScoreTemplate}"/>
+
+                    <TextBlock Text="{Binding Status}" FontSize="13" Margin="0,10,0,16"
+                               HorizontalAlignment="Center" TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               Foreground="{DynamicResource TextMutedBrush}"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Style="{StaticResource PrimaryButton}"
+                                Command="{Binding StartMatchCommand}" Content="Ván mới"/>
+                        <Button Style="{StaticResource GhostButton}" Margin="10,0,0,0"
+                                Content="Rời phòng" Click="Close_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
