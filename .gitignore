@@ -2,3 +2,9 @@ bin/
 obj/
 .vs/
 *.user
+
+# Du lieu sinh ra luc chay (tai khoan, tien trinh, tuy chon)
+Data/accounts.json
+Data/app-settings.json
+Data/saves/
+DuoiHinhBatChu.Server/Data/

@@ -34,38 +34,15 @@
                 <TextBlock Text="BẮT CHỮ" FontSize="34" FontWeight="Bold"
                            Foreground="{DynamicResource TextPrimaryBrush}"/>
 
-                <TextBlock Text="CHẾ ĐỘ CHƠI" Style="{StaticResource SectionLabel}"
-                           Margin="0,36,0,12"/>
+                <TextBlock TextWrapping="Wrap" FontSize="15" LineHeight="24"
+                           Margin="0,20,0,0" MaxWidth="360" HorizontalAlignment="Left"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           Text="Nhìn hình đoán chữ. Đăng nhập để giữ điểm và kim cương của riêng bạn, hoặc bấm Chơi khách để vào ngay."/>
 
-                <Border Style="{StaticResource Card}" Background="{DynamicResource CardAltBrush}"
-                        Margin="0,0,0,10">
-                    <StackPanel>
-                        <TextBlock Text="Chơi một mình" FontSize="16" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
-                        <TextBlock TextWrapping="Wrap" FontSize="13" Margin="0,4,0,0"
-                                   LineHeight="20"
-                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                   Text="Chạy offline, không cần mạng. Đăng nhập để giữ điểm và kim cương riêng, hoặc bấm Chơi khách để vào ngay."/>
-                    </StackPanel>
-                </Border>
-
-                <Border Style="{StaticResource Card}" Background="{DynamicResource CardAltBrush}">
-                    <StackPanel>
-                        <Grid>
-                            <TextBlock Text="Đấu nhiều người" FontSize="16" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
-                            <Border CornerRadius="999" Padding="10,3" HorizontalAlignment="Right"
-                                    Background="{DynamicResource TertiarySoftBrush}">
-                                <TextBlock Text="SẮP CÓ" Style="{StaticResource SectionLabel}"
-                                           Foreground="{DynamicResource TertiaryBrush}"/>
-                            </Border>
-                        </Grid>
-                        <TextBlock TextWrapping="Wrap" FontSize="13" Margin="0,4,0,0"
-                                   LineHeight="20"
-                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                   Text="Từ 2 người trở lên, cùng một câu đố, ai trả lời nhanh hơn được nhiều điểm hơn. Chế độ này cần máy chủ nên phải có tài khoản, chưa mở ở bản này."/>
-                    </StackPanel>
-                </Border>
+                <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20" Margin="0,16,0,0"
+                           MaxWidth="360" HorizontalAlignment="Left"
+                           Foreground="{DynamicResource TextMutedBrush}"
+                           Text="Chọn chơi một mình hay đấu nhiều người ở bước sau, khi đã vào."/>
             </StackPanel>
         </Border>
 

@@ -34,15 +34,22 @@ lẫn đem lên máy chủ thật sau này.
 1. ~~**Tách phần dùng chung** thành thư viện lớp `DuoiHinhBatChu.Core`.~~ **Xong.**
    Nhắm `net10.0` thuần, không tham chiếu WPF. Hiện chứa `Puzzle`, `Account`,
    `AnswerChecker`, `PuzzleRepository`, `PuzzleImageLocator`, `AccountService`.
-2. **Dựng server** `DuoiHinhBatChu.Server` (ASP.NET Core):
-   - Chuyển `AccountService` lên đây, đổi lưu file sang SQLite.
-   - Cấp token khi đăng nhập; client giữ token thay vì tự kiểm tra mật khẩu.
-3. **Hub phòng chơi** `GameHub`:
-   - `CreateRoom()` → trả mã phòng; `JoinRoom(code)`; `StartMatch()`.
-   - Server đẩy từng câu kèm mốc thời gian bắt đầu.
-   - `SubmitAnswer(roomId, answer)` — **server** chấm đúng/sai và tính thời gian.
-4. **Client**: màn chọn chế độ sau khi đăng nhập, màn phòng chờ, và màn đấu
-   dùng lại giao diện màn chơi hiện tại, thêm cột điểm của các người chơi khác.
+2. ~~**Dựng server** `DuoiHinhBatChu.Server` (ASP.NET Core).~~ **Xong.**
+   - `POST /api/auth/register`, `POST /api/auth/login` → trả vé đăng nhập.
+   - `GET /api/health` để client thử kết nối.
+   - `GET /api/puzzles/{ten}/image` phục vụ ảnh, nên máy người chơi không cần
+     có sẵn đúng bộ ảnh.
+   - Còn nợ: đang dùng lại `AccountService` ghi JSON, chưa đổi sang SQLite.
+     Vé để trong bộ nhớ nên khởi động lại máy chủ là phải đăng nhập lại.
+3. ~~**Hub phòng chơi** `GameHub`.~~ **Xong.**
+   - `CreateRoom` → mã 6 ký tự; `JoinRoom(code)`; `StartMatch(rounds)`.
+   - Máy chủ phát `RoundStarted` kèm số ô và bộ phím chữ, **không kèm đáp án**.
+   - `SubmitAnswer` — máy chủ chấm và tự đo thời gian; đáp án chỉ lộ ở `RoundEnded`.
+   - Chưa có: đá người treo máy, chơi lại ngay trong phòng cũ.
+4. **Client** — *đang làm dở*. Đã có màn chọn chế độ sau khi đăng nhập và phép
+   thử kết nối máy chủ. Còn thiếu màn phòng chờ và màn đấu: cần thêm gói
+   `Microsoft.AspNetCore.SignalR.Client` và một `MatchViewModel` nghe các
+   sự kiện `RoundStarted` / `AnswerJudged` / `RoundEnded` / `MatchEnded`.
 
 ## Cách tính điểm theo tốc độ
 

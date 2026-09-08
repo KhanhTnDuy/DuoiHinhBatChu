@@ -1,0 +1,80 @@
+using DuoiHinhBatChu.Models;
+using DuoiHinhBatChu.Server;
+using DuoiHinhBatChu.Services;
+using Microsoft.AspNetCore.Http.HttpResults;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<TokenService>();
+builder.Services.AddSingleton<AccountService>(_ => new AccountService());
+builder.Services.AddSingleton<PuzzleRepository>(_ => new PuzzleRepository());
+builder.Services.AddSingleton<RoomManager>();
+
+var app = builder.Build();
+
+// Nạp câu đố ngay lúc khởi động để sai đường dẫn ảnh thì biết luôn,
+// chứ không đợi tới lúc có người bấm chơi
+var rooms = app.Services.GetRequiredService<RoomManager>();
+app.Logger.LogInformation("Đã nạp {Count} câu đố", rooms.PuzzleCount);
+
+// ===== Kiểm tra máy chủ sống =====
+
+app.MapGet("/api/health", (RoomManager rooms) => Results.Ok(new HealthResponse(
+    "Đuổi hình bắt chữ",
+    typeof(Program).Assembly.GetName().Version?.ToString() ?? "1.0",
+    rooms.PuzzleCount,
+    rooms.RoomCount)));
+
+// ===== Xác thực =====
+
+app.MapPost("/api/auth/register",
+    (RegisterRequest req, AccountService accounts, TokenService tokens) =>
+    {
+        AuthResult result = accounts.Register(
+            req.UserName, req.DisplayName, req.Password, req.Confirm);
+
+        return result.Ok ? Ok(result.Account!, tokens) : BadRequest(result.Error);
+    });
+
+app.MapPost("/api/auth/login",
+    (LoginRequest req, AccountService accounts, TokenService tokens) =>
+    {
+        AuthResult result = accounts.Login(req.UserName, req.Password);
+        return result.Ok ? Ok(result.Account!, tokens) : BadRequest(result.Error);
+    });
+
+// ===== Ảnh câu đố =====
+// Client tải ảnh từ đây nên máy người chơi không cần có sẵn cùng bộ ảnh.
+
+app.MapGet("/api/puzzles/{imageName}/image", (string imageName, RoomManager rooms) =>
+{
+    // Chặn đi ngược thư mục kiểu "../../secret.txt"
+    if (imageName.Contains('/') || imageName.Contains('\\') || imageName.Contains(".."))
+        return Results.BadRequest(new ErrorResponse("Tên ảnh không hợp lệ."));
+
+    string? path = rooms.ImagePath(imageName);
+    if (path == null || !File.Exists(path))
+        return Results.NotFound(new ErrorResponse("Không có ảnh này."));
+
+    return Results.File(path, ContentType(path));
+});
+
+app.MapHub<GameHub>("/game");
+
+app.Run();
+
+static Results<Ok<AuthResponse>, BadRequest<ErrorResponse>> Ok(Account account, TokenService tokens)
+    => TypedResults.Ok(new AuthResponse(
+        tokens.Issue(account), account.Id, account.UserName, account.DisplayName));
+
+static Results<Ok<AuthResponse>, BadRequest<ErrorResponse>> BadRequest(string error)
+    => TypedResults.BadRequest(new ErrorResponse(error));
+
+static string ContentType(string path) => Path.GetExtension(path).ToLowerInvariant() switch
+{
+    ".jpg" or ".jpeg" => "image/jpeg",
+    ".webp" => "image/webp",
+    ".bmp" => "image/bmp",
+    _ => "image/png",
+};

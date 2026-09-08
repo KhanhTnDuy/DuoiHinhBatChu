@@ -13,6 +13,9 @@ public class AppSettings
     public bool IsDarkTheme { get; set; }
     public string LastUserName { get; set; } = "";
 
+    /// <summary>Địa chỉ máy chủ đấu nhiều người dùng lần gần nhất.</summary>
+    public string ServerAddress { get; set; } = "";
+
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
     private static string FilePath

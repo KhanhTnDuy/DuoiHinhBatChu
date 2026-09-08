@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DuoiHinhBatChu.Core\DuoiHinhBatChu.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Dùng chung kho ảnh với client. Máy chủ cần ảnh vì nó vừa bốc câu vừa
+      phục vụ GET /api/puzzles/{ten}/image, nhờ đó máy người chơi không phải
+      có sẵn đúng bộ ảnh mới đấu được.
+    -->
+    <Content Include="..\Assets\CauHoi\**\*.*" LinkBase="Assets\CauHoi">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="DuoiHinhBatChu.Core/DuoiHinhBatChu.Core.csproj" />
+  <Project Path="DuoiHinhBatChu.Server/DuoiHinhBatChu.Server.csproj" />
   <Project Path="DuoiHinhBatChu.csproj" />
 </Solution>
