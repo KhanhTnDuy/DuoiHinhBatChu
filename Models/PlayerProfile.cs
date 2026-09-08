@@ -9,7 +9,15 @@ public class PlayerProfile
 {
     public string PlayerName { get; set; } = "Người chơi";
     public int Score { get; set; } = 0;
-    public int Rubies { get; set; } = 150;
+
+    /// <summary>Vốn ban đầu của tài khoản mới: đủ dùng ba lần trợ giúp.</summary>
+    public int Rubies { get; set; } = 3;
+
+    /// <summary>
+    /// Đang đúng liên tiếp mấy câu. Đủ 5 câu thì thưởng 1 kim cương rồi đếm lại
+    /// từ đầu; trả lời sai hay bỏ qua là mất chuỗi.
+    /// </summary>
+    public int CorrectStreak { get; set; } = 0;
     public int Lives { get; set; } = 5;
     public int MaxLives { get; set; } = 5;
     public int CurrentPuzzleIndex { get; set; } = 0;

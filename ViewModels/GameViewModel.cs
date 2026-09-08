@@ -13,10 +13,15 @@ namespace DuoiHinhBatChu.ViewModels;
 /// </summary>
 public class GameViewModel : ViewModelBase
 {
-    // Giá các trợ giúp (kim cương)
-    public const int CostReveal = 30;   // mở 1 chữ
-    public const int CostBoom = 50;     // xóa bớt chữ thừa
-    public const int CostHint = 20;     // xem gợi ý bằng lời
+    // Giá các trợ giúp: trợ giúp nào cũng đúng 1 kim cương.
+    // Kim cương giờ hiếm (tài khoản mới có 3, đúng 5 câu liền mới được thêm 1)
+    // nên không cần bảng giá nhiều bậc nữa - dùng hết là phải tự nghĩ.
+    public const int CostReveal = 1;    // mở 1 chữ
+    public const int CostBoom = 1;      // xóa bớt chữ thừa
+    public const int CostHint = 1;      // xem gợi ý bằng lời
+
+    /// <summary>Đúng liên tiếp đủ chừng này câu thì được thưởng kim cương.</summary>
+    public const int StreakForRuby = 5;
 
 
     private readonly Account _account;
@@ -125,6 +130,21 @@ public class GameViewModel : ViewModelBase
         get => _profile.Rubies;
         private set { _profile.Rubies = value; OnPropertyChanged(); }
     }
+
+    /// <summary>Số câu đang đúng liên tiếp.</summary>
+    public int CorrectStreak
+    {
+        get => _profile.CorrectStreak;
+        private set
+        {
+            _profile.CorrectStreak = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(StreakText));
+        }
+    }
+
+    /// <summary>Hiện dạng "3/5" để người chơi biết còn mấy câu nữa được thưởng.</summary>
+    public string StreakText => $"{CorrectStreak}/{StreakForRuby}";
 
     public int Lives
     {
@@ -317,12 +337,22 @@ public class GameViewModel : ViewModelBase
         AudioService.Instance.PlayVictory();
 
         Score += 10 * Math.Max(1, Current.Difficulty);
-        Rubies += 5;
         if (!_profile.SolvedPuzzleIds.Contains(Current.Id))
             _profile.SolvedPuzzleIds.Add(Current.Id);
 
+        // Kim cương chỉ đến từ chuỗi đúng liên tiếp, không rơi ra sau mỗi câu
+        CorrectStreak++;
+        bool earnedRuby = CorrectStreak >= StreakForRuby;
+        if (earnedRuby)
+        {
+            Rubies++;
+            CorrectStreak = 0;
+        }
+
         IsFeedbackGood = true;
-        FeedbackText = $"Chính xác: {Current.Answer}";
+        FeedbackText = earnedRuby
+            ? $"Chính xác: {Current.Answer} - đúng {StreakForRuby} câu liền, thưởng 1 kim cương!"
+            : $"Chính xác: {Current.Answer}";
         OnPropertyChanged(nameof(SolvedText));
         _state.SaveProfile(_profile);
 
@@ -335,6 +365,7 @@ public class GameViewModel : ViewModelBase
         AudioService.Instance.PlayWrong();
 
         Lives--;
+        CorrectStreak = 0;          // sai một câu là mất cả chuỗi đang có
         IsFeedbackGood = false;
         FeedbackText = "Chưa đúng, thử lại!";
         foreach (AnswerSlot s in Slots) s.IsWrong = !s.IsSpace;
@@ -407,9 +438,12 @@ public class GameViewModel : ViewModelBase
         _state.SaveProfile(_profile);
     }
 
+    /// <summary>Bỏ qua cũng làm đứt chuỗi: chuỗi là "đúng liên tiếp", không phải "không sai".</summary>
     private void Skip()
     {
         if (_locked) return;
+
+        CorrectStreak = 0;
         GoNext();
     }
 
