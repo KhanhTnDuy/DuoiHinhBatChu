@@ -23,10 +23,20 @@ public class GameHub : Hub
     private readonly TokenService _tokens;
     private readonly ILogger<GameHub> _log;
 
-    public GameHub(RoomManager rooms, TokenService tokens, ILogger<GameHub> log)
+    /// <summary>
+    /// Đường phát tin không phụ thuộc một lời gọi nào.
+    ///
+    /// Ván đấu chạy nền lâu hơn lời gọi StartMatch, mà bản thân Hub bị hủy ngay
+    /// khi lời gọi đó trả về — dùng Clients của Hub ở đó là ván chết giữa chừng.
+    /// </summary>
+    private readonly IHubContext<GameHub> _hub;
+
+    public GameHub(RoomManager rooms, TokenService tokens, IHubContext<GameHub> hub,
+                   ILogger<GameHub> log)
     {
         _rooms = rooms;
         _tokens = tokens;
+        _hub = hub;
         _log = log;
     }
 
@@ -145,7 +155,7 @@ public class GameHub : Hub
                 RoundInfo? round = _rooms.NextRound(room);
                 if (round == null) break;
 
-                await Clients.Group(room.Code).SendAsync("RoundStarted", round);
+                await _hub.Clients.Group(room.Code).SendAsync("RoundStarted", round);
 
                 // Kết thúc câu khi mọi người đã trả lời đúng, hoặc khi hết giờ
                 DateTime deadline = room.RoundStartedUtc.AddSeconds(round.SecondsAllowed);
@@ -157,16 +167,16 @@ public class GameHub : Hub
                 }
 
                 string answer = room.CurrentPuzzle?.Answer ?? "";
-                await Clients.Group(room.Code)
-                             .SendAsync("RoundEnded",
-                                        new RoundEnded(round.RoundNumber, answer, room.Scores()));
+                await _hub.Clients.Group(room.Code)
+                                .SendAsync("RoundEnded",
+                                           new RoundEnded(round.RoundNumber, answer, room.Scores()));
 
                 if (room.Players.Count == 0) break;
                 await Task.Delay(BreakBetweenRounds);
             }
 
             room.IsPlaying = false;
-            await Clients.Group(room.Code).SendAsync("MatchEnded", new MatchEnded(room.Scores()));
+            await _hub.Clients.Group(room.Code).SendAsync("MatchEnded", new MatchEnded(room.Scores()));
         }
         catch (Exception ex)
         {

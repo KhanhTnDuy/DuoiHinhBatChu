@@ -9,6 +9,10 @@ namespace DuoiHinhBatChu.ViewModels;
 ///   - Chơi một mình: chạy hẳn trên máy, ai cũng vào được kể cả khách.
 ///   - Đấu nhiều người: cần máy chủ và cần tài khoản thật, vì máy chủ mới là
 ///     bên chấm ai nhanh hơn.
+///
+/// Tài khoản trên máy chủ là một sổ riêng, không phải tài khoản lưu ở máy này.
+/// Nên vào chế độ đấu phải đăng nhập thêm một lần vào máy chủ; tên đăng nhập
+/// điền sẵn theo tài khoản đang dùng, lần đầu thì bấm tạo tài khoản trên đó.
 /// </summary>
 public class ModeViewModel : ViewModelBase
 {
@@ -21,16 +25,24 @@ public class ModeViewModel : ViewModelBase
     /// <summary>Bắn lên khi người chơi chọn chế độ một mình.</summary>
     public event Action? StartSolo;
 
+    /// <summary>
+    /// Bắn lên khi đã nối được máy chủ và đăng nhập xong, kèm sẵn đường dây đã mở.
+    /// </summary>
+    public event Action<MatchClient, ServerClient, AuthResponse>? StartMatch;
+
     public ModeViewModel(Account account, AppSettings settings)
     {
         _account = account;
         _settings = settings;
         _serverAddress = settings.ServerAddress.Length > 0 ? settings.ServerAddress : DefaultAddress;
+        _serverUserName = account.UserName;
 
         PlaySoloCommand = new RelayCommand(_ => StartSolo?.Invoke());
         ShowOnlineCommand = new RelayCommand(_ => IsOnlinePanelOpen = true, _ => CanPlayOnline);
         HideOnlineCommand = new RelayCommand(_ => IsOnlinePanelOpen = false);
         CheckServerCommand = new RelayCommand(async _ => await CheckServerAsync());
+        ServerLoginCommand = new RelayCommand(async _ => await EnterMatchAsync(register: false));
+        ServerRegisterCommand = new RelayCommand(async _ => await EnterMatchAsync(register: true));
         ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
     }
 
@@ -38,6 +50,8 @@ public class ModeViewModel : ViewModelBase
     public RelayCommand ShowOnlineCommand { get; }
     public RelayCommand HideOnlineCommand { get; }
     public RelayCommand CheckServerCommand { get; }
+    public RelayCommand ServerLoginCommand { get; }
+    public RelayCommand ServerRegisterCommand { get; }
     public RelayCommand ToggleThemeCommand { get; }
 
     public string PlayerName => _account.DisplayName;
@@ -63,6 +77,25 @@ public class ModeViewModel : ViewModelBase
     {
         get => _serverAddress;
         set => SetProperty(ref _serverAddress, value);
+    }
+
+    private string _serverUserName;
+    /// <summary>Tên đăng nhập trên máy chủ; mặc định lấy theo tài khoản ở máy này.</summary>
+    public string ServerUserName
+    {
+        get => _serverUserName;
+        set => SetProperty(ref _serverUserName, value);
+    }
+
+    /// <summary>
+    /// PasswordBox không ràng buộc hai chiều được, nên code-behind của cửa sổ
+    /// đẩy giá trị vào đây mỗi lần người chơi gõ.
+    /// </summary>
+    private string _serverPassword = "";
+    public string ServerPassword
+    {
+        get => _serverPassword;
+        set => SetProperty(ref _serverPassword, value);
     }
 
     private string _serverMessage = "";
@@ -103,6 +136,68 @@ public class ModeViewModel : ViewModelBase
 
         if (!status.Ok) return;
 
+        RememberAddress();
+    }
+
+    /// <summary>
+    /// Đăng nhập (hoặc đăng ký) trên máy chủ rồi mở luôn đường dây thời gian thực.
+    /// Nối được ở đây thì màn đấu khỏi phải lo chuyện kết nối nữa.
+    /// </summary>
+    private async Task EnterMatchAsync(bool register)
+    {
+        if (IsChecking) return;
+
+        if (ServerPassword.Length == 0)
+        {
+            IsServerOk = false;
+            ServerMessage = "Nhập mật khẩu tài khoản trên máy chủ.";
+            return;
+        }
+
+        IsChecking = true;
+        ServerMessage = register ? "Đang tạo tài khoản..." : "Đang đăng nhập máy chủ...";
+
+        ServerAuth auth = register
+            ? await _server.RegisterAsync(ServerAddress, ServerUserName,
+                                          _account.DisplayName, ServerPassword)
+            : await _server.LoginAsync(ServerAddress, ServerUserName, ServerPassword);
+
+        if (!auth.Ok || auth.Auth == null)
+        {
+            IsServerOk = false;
+            ServerMessage = auth.Message;
+            IsChecking = false;
+            return;
+        }
+
+        var client = new MatchClient(_server.BaseAddress, auth.Auth.Token, App.OnUiThread);
+
+        try
+        {
+            await client.ConnectAsync();
+        }
+        catch (Exception ex)
+        {
+            await client.DisposeAsync();
+            IsServerOk = false;
+            ServerMessage = $"Đăng nhập được nhưng không mở được kênh đấu: {ex.Message}";
+            IsChecking = false;
+            return;
+        }
+
+        IsServerOk = true;
+        ServerMessage = "Đã vào máy chủ.";
+        IsChecking = false;
+
+        // Mật khẩu không cần giữ lại sau khi đã có vé
+        ServerPassword = "";
+        RememberAddress();
+
+        StartMatch?.Invoke(client, _server, auth.Auth);
+    }
+
+    private void RememberAddress()
+    {
         _settings.ServerAddress = ServerAddress.Trim();
         _settings.Save();
     }

@@ -1,4 +1,9 @@
-namespace DuoiHinhBatChu.Server;
+namespace DuoiHinhBatChu.Models;
+
+// Các bản tin đi lại giữa máy chủ và client của chế độ đấu nhiều người.
+//
+// Đặt ở Core vì cả hai bên phải hiểu y hệt nhau: máy chủ gửi đi, client đọc vào.
+// Để ở riêng mỗi bên một bản là kiểu gì cũng có ngày sửa một bên quên bên kia.
 
 // ===== Xác thực (REST) =====
 
