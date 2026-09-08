@@ -43,6 +43,10 @@ public class AccountService
     private static readonly Regex UserNamePattern =
         new("^[a-zA-Z0-9_]+$", RegexOptions.Compiled);
 
+    /// <summary>Số điện thoại Việt Nam: 10 chữ số, bắt đầu bằng 0.</summary>
+    private static readonly Regex PhonePattern =
+        new("^0[0-9]{9}$", RegexOptions.Compiled);
+
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
     private readonly string _filePath;
@@ -58,10 +62,15 @@ public class AccountService
     public bool HasAnyAccount() => Load().Count > 0;
 
     /// <summary>Tạo tài khoản mới rồi ghi xuống file.</summary>
-    public AuthResult Register(string userName, string displayName, string password, string confirm)
+    /// <param name="phone">
+    /// Số điện thoại, dùng để lấy lại tài khoản khi quên mật khẩu.
+    /// </param>
+    public AuthResult Register(string userName, string displayName, string password,
+                               string confirm, string phone)
     {
         userName = userName.Trim();
         displayName = displayName.Trim();
+        phone = NormalizePhone(phone);
 
         if (userName.Length is < UserNameMin or > UserNameMax)
             return AuthResult.Fail($"Tên đăng nhập cần {UserNameMin}-{UserNameMax} ký tự.");
@@ -78,10 +87,17 @@ public class AccountService
         if (displayName.Length > DisplayNameMax)
             return AuthResult.Fail($"Tên hiển thị tối đa {DisplayNameMax} ký tự.");
 
+        if (!PhonePattern.IsMatch(phone))
+            return AuthResult.Fail("Số điện thoại phải là 10 chữ số và bắt đầu bằng 0.");
+
         List<Account> accounts = Load();
 
         if (accounts.Any(a => a.UserName.Equals(userName, StringComparison.OrdinalIgnoreCase)))
             return AuthResult.Fail("Tên đăng nhập này đã có người dùng.");
+
+        // Một số chỉ gắn một tài khoản, không thì lúc quên mật khẩu không biết mở tài khoản nào
+        if (accounts.Any(a => a.Phone == phone))
+            return AuthResult.Fail("Số điện thoại này đã dùng cho một tài khoản khác.");
 
         byte[] salt = RandomNumberGenerator.GetBytes(SaltBytes);
 
@@ -89,6 +105,7 @@ public class AccountService
         {
             UserName = userName,
             DisplayName = displayName.Length > 0 ? displayName : userName,
+            Phone = phone,
             PasswordSalt = Convert.ToBase64String(salt),
             PasswordHash = Convert.ToBase64String(Hash(password, salt)),
         };
@@ -116,6 +133,50 @@ public class AccountService
 
         return AuthResult.Success(account);
     }
+
+    /// <summary>
+    /// Quên mật khẩu: khai đúng tên đăng nhập và số điện thoại đã đăng ký thì
+    /// được đặt mật khẩu mới ngay.
+    ///
+    /// Đây là cách của một game chơi trong nhà, không phải cách của ngân hàng:
+    /// ai biết số điện thoại của bạn là vào được. Muốn chắc thì phải gửi mã xác
+    /// nhận qua SMS, mà việc đó cần dịch vụ nhắn tin trả tiền.
+    /// </summary>
+    public AuthResult ResetPassword(string userName, string phone,
+                                    string newPassword, string confirm)
+    {
+        userName = userName.Trim();
+        phone = NormalizePhone(phone);
+
+        if (userName.Length == 0 || phone.Length == 0)
+            return AuthResult.Fail("Nhập đủ tên đăng nhập và số điện thoại.");
+
+        if (newPassword.Length < PasswordMin)
+            return AuthResult.Fail($"Mật khẩu mới cần ít nhất {PasswordMin} ký tự.");
+
+        if (newPassword != confirm)
+            return AuthResult.Fail("Hai lần nhập mật khẩu chưa giống nhau.");
+
+        List<Account> accounts = Load();
+        Account? account = accounts.FirstOrDefault(
+            a => a.UserName.Equals(userName, StringComparison.OrdinalIgnoreCase));
+
+        // Nói chung một câu, không tách "không có tài khoản" với "sai số điện thoại",
+        // để người lạ không dò được ai đang dùng số nào
+        if (account == null || account.Phone != phone)
+            return AuthResult.Fail("Tên đăng nhập và số điện thoại không khớp.");
+
+        byte[] salt = RandomNumberGenerator.GetBytes(SaltBytes);
+        account.PasswordSalt = Convert.ToBase64String(salt);
+        account.PasswordHash = Convert.ToBase64String(Hash(newPassword, salt));
+
+        Save(accounts);
+        return AuthResult.Success(account);
+    }
+
+    /// <summary>Bỏ khoảng trắng, dấu chấm và gạch nối để "0912 345 678" cũng khớp.</summary>
+    private static string NormalizePhone(string phone) =>
+        new(phone.Where(char.IsDigit).ToArray());
 
     /// <summary>Đổi tên hiển thị của tài khoản đang đăng nhập.</summary>
     public void UpdateDisplayName(Account account, string displayName)

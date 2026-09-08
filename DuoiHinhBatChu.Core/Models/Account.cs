@@ -17,6 +17,12 @@ public class Account
     /// <summary>Tên hiển thị trong game và trên bảng xếp hạng.</summary>
     public string DisplayName { get; set; } = "";
 
+    /// <summary>
+    /// Số điện thoại khai lúc đăng ký. Đây là thứ duy nhất để lấy lại tài khoản
+    /// khi quên mật khẩu, nên mỗi số chỉ gắn được một tài khoản.
+    /// </summary>
+    public string Phone { get; set; } = "";
+
     /// <summary>Chuỗi băm PBKDF2 của mật khẩu, mã Base64.</summary>
     public string PasswordHash { get; set; } = "";
 

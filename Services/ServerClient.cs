@@ -96,9 +96,15 @@ public class ServerClient
         PostAuthAsync(address, "login", new LoginRequest(userName, password));
 
     public Task<ServerAuth> RegisterAsync(
-        string address, string userName, string displayName, string password) =>
+        string address, string userName, string displayName, string password, string phone) =>
         PostAuthAsync(address, "register",
-                      new RegisterRequest(userName, displayName, password, password));
+                      new RegisterRequest(userName, displayName, password, password, phone));
+
+    /// <summary>Quên mật khẩu trên máy chủ: khớp số điện thoại thì đặt lại.</summary>
+    public Task<ServerAuth> ResetPasswordAsync(
+        string address, string userName, string phone, string newPassword) =>
+        PostAuthAsync(address, "reset-password",
+                      new ResetPasswordRequest(userName, phone, newPassword, newPassword));
 
     // ----- Nội bộ -----
 

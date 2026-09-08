@@ -7,7 +7,12 @@ namespace DuoiHinhBatChu.Models;
 
 // ===== Xác thực (REST) =====
 
-public record RegisterRequest(string UserName, string DisplayName, string Password, string Confirm);
+public record RegisterRequest(string UserName, string DisplayName, string Password,
+                              string Confirm, string Phone);
+
+/// <param name="Phone">Số đã khai lúc đăng ký; khớp thì được đặt mật khẩu mới.</param>
+public record ResetPasswordRequest(string UserName, string Phone,
+                                   string NewPassword, string Confirm);
 
 public record LoginRequest(string UserName, string Password);
 

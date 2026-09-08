@@ -158,8 +158,10 @@ public class ModeViewModel : ViewModelBase
         ServerMessage = register ? "Đang tạo tài khoản..." : "Đang đăng nhập máy chủ...";
 
         ServerAuth auth = register
+            // Số điện thoại lấy luôn của tài khoản trên máy này, để lỡ quên mật
+            // khẩu máy chủ thì vẫn lấy lại được bằng đúng số đó
             ? await _server.RegisterAsync(ServerAddress, ServerUserName,
-                                          _account.DisplayName, ServerPassword)
+                                          _account.DisplayName, ServerPassword, _account.Phone)
             : await _server.LoginAsync(ServerAddress, ServerUserName, ServerPassword);
 
         if (!auth.Ok || auth.Auth == null)

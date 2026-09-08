@@ -42,9 +42,17 @@ public partial class LoginWindow : Window
     /// </summary>
     private void Window_KeyDown(object sender, KeyEventArgs e)
     {
+        // Bảng hướng dẫn đang che màn hình thì ESC đóng nó, Enter không chạy nút nào
+        if (_vm.IsHelpOpen)
+        {
+            if (e.Key is Key.Escape or Key.Enter) _vm.IsHelpOpen = false;
+            return;
+        }
+
         if (e.Key != Key.Enter) return;
 
         if (_vm.IsRegisterMode) _vm.RegisterCommand.Execute(null);
+        else if (_vm.IsForgotMode) _vm.ResetPasswordCommand.Execute(null);
         else _vm.LoginCommand.Execute(null);
     }
 
