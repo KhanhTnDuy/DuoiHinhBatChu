@@ -31,7 +31,7 @@
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
-    <!-- Nút chính: nền đậm, bo tròn viên thuốc -->
+    <!-- Nút chính: nền đậm, góc chữ nhật bo nhẹ cho khớp ô nhập -->
     <Style x:Key="PrimaryButton" TargetType="Button">
         <Setter Property="Foreground" Value="{DynamicResource OnPrimaryBrush}"/>
         <Setter Property="FontSize" Value="16"/>
@@ -40,7 +40,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bg" CornerRadius="999" Padding="22,11"
+                    <Border x:Name="Bg" CornerRadius="10" Padding="22,11"
                             Background="{DynamicResource PrimaryBrush}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
@@ -67,7 +67,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bg" CornerRadius="999" Padding="16,9"
+                    <Border x:Name="Bg" CornerRadius="10" Padding="16,9"
                             Background="{DynamicResource CardBrush}"
                             BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -200,7 +200,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bg" CornerRadius="999"
+                    <Border x:Name="Bg" CornerRadius="10"
                             Background="{DynamicResource CardBrush}"
                             BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
                         <Path x:Name="Icon"
