@@ -1,0 +1,174 @@
+<Window x:Class="DuoiHinhBatChu.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        mc:Ignorable="d"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:conv="clr-namespace:DuoiHinhBatChu.Converters"
+        Title="Đuổi hình bắt chữ - Đăng nhập"
+        Width="960" Height="740"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        FontFamily="Segoe UI"
+        TextOptions.TextFormattingMode="Ideal"
+        Background="{DynamicResource CanvasBrush}"
+        KeyDown="Window_KeyDown">
+
+    <Window.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+        <conv:StringToVisibilityConverter x:Key="StrVis"/>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="420"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ==================== Bên trái: giới thiệu chế độ chơi ==================== -->
+        <Border Grid.Column="0" Background="{DynamicResource SidebarBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,0,1,0">
+            <StackPanel VerticalAlignment="Center" Margin="48,0">
+                <TextBlock Text="ĐUỔI HÌNH" FontSize="34" FontWeight="Bold"
+                           Foreground="{DynamicResource PrimaryBrush}"/>
+                <TextBlock Text="BẮT CHỮ" FontSize="34" FontWeight="Bold"
+                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+                <TextBlock Text="CHẾ ĐỘ CHƠI" Style="{StaticResource SectionLabel}"
+                           Margin="0,36,0,12"/>
+
+                <Border Style="{StaticResource Card}" Background="{DynamicResource CardAltBrush}"
+                        Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="Chơi một mình" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="13" Margin="0,4,0,0"
+                                   LineHeight="20"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Text="Chạy offline, không cần mạng. Đăng nhập để giữ điểm và kim cương riêng, hoặc bấm Chơi khách để vào ngay."/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Background="{DynamicResource CardAltBrush}">
+                    <StackPanel>
+                        <Grid>
+                            <TextBlock Text="Đấu nhiều người" FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <Border CornerRadius="999" Padding="10,3" HorizontalAlignment="Right"
+                                    Background="{DynamicResource TertiarySoftBrush}">
+                                <TextBlock Text="SẮP CÓ" Style="{StaticResource SectionLabel}"
+                                           Foreground="{DynamicResource TertiaryBrush}"/>
+                            </Border>
+                        </Grid>
+                        <TextBlock TextWrapping="Wrap" FontSize="13" Margin="0,4,0,0"
+                                   LineHeight="20"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Text="Từ 2 người trở lên, cùng một câu đố, ai trả lời nhanh hơn được nhiều điểm hơn. Chế độ này cần máy chủ nên phải có tài khoản, chưa mở ở bản này."/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- ==================== Bên phải: đăng nhập / đăng ký ==================== -->
+        <Grid Grid.Column="1" Margin="36,28">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Hai thẻ chuyển qua lại -->
+            <Grid Grid.Row="0">
+                <StackPanel Orientation="Horizontal">
+                    <Button Command="{Binding ShowLoginCommand}" Content="Đăng nhập"
+                            Margin="0,0,8,0">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsLoginMode}" Value="True">
+                                        <Setter Property="Foreground"
+                                                Value="{DynamicResource PrimaryBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Command="{Binding ShowRegisterCommand}" Content="Đăng ký">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsRegisterMode}" Value="True">
+                                        <Setter Property="Foreground"
+                                                Value="{DynamicResource PrimaryBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+
+                <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Right"
+                        Command="{Binding ToggleThemeCommand}"
+                        Content="{Binding ThemeToggleText}"/>
+            </Grid>
+
+            <!-- Ô nhập. Bọc ScrollViewer vì thẻ Đăng ký cao hơn thẻ Đăng nhập -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled" Margin="0,18">
+              <StackPanel VerticalAlignment="Center">
+                <TextBlock Style="{StaticResource FieldLabel}" Text="Tên đăng nhập"/>
+                <TextBox x:Name="UserNameBox" Style="{StaticResource Field}"
+                         Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <!-- Chỉ khi đăng ký -->
+                <StackPanel Margin="0,14,0,0"
+                            Visibility="{Binding IsRegisterMode, Converter={StaticResource BoolVis}}">
+                    <TextBlock Style="{StaticResource FieldLabel}"
+                               Text="Tên hiển thị (để trống thì lấy tên đăng nhập)"/>
+                    <TextBox Style="{StaticResource Field}"
+                             Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+
+                <TextBlock Style="{StaticResource FieldLabel}" Text="Mật khẩu" Margin="0,14,0,6"/>
+                <PasswordBox x:Name="PasswordBox" Style="{StaticResource PasswordField}"
+                             PasswordChanged="PasswordBox_PasswordChanged"/>
+
+                <StackPanel Margin="0,14,0,0"
+                            Visibility="{Binding IsRegisterMode, Converter={StaticResource BoolVis}}">
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="Nhập lại mật khẩu"/>
+                    <PasswordBox x:Name="ConfirmBox" Style="{StaticResource PasswordField}"
+                                 PasswordChanged="ConfirmBox_PasswordChanged"/>
+                </StackPanel>
+
+                <!-- Báo lỗi -->
+                <Border CornerRadius="10" Padding="12,9" Margin="0,14,0,0"
+                        Background="{DynamicResource ErrorSoftBrush}"
+                        Visibility="{Binding Error, Converter={StaticResource StrVis}}">
+                    <TextBlock Text="{Binding Error}" TextWrapping="Wrap" FontSize="13"
+                               Foreground="{DynamicResource ErrorBrush}"/>
+                </Border>
+
+                <Button Style="{StaticResource PrimaryButton}" Margin="0,20,0,0"
+                        Command="{Binding LoginCommand}" Content="Đăng nhập"
+                        Visibility="{Binding IsLoginMode, Converter={StaticResource BoolVis}}"/>
+
+                <Button Style="{StaticResource PrimaryButton}" Margin="0,20,0,0"
+                        Command="{Binding RegisterCommand}" Content="Tạo tài khoản"
+                        Visibility="{Binding IsRegisterMode, Converter={StaticResource BoolVis}}"/>
+              </StackPanel>
+            </ScrollViewer>
+
+            <!-- Lối vào nhanh -->
+            <StackPanel Grid.Row="2">
+                <Rectangle Height="1" Fill="{DynamicResource CardBorderBrush}" Margin="0,0,0,16"/>
+                <Button Style="{StaticResource GhostButton}"
+                        Command="{Binding PlayAsGuestCommand}"
+                        Content="Chơi khách - không cần tài khoản"/>
+                <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,10,0,0"
+                           TextAlignment="Center" LineHeight="18"
+                           Foreground="{DynamicResource TextMutedBrush}"
+                           Text="Chơi khách chỉ vào được chế độ một mình, và mọi máy dùng chung một hồ sơ khách."/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

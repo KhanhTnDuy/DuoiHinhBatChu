@@ -24,8 +24,10 @@ public class GameViewModel : ViewModelBase
     /// <summary>Bảng chữ cái tiếng Việt không dấu (không có F, J, W, Z).</summary>
     private const string Alphabet = "ABCDEGHIKLMNOPQRSTUVXY";
 
+    private readonly Account _account;
+    private readonly AppSettings _settings;
     private readonly List<Puzzle> _puzzles;
-    private readonly GameStateService _state = new();
+    private readonly GameStateService _state;
     private readonly PlayerProfile _profile;
     private readonly Random _rng = new();
     private readonly DispatcherTimer _delay = new();
@@ -34,12 +36,18 @@ public class GameViewModel : ViewModelBase
     private bool _locked;               // đang chờ hiệu ứng -> chặn mọi thao tác
     private Action? _afterDelay;
 
-    public GameViewModel()
+    /// <param name="account">Tài khoản đang đăng nhập; quyết định file lưu tiến trình.</param>
+    /// <param name="settings">Tùy chọn chung, dùng để nhớ chế độ sáng/tối.</param>
+    public GameViewModel(Account account, AppSettings settings)
     {
+        _account = account;
+        _settings = settings;
+        _state = new GameStateService(account.Id);
         _puzzles = new PuzzleRepository().LoadAll();
         _profile = _state.LoadProfile();
+        _profile.PlayerName = account.DisplayName;
         AudioService.Instance.IsEnabled = _profile.IsSoundEnabled;
-        ThemeService.Apply(_profile.IsDarkTheme);
+        ThemeService.Apply(_settings.IsDarkTheme);
 
         _delay.Tick += (_, _) =>
         {
@@ -91,14 +99,19 @@ public class GameViewModel : ViewModelBase
     /// <summary>true = đang ở chế độ tối.</summary>
     public bool IsDarkTheme
     {
-        get => _profile.IsDarkTheme;
+        get => _settings.IsDarkTheme;
         private set
         {
-            _profile.IsDarkTheme = value;
+            _settings.IsDarkTheme = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(ThemeToggleText));
         }
     }
+
+    /// <summary>Tên hiện ở cột trái; tài khoản khách thì ghi rõ là khách.</summary>
+    public string PlayerName => _account.DisplayName;
+
+    public string AccountKindText => _account.IsGuest ? "Chơi khách - offline" : "Đã đăng nhập";
 
     public string ThemeToggleText => IsDarkTheme ? "Chế độ sáng" : "Chế độ tối";
 
@@ -106,7 +119,7 @@ public class GameViewModel : ViewModelBase
     {
         IsDarkTheme = !IsDarkTheme;
         ThemeService.Apply(IsDarkTheme);
-        _state.SaveProfile(_profile);
+        _settings.Save();
     }
 
     public int Score

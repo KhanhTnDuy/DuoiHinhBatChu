@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
+using DuoiHinhBatChu.Models;
+using DuoiHinhBatChu.Services;
 using DuoiHinhBatChu.ViewModels;
 
 namespace DuoiHinhBatChu;
@@ -9,13 +11,15 @@ public partial class MainWindow : Window
 {
     private readonly GameViewModel? _vm;
 
-    public MainWindow()
+    /// <param name="account">Tài khoản vừa đăng nhập ở LoginWindow.</param>
+    /// <param name="settings">Tùy chọn chung, dùng chung với màn đăng nhập.</param>
+    public MainWindow(Account account, AppSettings settings)
     {
         InitializeComponent();
 
         try
         {
-            _vm = new GameViewModel();
+            _vm = new GameViewModel(account, settings);
         }
         catch (Exception ex)
         {
