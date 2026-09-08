@@ -348,13 +348,7 @@
                 <Border Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Center">
                     <StackPanel>
                         <TextBlock Text="THÔNG TIN CÂU ĐỐ" Style="{StaticResource SectionLabel}"/>
-                        <!-- Khi chưa có ảnh, mô tả đã hiện to ở giữa nên ở đây ẩn đi cho khỏi lặp -->
-                        <TextBlock Text="{Binding DrawText}" TextWrapping="Wrap" Margin="0,12,0,0"
-                                   FontSize="14" LineHeight="22"
-                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                   Visibility="{Binding HasImage, Converter={StaticResource BoolVis}}"/>
-
-                        <Border CornerRadius="12" Padding="12" Margin="0,14,0,0"
+                        <Border CornerRadius="12" Padding="12" Margin="0,12,0,0"
                                 Background="{DynamicResource CardAltBrush}">
                             <StackPanel>
                                 <Grid Margin="0,0,0,8">
@@ -393,20 +387,13 @@
                         <Image Source="{Binding ImageSource}" Stretch="Uniform"
                                Visibility="{Binding HasImage, Converter={StaticResource BoolVis}}"/>
 
-                        <!-- Chưa có ảnh: hiện mô tả hình cần vẽ -->
-                        <StackPanel MaxWidth="620" VerticalAlignment="Center"
-                                    HorizontalAlignment="Center"
-                                    Visibility="{Binding HasImage, Converter={StaticResource BoolVis},
-                                                 ConverterParameter=Invert}">
-                            <TextBlock Text="CHƯA CÓ ẢNH - MÔ TẢ HÌNH CẦN VẼ"
-                                       Style="{StaticResource SectionLabel}"
-                                       Foreground="{DynamicResource ErrorBrush}"
-                                       HorizontalAlignment="Center"/>
-                            <TextBlock Text="{Binding DrawText}" TextWrapping="Wrap"
-                                       Margin="0,14,0,0" FontSize="22" LineHeight="34"
-                                       TextAlignment="Center"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
-                        </StackPanel>
+                        <!-- Chỉ gặp khi file ảnh bị xóa hoặc hỏng giữa chừng -->
+                        <TextBlock Text="Không đọc được ảnh của câu đố này."
+                                   VerticalAlignment="Center" HorizontalAlignment="Center"
+                                   FontSize="18"
+                                   Foreground="{DynamicResource ErrorBrush}"
+                                   Visibility="{Binding HasImage, Converter={StaticResource BoolVis},
+                                                ConverterParameter=Invert}"/>
                     </Grid>
                 </Border>
 
