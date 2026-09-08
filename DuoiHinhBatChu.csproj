@@ -8,6 +8,22 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <!--
+    Dự án WPF nằm ngay thư mục gốc nên mặc định nó gom cả file của thư mục con
+    DuoiHinhBatChu.Core. Phải loại ra, không thì mỗi lớp bị biên dịch hai lần.
+  -->
+  <ItemGroup>
+    <Compile Remove="DuoiHinhBatChu.Core\**" />
+    <Page Remove="DuoiHinhBatChu.Core\**" />
+    <Content Remove="DuoiHinhBatChu.Core\**" />
+    <None Remove="DuoiHinhBatChu.Core\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Phần lõi không phụ thuộc WPF, dùng chung với máy chủ sau này -->
+    <ProjectReference Include="DuoiHinhBatChu.Core\DuoiHinhBatChu.Core.csproj" />
+  </ItemGroup>
+
   <ItemGroup>
     <!-- Ảnh câu đố: mỗi file là một câu, tên file chính là đáp án (vd "CÁ HEO.png") -->
     <Content Include="Assets\CauHoi\**\*.*">

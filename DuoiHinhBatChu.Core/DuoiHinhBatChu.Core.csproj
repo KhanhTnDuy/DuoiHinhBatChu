@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Phần lõi dùng chung: luật đọc câu đố, chuẩn hóa đáp án và tài khoản.
+    Nhắm net10.0 thuần (không phải net10.0-windows) và không tham chiếu WPF,
+    nên máy chủ ASP.NET Core sau này dùng lại được y nguyên.
+    Xem Docs/MULTIPLAYER.md.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>
