@@ -161,12 +161,20 @@
                                        HorizontalAlignment="Right"
                                        Foreground="{DynamicResource PrimaryBrush}"/>
                         </Grid>
-                        <Grid>
+                        <Grid Margin="0,0,0,10">
                             <TextBlock Text="KIM CƯƠNG" Style="{StaticResource SectionLabel}"
                                        VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding Rubies}" Style="{StaticResource HudValue}"
                                        HorizontalAlignment="Right"
                                        Foreground="{DynamicResource TertiaryBrush}"/>
+                        </Grid>
+                        <!-- Đúng liên tiếp: đủ 5 là được thêm 1 kim cương -->
+                        <Grid>
+                            <TextBlock Text="ĐÚNG LIÊN TIẾP" Style="{StaticResource SectionLabel}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding StreakText}" Style="{StaticResource HudValue}"
+                                       HorizontalAlignment="Right"
+                                       Foreground="{DynamicResource SuccessBrush}"/>
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -277,8 +285,19 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Khung ảnh câu đố -->
-                <Border Grid.Column="1" Margin="18,0" CornerRadius="24" Padding="10"
+                <!-- Câu hỏi + khung ảnh câu đố -->
+                <Grid Grid.Column="1" Margin="18,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Nói thẳng người chơi phải làm gì, thay vì để họ tự đoán -->
+                    <TextBlock Grid.Row="0" Text="Đây là gì?" FontSize="26" FontWeight="Bold"
+                               HorizontalAlignment="Center" Margin="0,0,0,10"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+                <Border Grid.Row="1" CornerRadius="24" Padding="10"
                         Background="{DynamicResource CardBrush}"
                         BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
                     <Grid>
@@ -294,6 +313,7 @@
                                                 ConverterParameter=Invert}"/>
                     </Grid>
                 </Border>
+                </Grid>
 
                 <!-- Thẻ phải: các trợ giúp -->
                 <Border Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Center">
@@ -309,7 +329,7 @@
                                     <TextBlock Text="Điền sẵn một ô bất kỳ" FontSize="12"
                                                Foreground="{DynamicResource TextMutedBrush}"/>
                                 </StackPanel>
-                                <TextBlock Text="30" Style="{StaticResource HudValue}" FontSize="15"
+                                <TextBlock Text="1" Style="{StaticResource HudValue}" FontSize="15"
                                            HorizontalAlignment="Right"
                                            Foreground="{DynamicResource TertiaryBrush}"/>
                             </Grid>
@@ -323,7 +343,7 @@
                                     <TextBlock Text="Bỏ bớt phím gây nhiễu" FontSize="12"
                                                Foreground="{DynamicResource TextMutedBrush}"/>
                                 </StackPanel>
-                                <TextBlock Text="50" Style="{StaticResource HudValue}" FontSize="15"
+                                <TextBlock Text="1" Style="{StaticResource HudValue}" FontSize="15"
                                            HorizontalAlignment="Right"
                                            Foreground="{DynamicResource TertiaryBrush}"/>
                             </Grid>
@@ -337,7 +357,7 @@
                                     <TextBlock Text="Xem mô tả đáp án" FontSize="12"
                                                Foreground="{DynamicResource TextMutedBrush}"/>
                                 </StackPanel>
-                                <TextBlock Text="20" Style="{StaticResource HudValue}" FontSize="15"
+                                <TextBlock Text="1" Style="{StaticResource HudValue}" FontSize="15"
                                            HorizontalAlignment="Right"
                                            Foreground="{DynamicResource TertiaryBrush}"/>
                             </Grid>
