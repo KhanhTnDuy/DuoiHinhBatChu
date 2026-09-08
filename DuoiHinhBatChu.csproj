@@ -16,6 +16,10 @@
     <Content Include="Assets\Puzzles\**\*.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- Ảnh câu đố đặt tên theo đáp án (vd "CÁ HEO.png") -->
+    <Content Include="Assets\CauHoi\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
