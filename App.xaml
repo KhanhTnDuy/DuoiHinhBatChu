@@ -1,9 +1,14 @@
-﻿<Application x:Class="DuoiHinhBatChu.App"
+<Application x:Class="DuoiHinhBatChu.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:DuoiHinhBatChu"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Vị trí 0 = bảng màu đang dùng, ThemeService thay nóng từ điển này -->
+                <ResourceDictionary Source="Themes/Light.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

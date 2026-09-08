@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=jetbrainsMono:wght@100..900&family=plusJakartaSans:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-tertiary": "#ffffff", "on-primary": "#ffffff", "on-secondary": "#ffffff", "primary-fixed": "#e0e0ff", "secondary-fixed": "#b6ebff", "on-secondary-fixed": "#001f28", "on-primary-container": "#cbceff", "error-container": "#ffdad6", "on-background": "#0b1c30", "background": "#f8f9ff", "outline-variant": "#c6c5d7", "surface-dim": "#cbdbf5", "surface": "#f8f9ff", "on-tertiary-container": "#ffc97f", "surface-container-lowest": "#ffffff", "outline": "#767686", "primary-container": "#3a47d5", "surface-container-low": "#eff4ff", "secondary": "#00677f", "on-primary-fixed": "#000668", "on-surface": "#0b1c30", "surface-container": "#e5eeff", "error": "#ba1a1a", "inverse-surface": "#213145", "surface-bright": "#f8f9ff", "tertiary-fixed": "#ffddb4", "secondary-fixed-dim": "#47d6ff", "tertiary-fixed-dim": "#ffb952", "on-secondary-fixed-variant": "#004e60", "on-error-container": "#93000a", "on-secondary-container": "#00566a", "inverse-on-surface": "#eaf1ff", "tertiary": "#5e3c00", "on-primary-fixed-variant": "#222fc2", "surface-tint": "#3f4cd9", "secondary-container": "#00d2ff", "on-surface-variant": "#454655", "surface-container-highest": "#d3e4fe", "on-error": "#ffffff", "inverse-primary": "#bdc2ff", "surface-variant": "#d3e4fe", "primary": "#1c29be", "tertiary-container": "#7d5100", "primary-fixed-dim": "#bdc2ff", "on-tertiary-fixed": "#291800", "on-tertiary-fixed-variant": "#633f00", "surface-container-high": "#dce9ff" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-xl": "2rem", "space-2xl": "3rem", "space-lg": "1.5rem", "tile-gap": "0.625rem", "sidebar-width": "18rem", "gutter-canvas": "1.5rem", "space-2xs": "0.25rem", "space-sm": "0.75rem", "space-xs": "0.5rem", "space-md": "1rem" }, "fontFamily": { "label-sm": ["jetbrainsMono"], "hud-counter": ["jetbrainsMono"], "headline-md": ["plusJakartaSans"], "headline-lg": ["plusJakartaSans"], "label-md": ["jetbrainsMono"], "body-lg": ["plusJakartaSans"], "body-md": ["plusJakartaSans"], "body-sm": ["plusJakartaSans"], "headline-xl": ["plusJakartaSans"], "headline-sm": ["plusJakartaSans"], "tile-char": ["plusJakartaSans"] }, "fontSize": { "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "500" }], "hud-counter": ["18px", { "lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "700" }], "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }], "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.015em", "fontWeight": "700" }], "label-md": ["13px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "800" }], "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }], "tile-char": ["26px", { "lineHeight": "32px", "letterSpacing": "0.02em", "fontWeight": "800" }] } } } };</script></head><body class="bg-surface text-on-surface select-none min-h-screen"><header class="fixed top-0 left-0 right-0 z-50 h-16 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] flex flex-col justify-between"><div class="h-9 px-space-md flex items-center justify-between bg-surface-container-low/60"><div class="flex items-center gap-space-xs"><img alt="PicGuess App Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA60CbiH8ukNs5PqIKRIWO9vLncTREftIJtB7fPvxTRTuwljeibFn82aJrHNcmzrdcU-bJvUYZh0TcQg4mejn4tpBeaqyhhFVQCMTtYHONPqYJCxzUB4xpS9onCRYrN7z8G6_4CsY6SWEfyxJBDfkp-IjLRaIkQ2ivH7fwK2NykwDf7Qg3wlmDRhj5mr6E77FcMglGCsz9UOmYku1NxWTzs3h3EaEjYPPKpObkjutJ9tYTitfHfsO1ZDA"/><span class="font-headline-sm text-body-sm text-on-surface font-semibold tracking-wide">PicGuess Studio - Word Mystery</span></div><div class="flex items-center"><button class="w-9 h-7 flex items-center justify-center hover:bg-surface-container hover:text-on-surface text-on-surface-variant transition-colors" type="button"><span class="material-symbols-outlined text-[14px]">minimize</span></button><button class="w-9 h-7 flex items-center justify-center hover:bg-surface-container hover:text-on-surface text-on-surface-variant transition-colors" type="button"><span class="material-symbols-outlined text-[13px]">check_box_outline_blank</span></button><button class="w-9 h-7 flex items-center justify-center hover:bg-error hover:text-on-error text-on-surface-variant transition-colors" type="button"><span class="material-symbols-outlined text-[15px]">close</span></button></div></div><div class="h-7 px-space-md flex items-center justify-between"><div class="flex items-center gap-space-sm"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Desktop Host</span><div class="h-3 w-[1px] bg-outline-variant"></div><div class="flex items-center gap-space-xs text-on-surface-variant"><span class="material-symbols-outlined text-[15px]">memory</span><span class="font-label-sm text-label-sm">Fluent UI Core</span></div></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><button class="w-6 h-6 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[16px]">volume_up</span></button><button class="w-6 h-6 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[16px]">music_note</span></button></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><aside class="fixed left-0 top-16 bottom-0 w-sidebar-width bg-surface-container-low/70 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex flex-col justify-between p-space-md"><div class="flex flex-col gap-space-md"><div class="px-space-xs py-space-2xs"><span class="font-label-md text-label-md text-primary font-bold uppercase tracking-wider">Navigation</span></div><nav class="flex flex-col gap-space-2xs" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded-lg shadow-sm"><a aria-current="page" class="flex items-center gap-space-sm px-space-sm py-space-xs transition-colors bg-primary-container text-on-primary-container font-semibold rounded-lg shadow-sm" data-path="classic-mode" href="#"><span class="material-symbols-outlined text-[20px]">grid_view</span><span class="font-body-md text-body-md">Classic Mode</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="daily-challenge" href="#"><span class="material-symbols-outlined text-[20px]">event_available</span><span class="font-body-md text-body-md">Daily Challenge</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="leaderboards" href="#"><span class="material-symbols-outlined text-[20px]">leaderboard</span><span class="font-body-md text-body-md">Leaderboards</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="settings" href="#"><span class="material-symbols-outlined text-[20px]">tune</span><span class="font-body-md text-body-md">Settings</span></a></nav></div><div class="p-space-sm rounded-lg bg-surface-container/60 backdrop-blur-md flex flex-col gap-space-xs"><div class="flex items-center justify-between"><span class="font-label-sm text-label-sm text-on-surface-variant">STREAK</span><span class="font-hud-counter text-hud-counter text-secondary">12</span></div><div class="flex items-center justify-between"><span class="font-label-sm text-label-sm text-on-surface-variant">COINS</span><span class="font-hud-counter text-hud-counter text-tertiary-container">850</span></div></div></aside><div class="pl-sidebar-width"><main class="relative w-full pt-16 min-h-screen bg-gradient-to-br from-surface via-surface-container-lowest to-surface-container-low p-space-lg"><div class="flex flex-col w-full max-w-7xl mx-auto gap-space-md select-none">
+<!-- TOP SECTION: Fluent HUD Header Panel -->
+<section class="w-full bg-surface-container-lowest/90 backdrop-blur-xl rounded-xl p-space-md shadow-md flex flex-wrap items-center justify-between gap-space-md">
+<!-- Level & Mastery Progress -->
+<div class="flex items-center gap-space-md min-w-[260px]">
+<div class="relative w-12 h-12 flex items-center justify-center shrink-0">
+<svg class="w-full h-full -rotate-90" viewbox="0 0 44 44">
+<circle class="text-surface-container-high" cx="22" cy="22" fill="transparent" r="18" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-primary" cx="22" cy="22" fill="transparent" r="18" stroke="currentColor" stroke-dasharray="113.1" stroke-dashoffset="33.9" stroke-linecap="round" stroke-width="4"></circle>
+</svg>
+<span class="absolute font-hud-counter text-body-sm text-primary font-bold">42</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-body-md text-on-surface font-bold tracking-tight">Novice Explorer</span>
+<span class="material-symbols-outlined text-secondary text-[16px]">verified</span>
+</div>
+<div class="flex items-center gap-space-xs text-on-surface-variant">
+<span class="font-label-sm text-label-sm">XP 3,240 / 4,500</span>
+<span class="text-outline-variant">•</span>
+<span class="font-label-sm text-label-sm text-secondary">Level 43 Soon</span>
+</div>
+</div>
+</div>
+<!-- Category & Difficulty Pill -->
+<div class="flex items-center gap-space-sm bg-surface-container-low px-space-md py-space-xs rounded-full">
+<span class="material-symbols-outlined text-primary text-[20px]">paragliding</span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Category</span>
+<span class="font-headline-sm text-body-sm text-on-surface font-semibold">Hot Air / Flight</span>
+</div>
+<div class="h-6 w-px bg-surface-container-highest mx-space-xs"></div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Difficulty</span>
+<div class="flex items-center text-tertiary-fixed-dim">
+<span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[15px] text-surface-dim">star</span>
+<span class="material-symbols-outlined text-[15px] text-surface-dim">star</span>
+</div>
+</div>
+</div>
+<!-- Score & Streak Multiplier -->
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-space-sm bg-surface-container-low px-space-md py-space-xs rounded-xl shadow-sm">
+<div class="w-8 h-8 rounded-lg bg-tertiary-fixed flex items-center justify-center text-tertiary-container shadow-sm">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">emoji_events</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-hud-counter text-hud-counter text-on-surface">14,850</span>
+<span class="font-label-sm text-[10px] text-secondary font-bold uppercase tracking-wider">PTS</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary font-semibold flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">bolt</span> +250 Combo Streak
+          </span>
+</div>
+</div>
+<!-- Coin Balance Pill -->
+<div class="flex items-center gap-space-xs bg-tertiary-fixed/30 px-space-md py-space-xs rounded-full shadow-sm">
+<span class="material-symbols-outlined text-tertiary-container text-[20px]" style="font-variation-settings: 'FILL' 1;">monetization_on</span>
+<span class="font-hud-counter text-body-lg text-tertiary-container font-extrabold" id="coin-counter">850</span>
+<button class="w-6 h-6 rounded-full bg-tertiary-container text-on-tertiary flex items-center justify-center hover:opacity-90 transition-transform active:scale-95 shadow-sm ml-space-2xs" title="Get More Coins" type="button">
+<span class="material-symbols-outlined text-[14px]">add</span>
+</button>
+</div>
+</div>
+</section>
+<!-- MIDDLE SECTION: Central Puzzle Display -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-space-md items-center">
+<!-- Left Auxiliary Card: Puzzle Clues & Stats -->
+<div class="hidden lg:flex lg:col-span-3 flex-col gap-space-sm bg-surface-container-lowest/80 backdrop-blur-md p-space-md rounded-xl shadow-sm">
+<div class="flex items-center gap-space-xs pb-space-xs border-b border-surface-container">
+<span class="material-symbols-outlined text-primary text-[18px]">psychology</span>
+<span class="font-headline-sm text-body-sm font-bold text-on-surface">Investigation Log</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+        Floating gently above picturesque patchwork fields, powered by warm air, carrying explorers toward azure heights.
+      </p>
+<div class="bg-surface-container-low p-space-sm rounded-lg flex flex-col gap-space-2xs mt-space-xs">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm">Word Length</span>
+<span class="font-label-md text-label-md font-bold text-primary">7 Letters</span>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm">Tiles Revealed</span>
+<span class="font-label-md text-label-md font-bold text-secondary">3 of 7</span>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm">Accuracy Bonus</span>
+<span class="font-label-md text-label-md font-bold text-tertiary-container">+150 Coins</span>
+</div>
+</div>
+</div>
+<!-- Center: Main Image Viewport with WPF Fluent Styling -->
+<div class="col-span-1 lg:col-span-6 flex flex-col items-center">
+<div class="relative w-full max-w-lg aspect-square rounded-2xl bg-surface-container-low shadow-xl overflow-hidden group">
+<!-- Main Clue Picture -->
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Vibrant storybook illustration of a colorful hot air balloon with yellow, orange, and teal stripes floating over rolling green patchwork hills, dotted with miniature cottages, a meandering blue river, and bright sunny skies with puffy clouds in a cheerful Windows Fluent aesthetic." id="puzzle-img" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDEK5-fBrGvKFmnSO8-zo7F39PLygm0mor6WeeCrI6tzdNyv5-zfAqKZ6DrSNKibwDxSKc2n1_GHAg-v3sbO8Nbq9ubs9OWcJu7Y5FuzzZesOhpLBWeKiwIKIm9XBeDmqxFODkK1KUChWjUTrBrU-9AffBvvXPXzLBuU1gW9z_6afjtd0GyhBwbnrA2IjlmdsanVVtfR7ra940nrSx6HYykdUsmrd52auD81MGIbHlG5tadQkvA0yy5g"/>
+<!-- Floating Glass Overlays & Inspection Toolbar -->
+<div class="absolute top-space-md left-space-md right-space-md flex items-center justify-between pointer-events-none">
+<!-- Countdown Timer Pill -->
+<div class="pointer-events-auto flex items-center gap-space-xs bg-surface-container-lowest/90 backdrop-blur-md px-space-md py-space-2xs rounded-full shadow-md">
+<span class="material-symbols-outlined text-error text-[18px] animate-pulse">timer</span>
+<span class="font-hud-counter text-body-sm text-on-surface font-bold" id="timer-display">00:45</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Bonus</span>
+</div>
+<!-- Inspection Action Pills -->
+<div class="pointer-events-auto flex items-center gap-space-2xs bg-surface-container-lowest/90 backdrop-blur-md p-space-2xs rounded-full shadow-md">
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors" id="zoom-btn" title="Zoom & Pan Inspection" type="button">
+<span class="material-symbols-outlined text-[18px]">zoom_in</span>
+</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors" id="focus-btn" title="Toggle Focus Vignette" type="button">
+<span class="material-symbols-outlined text-[18px]">filter_vintage</span>
+</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors" id="fullscreen-btn" title="Inspect Fullscreen" type="button">
+<span class="material-symbols-outlined text-[18px]">fullscreen</span>
+</button>
+</div>
+</div>
+<!-- Subtle Gradient Scrim at base -->
+<div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/40 via-black/10 to-transparent pointer-events-none flex items-end px-space-md pb-space-sm justify-between text-on-primary">
+<span class="font-label-sm text-label-sm drop-shadow">Puzzle #1,204 • Aerial Wonders</span>
+<span class="font-label-sm text-label-sm drop-shadow opacity-80">Click letters below to solve</span>
+</div>
+</div>
+</div>
+<!-- Right Auxiliary Card: Quick Powers & Level Perks -->
+<div class="hidden lg:flex lg:col-span-3 flex-col gap-space-sm bg-surface-container-lowest/80 backdrop-blur-md p-space-md rounded-xl shadow-sm">
+<div class="flex items-center gap-space-xs pb-space-xs border-b border-surface-container">
+<span class="material-symbols-outlined text-secondary text-[18px]">auto_awesome</span>
+<span class="font-headline-sm text-body-sm font-bold text-on-surface">Active Boosters</span>
+</div>
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between p-space-xs rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary-container text-[20px]">lightbulb</span>
+<div>
+<div class="font-label-md text-label-md text-on-surface font-semibold">First Letter</div>
+<div class="font-label-sm text-[10px] text-on-surface-variant">Unlocked slot #1</div>
+</div>
+</div>
+<span class="font-label-sm text-label-sm font-bold text-secondary">ACTIVE</span>
+</div>
+<div class="flex items-center justify-between p-space-xs rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">shuffle</span>
+<div>
+<div class="font-label-md text-label-md text-on-surface font-semibold">Auto-Reshuffle</div>
+<div class="font-label-sm text-[10px] text-on-surface-variant">Free on keyboard stall</div>
+</div>
+</div>
+<span class="font-label-sm text-label-sm font-bold text-on-surface-variant">READY</span>
+</div>
+<div class="flex items-center justify-between p-space-xs rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-error text-[20px]">timer_off</span>
+<div>
+<div class="font-label-md text-label-md text-on-surface font-semibold">Freeze Timer</div>
+<div class="font-label-sm text-[10px] text-on-surface-variant">Pause countdown 30s</div>
+</div>
+</div>
+<span class="font-label-sm text-label-sm font-bold text-tertiary-container">20 🪙</span>
+</div>
+</div>
+</div>
+</section>
+<!-- BELOW THE IMAGE: Target Word Slots Row -->
+<section class="w-full flex flex-col items-center justify-center gap-space-xs my-space-xs">
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest font-bold">Word Solution</div>
+<div class="flex items-center gap-space-xs flex-wrap justify-center">
+<!-- Slot 0: 'B' Filled -->
+<div class="slot-tile w-12 h-14 sm:w-14 sm:h-16 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center font-tile-char text-tile-char shadow-md transition-all duration-200 cursor-pointer select-none border-b-4 border-primary">
+        B
+      </div>
+<!-- Slot 1: 'A' Filled -->
+<div class="slot-tile w-12 h-14 sm:w-14 sm:h-16 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center font-tile-char text-tile-char shadow-md transition-all duration-200 cursor-pointer select-none border-b-4 border-primary">
+        A
+      </div>
+<!-- Slot 2: 'L' Filled -->
+<div class="slot-tile w-12 h-14 sm:w-14 sm:h-16 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center font-tile-char text-tile-char shadow-md transition-all duration-200 cursor-pointer select-none border-b-4 border-primary">
+        L
+      </div>
+<!-- Slot 3: Empty (Dashed / Active Focus) -->
+<div class="slot-tile w-12 h-14 sm:w-14 sm:h-16 rounded-xl bg-surface-container-lowest/80 text-primary flex items-center justify-center font-tile-char text-tile-char shadow-inner border-2 border-dashed border-secondary-container transition-all duration-200 animate-pulse select-none" data-index="3">
+        _
+      </div>
+<!-- Slot 4: Empty -->
+<div class="slot-tile w-12 h-14 sm:w-14 sm:h-16 rounded-xl bg-surface-container-lowest/60 text-on-surface-variant flex items-center justify-center font-tile-char text-tile-char shadow-inner border-2 border-dashed border-outline-variant transition-all duration-200 select-none" data-index="4">
+        _
+      </div>
+<!-- Slot 5: Empty -->
+<div class="slot-tile w-12 h-14 sm:w-14 sm:h-16 rounded-xl bg-surface-container-lowest/60 text-on-surface-variant flex items-center justify-center font-tile-char text-tile-char shadow-inner border-2 border-dashed border-outline-variant transition-all duration-200 select-none" data-index="5">
+        _
+      </div>
+<!-- Slot 6: Empty -->
+<div class="slot-tile w-12 h-14 sm:w-14 sm:h-16 rounded-xl bg-surface-container-lowest/60 text-on-surface-variant flex items-center justify-center font-tile-char text-tile-char shadow-inner border-2 border-dashed border-outline-variant transition-all duration-200 select-none" data-index="6">
+        _
+      </div>
+<!-- Action Button: Backspace / Undo -->
+<button class="w-12 h-14 sm:w-14 sm:h-16 ml-space-xs rounded-xl bg-surface-container-high hover:bg-error-container text-on-surface hover:text-on-error-container flex flex-col items-center justify-center shadow-md transition-all duration-150 active:translate-y-0.5" id="btn-backspace" title="Backspace / Remove last tile" type="button">
+<span class="material-symbols-outlined text-[24px]">backspace</span>
+<span class="font-label-sm text-[10px] uppercase font-bold">Del</span>
+</button>
+</div>
+</section>
+<!-- BOTTOM SECTION: Virtual Scrambled Keyboard & Game Power Controls -->
+<section class="w-full bg-surface-container-lowest/90 backdrop-blur-xl rounded-2xl p-space-md shadow-lg flex flex-col md:flex-row items-center justify-between gap-space-lg">
+<!-- Left Power Action: HINT -->
+<div class="flex items-center gap-space-sm shrink-0 order-2 md:order-1">
+<button class="relative group flex items-center gap-space-xs px-space-md py-space-sm rounded-xl bg-gradient-to-br from-tertiary-fixed to-tertiary-fixed-dim text-on-tertiary-fixed font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all" id="btn-hint" type="button">
+<span class="material-symbols-outlined text-[22px] text-tertiary-container group-hover:animate-bounce" style="font-variation-settings: 'FILL' 1;">lightbulb</span>
+<div class="flex flex-col text-left">
+<span class="font-headline-sm text-body-sm leading-tight text-on-tertiary-fixed font-extrabold">HINT</span>
+<span class="font-label-sm text-[10px] text-tertiary-container leading-tight">-50 🪙</span>
+</div>
+<!-- Remaining Free Badge -->
+<span class="absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full bg-secondary text-on-secondary font-label-sm text-[10px] font-bold shadow-sm">
+          2 Free
+        </span>
+</button>
+<!-- Auxiliary: Reveal First Letter helper -->
+<button class="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-surface-container-low hover:bg-surface-container text-primary transition-all active:scale-95 shadow-sm" title="Reveal Next Correct Letter" type="button">
+<span class="material-symbols-outlined text-[20px]">spellcheck</span>
+<span class="font-label-sm text-[9px] uppercase font-bold">Letter</span>
+</button>
+</div>
+<!-- Scrambled Keyboard Tile Matrix (2 Rows) -->
+<div class="flex flex-col gap-space-xs items-center justify-center flex-1 order-1 md:order-2">
+<!-- Row 1 (7 Letters) -->
+<div class="flex items-center gap-space-xs sm:gap-space-sm justify-center flex-wrap">
+<button class="key-tile w-10 h-11 sm:w-12 sm:h-13 rounded-xl bg-surface-container-lowest text-on-surface font-tile-char text-body-lg sm:text-tile-char font-extrabold shadow-[0_4px_0_0_#c6c5d7] hover:shadow-[0_2px_0_0_#c6c5d7] hover:translate-y-0.5 active:shadow-none active:translate-y-1 transition-all border border-surface-container flex items-center justify-center" type="button">
+          B
+        </button>
+<button class="key-tile w-10 h-11 sm:w-12 sm:h-13 rounded-xl bg-surface-container-lowest text-on-surface font-tile-char text-body-lg sm:text-tile-char font-extrabold shadow-[0_4px_0_0_#c6c5d7] hover:shadow-[0_2px_0_0_#c6c5d7] hover:translate-y-0.5 active:shadow-none active:translate-y-1 transition-all border border-surface-container flex items-center justify-center" type="button">
+          A
+        </button>
+<button class="key-tile w-10 h-11 sm:w-12 sm:h-13 rounded-xl bg-surface-container-lowest text-on-surface font-tile-char text-body-lg sm:text-tile-char font-extrabold shadow-[0_4px_0_0_#c6c5d7] hover:shadow-[0_2px_0_0_#c6c5d7] hover:translate-y-0.5 active:shadow-none active:translate-y-1 transition-all border border-surface-container flex items-center justify-center" type="button">
+          L
+        </button>
+<button class="key-tile w-10 h-11 sm:w-12 sm:h-13 rounded-xl bg-surface-container-lowest text-on-surface font-tile-char text-body-lg sm:text-tile-char font-extrabold shadow-[0_4px_0_0_#c6c5d7] hover:shadow-[0_2px_0_0_#c6c5d7] hover:translate-y-0.5 active:shadow-none active:translate-y-1 transition-all border border-surface-container flex items-center justify-center" type="button">
+          O
+        </button>
+<button class="key-tile w-10 h-11 sm:w-12 sm:h-13 rounded-xl bg-surface-container-lowest text-on-surface font-tile-char text-body-lg sm:text-tile-char font-extrabold shadow-[0_4px_0_0_#c6c5d7] hover:shadow-[0_2px_0_0_#c6c5d7] hover:translate-y-0.5 active:shadow-none active:translate-y-1 transition-all border border-surface-container flex items-center justify-center" type="button">
+          N
+        </button>
+<button class="key-tile w-10 h-11 sm:w-12 sm:h-13 rounded-xl bg-surface-container-lowest text-on-surface font-tile-char text-body-lg sm:text-tile-char font-extrabold shadow-[0_4px_0_0_#c6c5d7] hover:shadow-[0_2px_0_0_#c6c5d7] hover:translate-y-0.5 active:shadow-none active:translate-y-1 transition-all border border-surface-container flex items-center justify-center" type="button">
+          T
+        </button>
+<button class="key-tile w-10 h-11 sm:w-12 sm:h-13 rounded-xl bg-surface-container-lowest text-on-surface font-tile-char text-body-lg sm:text-tile-char font-extrabold shadow-[0_4px_0_0_#c6c5d7] hover:shadow-[0_2px_0_0_#c6c5d7] hover:translate-y-0.5 active:shadow-none active:translate-y-1 transition-all border border-surface-container flex items-center justify-center" type="button">
+          H
+        </button>
+</div>
+<!-- Row 2 (7 Letters) -->
+<div class="flex items-center gap-space-xs sm:gap-space-sm justify-center flex-wrap">
+<button class="key-tile w-10 h-11 sm:w-12 sm:h-13 rounded-xl bg-surface-container-lowest text-on-surface font-tile-char text-body-lg sm:text-tile-char font-extrabold shadow-[0_4px_0_0_#c6c5d7] hover:shadow-[0_2px_0_0_#c6c5d7] hover:translate-y-0.5 active:shadow-none active:translate-y-1 transition-all border border-surface-container flex items-center justify-center" type="button">
+          R
+        </button>
+<button class="key-tile w-10 h-11 sm:w-12 sm:h-13 rounded-xl bg-surface-container-lowest text-on-surface font-tile-char text-body-lg sm:text-tile-char font-extrabold shadow-[0_4px_0_0_#c6c5d7] hover:shadow-[0_2px_0_0_#c6c5d7] hover:translate-y-0.5 active:shadow-none active:translate-y-1 transition-all border border-surface-container flex items-center justify-center" type="button">
+          I
+        </button>
+<button class="key-tile w-10 h-11 sm:w-12 sm:h-13 rounded-xl bg-surface-container-lowest text-on-surface font-tile-char text-body-lg sm:text-tile-char font-extrabold shadow-[0_4px_0_0_#c6c5d7] hover:shadow-[0_2px_0_0_#c6c5d7] hover:translate-y-0.5 active:shadow-none active:translate-y-1 transition-all border border-surface-container flex items-center justify-center" type="button">
+          X
+        </button>
+<button class="key-tile w-10 h-11 sm:w-12 sm:h-13 rounded-xl bg-surface-container-lowest text-on-surface font-tile-char text-body-lg sm:text-tile-char font-extrabold shadow-[0_4px_0_0_#c6c5d7] hover:shadow-[0_2px_0_0_#c6c5d7] hover:translate-y-0.5 active:shadow-none active:translate-y-1 transition-all border border-surface-container flex items-center justify-center" type="button">
+          E
+        </button>
+<button class="key-tile w-10 h-11 sm:w-12 sm:h-13 rounded-xl bg-surface-container-lowest text-on-surface font-tile-char text-body-lg sm:text-tile-char font-extrabold shadow-[0_4px_0_0_#c6c5d7] hover:shadow-[0_2px_0_0_#c6c5d7] hover:translate-y-0.5 active:shadow-none active:translate-y-1 transition-all border border-surface-container flex items-center justify-center" type="button">
+          S
+        </button>
+<button class="key-tile w-10 h-11 sm:w-12 sm:h-13 rounded-xl bg-surface-container-lowest text-on-surface font-tile-char text-body-lg sm:text-tile-char font-extrabold shadow-[0_4px_0_0_#c6c5d7] hover:shadow-[0_2px_0_0_#c6c5d7] hover:translate-y-0.5 active:shadow-none active:translate-y-1 transition-all border border-surface-container flex items-center justify-center" type="button">
+          P
+        </button>
+<button class="key-tile w-10 h-11 sm:w-12 sm:h-13 rounded-xl bg-surface-container-lowest text-on-surface font-tile-char text-body-lg sm:text-tile-char font-extrabold shadow-[0_4px_0_0_#c6c5d7] hover:shadow-[0_2px_0_0_#c6c5d7] hover:translate-y-0.5 active:shadow-none active:translate-y-1 transition-all border border-surface-container flex items-center justify-center" type="button">
+          W
+        </button>
+</div>
+</div>
+<!-- Right Power Action: SKIP & Shuffle -->
+<div class="flex items-center gap-space-sm shrink-0 order-3">
+<!-- Shuffle Letters Button -->
+<button class="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-surface-container-low hover:bg-surface-container text-primary transition-all active:rotate-180 shadow-sm" id="btn-shuffle" title="Shuffle Scrambled Letters" type="button">
+<span class="material-symbols-outlined text-[20px]">sync</span>
+<span class="font-label-sm text-[9px] uppercase font-bold">Mix</span>
+</button>
+<!-- SKIP Puzzle Button -->
+<button class="flex items-center gap-space-xs px-space-md py-space-sm rounded-xl bg-surface-container-high hover:bg-surface-dim text-on-surface font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all" id="btn-skip" type="button">
+<span class="material-symbols-outlined text-[22px] text-secondary">fast_forward</span>
+<div class="flex flex-col text-left">
+<span class="font-headline-sm text-body-sm leading-tight font-extrabold">SKIP</span>
+<span class="font-label-sm text-[10px] text-on-surface-variant leading-tight">-100 🪙</span>
+</div>
+</button>
+</div>
+</section>
+<!-- Notification Toast for Interactive Feedback -->
+<div class="fixed bottom-6 right-6 pointer-events-none opacity-0 translate-y-4 transition-all duration-300 z-50 bg-inverse-surface text-inverse-on-surface px-space-md py-space-xs rounded-xl shadow-xl flex items-center gap-space-xs" id="game-toast">
+<span class="material-symbols-outlined text-secondary-fixed text-[20px]" id="toast-icon">check_circle</span>
+<span class="font-body-sm text-body-sm font-semibold" id="toast-text">Feedback Message</span>
+</div>
+</div>
+<script>
+  (function() {
+    // Interactive countdown timer
+    let secondsLeft = 45;
+    const timerElem = document.getElementById('timer-display');
+    if (timerElem) {
+      const timerInterval = setInterval(() => {
+        if (secondsLeft > 0) {
+          secondsLeft--;
+          const m = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+          const s = String(secondsLeft % 60).padStart(2, '0');
+          timerElem.textContent = `${m}:${s}`;
+        } else {
+          clearInterval(timerInterval);
+        }
+      }, 1000);
+    }
+
+    // Toast helper
+    const toast = document.getElementById('game-toast');
+    const toastText = document.getElementById('toast-text');
+    const toastIcon = document.getElementById('toast-icon');
+    let toastTimeout;
+
+    function showToast(msg, icon = 'info') {
+      if (!toast || !toastText) return;
+      toastText.textContent = msg;
+      if (toastIcon) toastIcon.textContent = icon;
+      toast.classList.remove('opacity-0', 'translate-y-4');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-4');
+        toast.classList.remove('opacity-100', 'translate-y-0');
+      }, 2400);
+    }
+
+    // Virtual Keyboard interaction
+    const keyTiles = document.querySelectorAll('.key-tile');
+    const emptySlots = document.querySelectorAll('.slot-tile[data-index]');
+    let currentSlotIdx = 0;
+
+    keyTiles.forEach(tile => {
+      tile.addEventListener('click', () => {
+        const letter = tile.textContent.trim();
+        if (currentSlotIdx < emptySlots.length) {
+          const targetSlot = emptySlots[currentSlotIdx];
+          targetSlot.textContent = letter;
+          targetSlot.classList.remove('border-dashed', 'border-outline-variant', 'animate-pulse', 'text-on-surface-variant');
+          targetSlot.classList.add('bg-primary-container', 'text-on-primary-container', 'border-b-4', 'border-primary', 'shadow-md');
+          tile.classList.add('opacity-40', 'pointer-events-none');
+          currentSlotIdx++;
+
+          if (currentSlotIdx === emptySlots.length) {
+            showToast('All slots filled! Verifying answer...', 'task_alt');
+          }
+        }
+      });
+    });
+
+    // Backspace button interaction
+    const backspaceBtn = document.getElementById('btn-backspace');
+    if (backspaceBtn) {
+      backspaceBtn.addEventListener('click', () => {
+        if (currentSlotIdx > 0) {
+          currentSlotIdx--;
+          const targetSlot = emptySlots[currentSlotIdx];
+          const removedChar = targetSlot.textContent.trim();
+          targetSlot.textContent = '_';
+          targetSlot.classList.add('border-dashed', 'border-outline-variant', 'text-on-surface-variant');
+          targetSlot.classList.remove('bg-primary-container', 'text-on-primary-container', 'border-b-4', 'border-primary', 'shadow-md');
+
+          // Re-enable the corresponding keyboard key
+          for (let tile of keyTiles) {
+            if (tile.textContent.trim() === removedChar && tile.classList.contains('pointer-events-none')) {
+              tile.classList.remove('opacity-40', 'pointer-events-none');
+              break;
+            }
+          }
+        }
+      });
+    }
+
+    // Hint button interaction
+    const hintBtn = document.getElementById('btn-hint');
+    if (hintBtn) {
+      hintBtn.addEventListener('click', () => {
+        showToast('Hint used: "O" is the next letter in the basket!', 'lightbulb');
+      });
+    }
+
+    // Shuffle button
+    const shuffleBtn = document.getElementById('btn-shuffle');
+    if (shuffleBtn) {
+      shuffleBtn.addEventListener('click', () => {
+        showToast('Keyboard tiles rearranged!', 'sync');
+      });
+    }
+
+    // Skip button
+    const skipBtn = document.getElementById('btn-skip');
+    if (skipBtn) {
+      skipBtn.addEventListener('click', () => {
+        showToast('Skipping to next adventure puzzle...', 'fast_forward');
+      });
+    }
+
+    // Zoom inspection tool
+    const zoomBtn = document.getElementById('zoom-btn');
+    const puzzleImg = document.getElementById('puzzle-img');
+    if (zoomBtn && puzzleImg) {
+      let isZoomed = false;
+      zoomBtn.addEventListener('click', () => {
+        isZoomed = !isZoomed;
+        puzzleImg.style.transform = isZoomed ? 'scale(1.4)' : 'scale(1)';
+        showToast(isZoomed ? 'Magnifier 1.4x Active' : 'Magnifier Reset', 'zoom_in');
+      });
+    }
+  })();
+</script></main></div></body></html>

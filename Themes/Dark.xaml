@@ -1,0 +1,38 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ===== Chế độ TỐI - cùng bộ khóa với Light.xaml để đổi nóng được ===== -->
+
+    <SolidColorBrush x:Key="CanvasBrush"      Color="#0B1220"/>
+    <SolidColorBrush x:Key="SidebarBrush"     Color="#111A2B"/>
+    <SolidColorBrush x:Key="CardBrush"        Color="#162033"/>
+    <SolidColorBrush x:Key="CardAltBrush"     Color="#1B2740"/>
+    <SolidColorBrush x:Key="CardBorderBrush"  Color="#26334A"/>
+
+    <SolidColorBrush x:Key="TextPrimaryBrush"   Color="#EAF1FF"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#A9B6CC"/>
+    <SolidColorBrush x:Key="TextMutedBrush"     Color="#7C8AA3"/>
+
+    <SolidColorBrush x:Key="PrimaryBrush"      Color="#5A67F0"/>
+    <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#6C78FF"/>
+    <SolidColorBrush x:Key="OnPrimaryBrush"    Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="PrimarySoftBrush"  Color="#1E2647"/>
+    <SolidColorBrush x:Key="SecondaryBrush"    Color="#47D6FF"/>
+    <SolidColorBrush x:Key="TertiaryBrush"     Color="#FFB952"/>
+    <SolidColorBrush x:Key="TertiarySoftBrush" Color="#3A2C10"/>
+    <SolidColorBrush x:Key="ErrorBrush"        Color="#FF8A8A"/>
+    <SolidColorBrush x:Key="ErrorSoftBrush"    Color="#4A1717"/>
+    <SolidColorBrush x:Key="SuccessBrush"      Color="#6FDA8E"/>
+
+    <SolidColorBrush x:Key="TileBrush"        Color="#1E2A42"/>
+    <SolidColorBrush x:Key="TileBevelBrush"   Color="#0C1322"/>
+    <SolidColorBrush x:Key="TileTextBrush"    Color="#EAF1FF"/>
+    <SolidColorBrush x:Key="TileHoverBrush"   Color="#2A3A5A"/>
+
+    <SolidColorBrush x:Key="SlotEmptyBrush"       Color="#3D4A63"/>
+    <SolidColorBrush x:Key="SlotFilledBrush"      Color="#5A67F0"/>
+    <SolidColorBrush x:Key="SlotFilledTextBrush"  Color="#FFFFFF"/>
+
+    <SolidColorBrush x:Key="ScrimBrush" Color="#060B14" Opacity="0.82"/>
+
+</ResourceDictionary>

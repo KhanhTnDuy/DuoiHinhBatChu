@@ -35,6 +35,7 @@ public class GameViewModel : ViewModelBase
         _puzzles = new PuzzleRepository().LoadAll();
         _profile = _state.LoadProfile();
         AudioService.Instance.IsEnabled = _profile.IsSoundEnabled;
+        ThemeService.Apply(_profile.IsDarkTheme);
 
         _delay.Tick += (_, _) =>
         {
@@ -51,6 +52,7 @@ public class GameViewModel : ViewModelBase
         ShowHintCommand = new RelayCommand(_ => ShowHint());
         SkipCommand = new RelayCommand(_ => Skip());
         RestartCommand = new RelayCommand(_ => Restart());
+        ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
 
         LoadPuzzle(Math.Clamp(_profile.CurrentPuzzleIndex, 0, _puzzles.Count - 1));
     }
@@ -63,6 +65,7 @@ public class GameViewModel : ViewModelBase
     public RelayCommand ShowHintCommand { get; }
     public RelayCommand SkipCommand { get; }
     public RelayCommand RestartCommand { get; }
+    public RelayCommand ToggleThemeCommand { get; }
 
     // ----- Dữ liệu hiển thị -----
     public ObservableCollection<AnswerSlot> Slots { get; } = new();
@@ -73,8 +76,34 @@ public class GameViewModel : ViewModelBase
 
     public string ProgressText => $"Câu {_index + 1}/{_puzzles.Count}";
 
-    public string DifficultyText =>
-        new string('★', Current.Difficulty) + new string('☆', 5 - Current.Difficulty);
+    public string DifficultyText => $"{Current.Difficulty}/5";
+
+    /// <summary>Số ô chữ cái của đáp án (không tính khoảng trắng).</summary>
+    public string LetterCountText => $"{Slots.Count(x => !x.IsSpace)} chữ cái";
+
+    /// <summary>Số câu đã giải trên tổng số câu.</summary>
+    public string SolvedText => $"{_profile.SolvedPuzzleIds.Count}/{_puzzles.Count}";
+
+    /// <summary>true = đang ở chế độ tối.</summary>
+    public bool IsDarkTheme
+    {
+        get => _profile.IsDarkTheme;
+        private set
+        {
+            _profile.IsDarkTheme = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ThemeToggleText));
+        }
+    }
+
+    public string ThemeToggleText => IsDarkTheme ? "Chế độ sáng" : "Chế độ tối";
+
+    private void ToggleTheme()
+    {
+        IsDarkTheme = !IsDarkTheme;
+        ThemeService.Apply(IsDarkTheme);
+        _state.SaveProfile(_profile);
+    }
 
     public int Score
     {
@@ -100,8 +129,7 @@ public class GameViewModel : ViewModelBase
     }
 
     public string LivesText =>
-        new string('♥', Math.Max(0, Lives))
-        + new string('♡', Math.Max(0, _profile.MaxLives - Lives));
+        $"{Math.Max(0, Lives)}/{_profile.MaxLives}";
 
     private BitmapImage? _imageSource;
     public BitmapImage? ImageSource
@@ -180,6 +208,7 @@ public class GameViewModel : ViewModelBase
 
         OnPropertyChanged(nameof(ProgressText));
         OnPropertyChanged(nameof(DifficultyText));
+        OnPropertyChanged(nameof(LetterCountText));
         _state.SaveProfile(_profile);
     }
 
@@ -317,7 +346,8 @@ public class GameViewModel : ViewModelBase
             _profile.SolvedPuzzleIds.Add(Current.Id);
 
         IsFeedbackGood = true;
-        FeedbackText = $"✔ Chính xác — {Current.Answer}";
+        FeedbackText = $"Chính xác: {Current.Answer}";
+        OnPropertyChanged(nameof(SolvedText));
         _state.SaveProfile(_profile);
 
         RunAfter(1.4, GoNext);
@@ -330,7 +360,7 @@ public class GameViewModel : ViewModelBase
 
         Lives--;
         IsFeedbackGood = false;
-        FeedbackText = "✘ Chưa đúng, thử lại!";
+        FeedbackText = "Chưa đúng, thử lại!";
         foreach (AnswerSlot s in Slots) s.IsWrong = !s.IsSpace;
 
         RunAfter(0.8, () =>
@@ -396,7 +426,7 @@ public class GameViewModel : ViewModelBase
         if (_locked || HintText.Length > 0 || Rubies < CostHint) return;
 
         Rubies -= CostHint;
-        HintText = "💡 " + Current.Hint;
+        HintText = "Gợi ý: " + Current.Hint;
         AudioService.Instance.PlayHint();
         _state.SaveProfile(_profile);
     }
@@ -433,6 +463,7 @@ public class GameViewModel : ViewModelBase
         {
             Score = 0;
             _profile.SolvedPuzzleIds.Clear();
+            OnPropertyChanged(nameof(SolvedText));
         }
 
         LoadPuzzle(restartFromStart ? 0 : _index);
