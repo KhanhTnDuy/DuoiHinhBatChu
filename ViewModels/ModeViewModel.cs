@@ -88,8 +88,6 @@ public class ModeViewModel : ViewModelBase
 
     public bool IsDarkTheme => _settings.IsDarkTheme;
 
-    public string ThemeToggleText => IsDarkTheme ? "Chế độ sáng" : "Chế độ tối";
-
     private async Task CheckServerAsync()
     {
         if (IsChecking) return;
@@ -116,6 +114,5 @@ public class ModeViewModel : ViewModelBase
         ThemeService.Apply(_settings.IsDarkTheme);
 
         OnPropertyChanged(nameof(IsDarkTheme));
-        OnPropertyChanged(nameof(ThemeToggleText));
     }
 }

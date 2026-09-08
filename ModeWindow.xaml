@@ -35,10 +35,9 @@
                            Foreground="{DynamicResource TextMutedBrush}"/>
             </StackPanel>
 
-            <Button Style="{StaticResource GhostButton}"
+            <Button Style="{StaticResource ThemeToggleButton}"
                     HorizontalAlignment="Right" VerticalAlignment="Top"
-                    Command="{Binding ToggleThemeCommand}"
-                    Content="{Binding ThemeToggleText}"/>
+                    Command="{Binding ToggleThemeCommand}"/>
         </Grid>
 
         <!-- === Hai thẻ chế độ === -->
