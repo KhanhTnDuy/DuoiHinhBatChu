@@ -7,12 +7,26 @@ namespace DuoiHinhBatChu;
 
 public partial class MainWindow : Window
 {
-    private readonly GameViewModel _vm;
+    private readonly GameViewModel? _vm;
 
     public MainWindow()
     {
         InitializeComponent();
-        _vm = new GameViewModel();
+
+        try
+        {
+            _vm = new GameViewModel();
+        }
+        catch (Exception ex)
+        {
+            // Hay gặp nhất: thư mục Assets/CauHoi chưa có ảnh nào.
+            // Báo bằng hộp thoại rồi thoát, thay vì để cửa sổ hỏng.
+            MessageBox.Show(ex.Message, "Không mở được màn chơi",
+                            MessageBoxButton.OK, MessageBoxImage.Warning);
+            Loaded += (_, _) => Close();
+            return;
+        }
+
         DataContext = _vm;
     }
 
@@ -23,5 +37,5 @@ public partial class MainWindow : Window
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
-    private void Window_Closing(object sender, CancelEventArgs e) => _vm.Save();
+    private void Window_Closing(object sender, CancelEventArgs e) => _vm?.Save();
 }

@@ -9,15 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Copy dữ liệu câu đố và ảnh ra thư mục build để đọc lúc chạy -->
-    <Content Include="Data\puzzles.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\Puzzles\**\*.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <!-- Ảnh câu đố đặt tên theo đáp án (vd "CÁ HEO.png") -->
+    <!-- Ảnh câu đố: mỗi file là một câu, tên file chính là đáp án (vd "CÁ HEO.png") -->
     <Content Include="Assets\CauHoi\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <!-- Gợi ý và độ khó bổ sung cho từng đáp án (tùy chọn) -->
+    <Content Include="Data\puzzles.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

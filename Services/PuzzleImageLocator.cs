@@ -1,70 +1,80 @@
 using System.IO;
-using DuoiHinhBatChu.Models;
+using System.Text.RegularExpressions;
 
 namespace DuoiHinhBatChu.Services;
 
 /// <summary>
-/// Tìm file ảnh cho một câu đố.
-/// Thứ tự ưu tiên:
-///   1. Assets/CauHoi/&lt;tên bất kỳ&gt; có tên trùng đáp án sau khi bỏ dấu và bỏ khoảng trắng
-///      (nhờ vậy "CÁ HEO.png", "ca heo.png", "CAHEO.png.png" đều nhận).
-///   2. Đường dẫn ghi sẵn trong puzzles.json (Assets/Puzzles/pNNN.png).
-/// Trả về null nếu chưa có ảnh — màn chơi sẽ hiện mô tả thay thế.
+/// Thư mục <c>Assets/CauHoi</c> là nguồn duy nhất của các câu đố:
+/// mỗi file ảnh là một câu, và tên file chính là đáp án.
+///
+/// Quy ước đặt tên:
+///   "CÁ HEO.png"        -> đáp án "CÁ HEO"
+///   "01 - CÁ HEO.png"   -> đáp án "CÁ HEO", xếp thứ tự số 1
+///   "CAHEO.png.png"     -> đáp án "CAHEO" (mọi phần đuôi đều bị cắt bỏ)
+///
+/// Viết dấu tiếng Việt và khoảng trắng ngay trong tên file, vì đáp án hiển thị
+/// trên các ô chữ đúng như tên file.
 /// </summary>
 public static class PuzzleImageLocator
 {
     private static readonly string[] Extensions = { ".png", ".jpg", ".jpeg", ".webp", ".bmp" };
 
-    // Quét thư mục CauHoi một lần rồi nhớ lại: khóa = đáp án chuẩn hóa, không khoảng trắng.
-    private static Dictionary<string, string>? _cauHoiIndex;
+    /// <summary>Số thứ tự tùy chọn ở đầu tên file, vd "01 - ", "2_", "003.".</summary>
+    private static readonly Regex OrderPrefix =
+        new(@"^\s*(\d+)\s*[-_.]\s*", RegexOptions.Compiled);
 
-    public static string? Find(Puzzle puzzle)
+    /// <summary>Một file ảnh đã đọc được đáp án từ tên.</summary>
+    public readonly record struct ImageEntry(int Order, string Answer, string Path);
+
+    /// <summary>Thư mục chứa ảnh câu đố, nằm cạnh file .exe.</summary>
+    public static string Folder => Path.Combine(AppContext.BaseDirectory, "Assets", "CauHoi");
+
+    /// <summary>
+    /// Quét thư mục ảnh, trả về danh sách câu đố đã sắp xếp:
+    /// file có số thứ tự đứng trước, phần còn lại xếp theo bảng chữ cái.
+    /// Hai file cho ra cùng một đáp án thì chỉ lấy file đầu tiên.
+    /// </summary>
+    public static List<ImageEntry> Scan()
     {
-        string key = Key(puzzle.Answer);
-        if (key.Length > 0 && Index().TryGetValue(key, out string? path))
-            return path;
+        var result = new List<ImageEntry>();
+        if (!Directory.Exists(Folder)) return result;
 
-        if (!string.IsNullOrWhiteSpace(puzzle.Image))
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (string file in Directory.EnumerateFiles(Folder))
         {
-            string full = Path.Combine(
-                AppContext.BaseDirectory,
-                puzzle.Image.Replace('/', Path.DirectorySeparatorChar));
-            if (File.Exists(full)) return full;
-        }
+            string ext = Path.GetExtension(file).ToLowerInvariant();
+            if (!Extensions.Contains(ext)) continue;
 
-        return null;
-    }
+            // Cắt mọi phần đuôi: "CÁ HEO.png.png" -> "CÁ HEO"
+            string name = Path.GetFileName(file);
+            int dot = name.IndexOf('.');
+            if (dot > 0) name = name[..dot];
 
-    /// <summary>Xóa bộ nhớ đệm để lần sau quét lại thư mục ảnh.</summary>
-    public static void Refresh() => _cauHoiIndex = null;
-
-    private static Dictionary<string, string> Index()
-    {
-        if (_cauHoiIndex != null) return _cauHoiIndex;
-
-        var map = new Dictionary<string, string>();
-        string dir = Path.Combine(AppContext.BaseDirectory, "Assets", "CauHoi");
-
-        if (Directory.Exists(dir))
-        {
-            foreach (string file in Directory.EnumerateFiles(dir))
+            // Tách số thứ tự nếu có
+            int order = int.MaxValue;
+            Match m = OrderPrefix.Match(name);
+            if (m.Success && int.TryParse(m.Groups[1].Value, out int n))
             {
-                string ext = Path.GetExtension(file).ToLowerInvariant();
-                if (!Extensions.Contains(ext)) continue;
-
-                // Bỏ hết phần đuôi: "SONGCHO.png.png" -> "SONGCHO"
-                string name = Path.GetFileName(file);
-                int dot = name.IndexOf('.');
-                if (dot > 0) name = name[..dot];
-
-                string key = Key(name);
-                if (key.Length > 0) map.TryAdd(key, file);
+                order = n;
+                name = name[m.Length..];
             }
+
+            string answer = Normalize(name);
+            if (answer.Length == 0) continue;
+            if (!seen.Add(answer)) continue;
+
+            result.Add(new ImageEntry(order, answer, file));
         }
 
-        return _cauHoiIndex = map;
+        return result
+            .OrderBy(e => e.Order)
+            .ThenBy(e => e.Answer, StringComparer.CurrentCulture)
+            .ToList();
     }
 
-    /// <summary>"CÁ HEO" -> "caheo" để so tên file không cần gõ dấu.</summary>
-    private static string Key(string text) => AnswerChecker.Normalize(text).Replace(" ", "");
+    /// <summary>Gộp khoảng trắng thừa và viết hoa toàn bộ đáp án.</summary>
+    private static string Normalize(string name) =>
+        string.Join(' ', name.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+              .ToUpperInvariant();
 }

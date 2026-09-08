@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using DuoiHinhBatChu.Models;
@@ -144,14 +145,6 @@ public class GameViewModel : ViewModelBase
 
     public bool HasImage => ImageSource != null;
 
-    private string _drawText = "";
-    /// <summary>Mô tả hình cần vẽ — hiện tạm khi câu đố chưa có ảnh.</summary>
-    public string DrawText
-    {
-        get => _drawText;
-        private set => SetProperty(ref _drawText, value);
-    }
-
     private string _hintText = "";
     public string HintText
     {
@@ -273,13 +266,13 @@ public class GameViewModel : ViewModelBase
 
     private void LoadImage(Puzzle p)
     {
-        string? path = PuzzleImageLocator.Find(p);
-        if (path == null)
+        if (string.IsNullOrEmpty(p.Image) || !File.Exists(p.Image))
         {
             ImageSource = null;
-            DrawText = p.Draw;
             return;
         }
+
+        string path = p.Image;
 
         var bmp = new BitmapImage();
         bmp.BeginInit();
