@@ -4,97 +4,252 @@
         mc:Ignorable="d"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:conv="clr-namespace:DuoiHinhBatChu.Converters"
         Title="Đuổi hình bắt chữ"
         WindowStyle="None"
         WindowState="Maximized"
         ResizeMode="NoResize"
-        Background="#1E1E2E"
         FontFamily="Segoe UI"
-        KeyDown="Window_KeyDown">
+        TextOptions.TextFormattingMode="Ideal"
+        KeyDown="Window_KeyDown"
+        Closing="Window_Closing">
+
+    <Window.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#3B2FD6" Offset="0"/>
+            <GradientStop Color="#8B4EE8" Offset="1"/>
+        </LinearGradientBrush>
+    </Window.Background>
 
     <Window.Resources>
-        <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#ECECEC"/>
-            <Setter Property="FontSize" Value="22"/>
-        </Style>
-        <Style TargetType="TextBox">
-            <Setter Property="FontSize" Value="24"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-        </Style>
-        <Style TargetType="Button">
-            <Setter Property="FontSize" Value="20"/>
-            <Setter Property="Padding" Value="22,10"/>
-            <Setter Property="Margin" Value="6,0"/>
-            <Setter Property="Foreground" Value="#ECECEC"/>
-            <Setter Property="Background" Value="#45475A"/>
+        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+        <conv:StringToVisibilityConverter x:Key="StrVis"/>
+
+        <!-- Ô ký tự trong hàng đáp án -->
+        <DataTemplate x:Key="SlotTemplate">
+            <Button Command="{Binding DataContext.TakeBackCommand,
+                              RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                    CommandParameter="{Binding}"
+                    Cursor="Hand"
+                    Margin="4,6">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Box"
+                                Width="58" Height="70" CornerRadius="12"
+                                Background="#FFFFFF" BorderBrush="#FFD84D" BorderThickness="3">
+                            <TextBlock Text="{Binding DisplayText}"
+                                       FontSize="34" FontWeight="Bold" Foreground="#2A2440"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <!-- Khoảng trắng giữa hai từ: chỉ là chỗ hở, không phải ô bấm -->
+                            <DataTrigger Binding="{Binding IsSpace}" Value="True">
+                                <Setter TargetName="Box" Property="Width" Value="26"/>
+                                <Setter TargetName="Box" Property="Background" Value="Transparent"/>
+                                <Setter TargetName="Box" Property="BorderThickness" Value="0"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsRevealedByHint}" Value="True">
+                                <Setter TargetName="Box" Property="Background" Value="#FFE9A8"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsWrong}" Value="True">
+                                <Setter TargetName="Box" Property="Background" Value="#FF8A8A"/>
+                                <Setter TargetName="Box" Property="BorderBrush" Value="#D62828"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </DataTemplate>
+
+        <!-- Phím chữ cái -->
+        <DataTemplate x:Key="TileTemplate">
+            <Button Command="{Binding DataContext.PlaceLetterCommand,
+                              RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                    CommandParameter="{Binding}"
+                    Cursor="Hand"
+                    Margin="6">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Key"
+                                Width="64" Height="64" CornerRadius="14"
+                                Background="#FFD84D" BorderBrush="#B8860B" BorderThickness="0,0,0,4">
+                            <TextBlock Text="{Binding Character}"
+                                       FontSize="32" FontWeight="Bold" Foreground="#2A2440"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Key" Property="Background" Value="#FFE889"/>
+                            </Trigger>
+                            <!-- Đã dùng / bị xóa: ẩn nhưng giữ chỗ để bàn phím không nhảy -->
+                            <DataTrigger Binding="{Binding IsUsed}" Value="True">
+                                <Setter TargetName="Key" Property="Visibility" Value="Hidden"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsEliminated}" Value="True">
+                                <Setter TargetName="Key" Property="Visibility" Value="Hidden"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </DataTemplate>
+
+        <!-- Nút trợ giúp / điều khiển -->
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontSize" Value="18"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="8,0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                CornerRadius="10"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
+                        <Border x:Name="Bg" Background="#4A2FB0" CornerRadius="14"
+                                Padding="20,12" BorderBrush="#FFD84D" BorderThickness="2">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#6141D8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#585B70"/>
-                </Trigger>
-            </Style.Triggers>
         </Style>
     </Window.Resources>
 
-    <Grid Margin="48">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <Grid>
+        <Grid Margin="40,24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-        <!-- Thanh trạng thái -->
-        <Grid Grid.Row="0">
-            <TextBlock x:Name="TxtProgress" HorizontalAlignment="Left" Foreground="#A6ADC8"/>
-            <TextBlock x:Name="TxtDifficulty" HorizontalAlignment="Center" Foreground="#F9E2AF"/>
-            <TextBlock x:Name="TxtScore" HorizontalAlignment="Right" Foreground="#A6ADC8"
-                       Text="Điểm: 0"/>
-        </Grid>
-
-        <!-- Ảnh câu đố, hoặc mô tả nếu chưa có ảnh -->
-        <Grid Grid.Row="1" Margin="0,24">
-            <Image x:Name="ImgPuzzle" Stretch="Uniform"/>
-            <Border x:Name="PanelNoImage"
-                    Background="#313244" CornerRadius="16" Padding="48"
-                    MaxWidth="1100" VerticalAlignment="Center" HorizontalAlignment="Center"
-                    Visibility="Collapsed">
-                <StackPanel>
-                    <TextBlock Text="[ Chưa có ảnh — mô tả hình cần vẽ ]"
-                               Foreground="#F38BA8" FontSize="18" Margin="0,0,0,16"/>
-                    <TextBlock x:Name="TxtDraw" TextWrapping="Wrap" FontSize="28" LineHeight="40"/>
+            <!-- Thanh trạng thái -->
+            <Grid Grid.Row="0">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                    <TextBlock Text="{Binding ProgressText}" Foreground="White"
+                               FontSize="22" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding DifficultyText}" Foreground="#FFD84D"
+                               FontSize="22" Margin="18,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <TextBlock Text="{Binding LivesText}" Foreground="#FF6B81"
+                               FontSize="26" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding Rubies, StringFormat={}💎 {0}}" Foreground="#7FE7FF"
+                               FontSize="22" Margin="24,0,0,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding Score, StringFormat={}⭐ {0}}" Foreground="#FFD84D"
+                               FontSize="22" Margin="24,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Ảnh câu đố (hoặc mô tả khi chưa có ảnh) -->
+            <Border Grid.Row="1" Margin="0,16" CornerRadius="24" Background="#FFFFFF"
+                    HorizontalAlignment="Center" Padding="12">
+                <Grid>
+                    <Image Source="{Binding ImageSource}" Stretch="Uniform"
+                           Visibility="{Binding HasImage, Converter={StaticResource BoolVis}}"/>
+                    <StackPanel MaxWidth="900" VerticalAlignment="Center"
+                                Visibility="{Binding HasImage, Converter={StaticResource BoolVis},
+                                             ConverterParameter=Invert}">
+                        <TextBlock Text="[ Chưa có ảnh — mô tả hình cần vẽ ]"
+                                   Foreground="#D62828" FontSize="18" Margin="0,0,0,14"/>
+                        <TextBlock Text="{Binding DrawText}" TextWrapping="Wrap"
+                                   FontSize="26" LineHeight="38" Foreground="#2A2440"/>
+                    </StackPanel>
+                </Grid>
             </Border>
+
+            <!-- Gợi ý bằng lời -->
+            <TextBlock Grid.Row="2" Text="{Binding HintText}" Foreground="#FFE9A8"
+                       FontSize="20" TextWrapping="Wrap" HorizontalAlignment="Center"
+                       Margin="0,0,0,6"
+                       Visibility="{Binding HintText, Converter={StaticResource StrVis}}"/>
+
+            <!-- Phản hồi đúng/sai -->
+            <TextBlock Grid.Row="3" Text="{Binding FeedbackText}" FontSize="28" FontWeight="Bold"
+                       HorizontalAlignment="Center" Margin="0,4" Foreground="#FF8A8A">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsFeedbackGood}" Value="True">
+                                <Setter Property="Foreground" Value="#9CFF9C"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <!-- Hàng ô đáp án -->
+            <ItemsControl Grid.Row="4" ItemsSource="{Binding Slots}"
+                          ItemTemplate="{StaticResource SlotTemplate}"
+                          HorizontalAlignment="Center" Margin="0,6">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+
+            <!-- Ngân hàng chữ cái + trợ giúp -->
+            <StackPanel Grid.Row="5" Margin="0,10,0,0">
+                <ItemsControl ItemsSource="{Binding Tiles}"
+                              ItemTemplate="{StaticResource TileTemplate}"
+                              HorizontalAlignment="Center">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                       MaxWidth="820"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
+                    <Button Style="{StaticResource ActionButton}"
+                            Command="{Binding RevealLetterCommand}" Content="🔎 Mở 1 chữ · 30💎"/>
+                    <Button Style="{StaticResource ActionButton}"
+                            Command="{Binding BoomCommand}" Content="💣 Xóa chữ thừa · 50💎"/>
+                    <Button Style="{StaticResource ActionButton}"
+                            Command="{Binding ShowHintCommand}" Content="💡 Gợi ý · 20💎"/>
+                    <Button Style="{StaticResource ActionButton}"
+                            Command="{Binding SkipCommand}" Content="⏭ Bỏ qua"/>
+                </StackPanel>
+
+                <TextBlock Text="Bấm chữ để điền · bấm lại ô để lấy ra · ESC để thoát"
+                           Foreground="#C9BFFF" FontSize="14"
+                           HorizontalAlignment="Center" Margin="0,12,0,0"/>
+            </StackPanel>
         </Grid>
 
-        <!-- Gợi ý -->
-        <TextBlock Grid.Row="2" x:Name="TxtHint" Foreground="#89B4FA"
-                   TextWrapping="Wrap" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+        <!-- Lớp phủ: hết mạng -->
+        <Grid Background="#CC1A1040"
+              Visibility="{Binding IsGameOver, Converter={StaticResource BoolVis}}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="💔 Hết mạng rồi!" Foreground="White" FontSize="52" FontWeight="Bold"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding Score, StringFormat=Điểm của bạn: {0}}" Foreground="#FFD84D"
+                           FontSize="26" Margin="0,16" HorizontalAlignment="Center"/>
+                <Button Style="{StaticResource ActionButton}" Command="{Binding RestartCommand}"
+                        Content="🔄 Chơi lại" HorizontalAlignment="Center" FontSize="24"/>
+            </StackPanel>
+        </Grid>
 
-        <!-- Phản hồi đúng/sai -->
-        <TextBlock Grid.Row="3" x:Name="TxtFeedback" FontSize="26" FontWeight="SemiBold"
-                   HorizontalAlignment="Center" Margin="0,0,0,16"/>
-
-        <!-- Nhập đáp án -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center">
-            <TextBox x:Name="TxtAnswer" Width="520" KeyDown="TxtAnswer_KeyDown"/>
-            <Button Content="Trả lời"  Click="BtnSubmit_Click" Background="#A6E3A1" Foreground="#1E1E2E"/>
-            <Button Content="Gợi ý"    Click="BtnHint_Click"/>
-            <Button Content="Bỏ qua"   Click="BtnSkip_Click"/>
-        </StackPanel>
+        <!-- Lớp phủ: hết bộ câu đố -->
+        <Grid Background="#CC1A1040"
+              Visibility="{Binding IsFinished, Converter={StaticResource BoolVis}}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="🎉 Bạn đã chơi hết bộ câu đố!" Foreground="White"
+                           FontSize="46" FontWeight="Bold" HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding Score, StringFormat=Tổng điểm: {0}}" Foreground="#FFD84D"
+                           FontSize="28" Margin="0,16" HorizontalAlignment="Center"/>
+                <Button Style="{StaticResource ActionButton}" Command="{Binding RestartCommand}"
+                        Content="🔄 Chơi lại từ đầu" HorizontalAlignment="Center" FontSize="24"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>
