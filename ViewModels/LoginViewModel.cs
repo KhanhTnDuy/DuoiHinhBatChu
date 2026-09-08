@@ -26,22 +26,43 @@ public class LoginViewModel : ViewModelBase
 
         UserName = settings.LastUserName;
         // Chưa có tài khoản nào thì mở thẳng thẻ Đăng ký cho đỡ phải bấm thêm
-        _isRegisterMode = !accounts.HasAnyAccount();
+        _mode = accounts.HasAnyAccount() ? LoginMode.Login : LoginMode.Register;
 
         LoginCommand = new RelayCommand(_ => Login());
         RegisterCommand = new RelayCommand(_ => Register());
+        ResetPasswordCommand = new RelayCommand(_ => ResetPassword());
         PlayAsGuestCommand = new RelayCommand(_ => PlayAsGuest());
-        ShowLoginCommand = new RelayCommand(_ => IsRegisterMode = false);
-        ShowRegisterCommand = new RelayCommand(_ => IsRegisterMode = true);
+        ShowLoginCommand = new RelayCommand(_ => Mode = LoginMode.Login);
+        ShowRegisterCommand = new RelayCommand(_ => Mode = LoginMode.Register);
+        ShowForgotCommand = new RelayCommand(_ => Mode = LoginMode.Forgot);
         ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
+        ShowHelpCommand = new RelayCommand(_ => IsHelpOpen = true);
+        HideHelpCommand = new RelayCommand(_ => IsHelpOpen = false);
     }
 
     public RelayCommand LoginCommand { get; }
     public RelayCommand RegisterCommand { get; }
+    public RelayCommand ResetPasswordCommand { get; }
     public RelayCommand PlayAsGuestCommand { get; }
     public RelayCommand ShowLoginCommand { get; }
     public RelayCommand ShowRegisterCommand { get; }
+    public RelayCommand ShowForgotCommand { get; }
     public RelayCommand ToggleThemeCommand { get; }
+    public RelayCommand ShowHelpCommand { get; }
+    public RelayCommand HideHelpCommand { get; }
+
+    private bool _isHelpOpen;
+    /// <summary>
+    /// Bảng hướng dẫn đang mở hay không.
+    ///
+    /// Mấy dòng giải thích luật chơi dồn hết vào đây thay vì rải khắp màn hình:
+    /// người vào lần đầu bấm "?" là đọc được, người đã quen thì không phải nhìn.
+    /// </summary>
+    public bool IsHelpOpen
+    {
+        get => _isHelpOpen;
+        set => SetProperty(ref _isHelpOpen, value);
+    }
 
     // ----- Ô nhập -----
 
@@ -77,21 +98,37 @@ public class LoginViewModel : ViewModelBase
         set => SetProperty(ref _confirmPassword, value);
     }
 
+    private string _phone = "";
+    /// <summary>Số điện thoại: khai lúc đăng ký, và là chìa khóa lúc quên mật khẩu.</summary>
+    public string Phone
+    {
+        get => _phone;
+        set { if (SetProperty(ref _phone, value)) Error = ""; }
+    }
+
     // ----- Trạng thái màn hình -----
 
-    private bool _isRegisterMode;
-    public bool IsRegisterMode
+    /// <summary>Ba thẻ của màn đăng nhập.</summary>
+    public enum LoginMode { Login, Register, Forgot }
+
+    private LoginMode _mode;
+    public LoginMode Mode
     {
-        get => _isRegisterMode;
+        get => _mode;
         set
         {
-            if (!SetProperty(ref _isRegisterMode, value)) return;
+            if (!SetProperty(ref _mode, value)) return;
+
             Error = "";
             OnPropertyChanged(nameof(IsLoginMode));
+            OnPropertyChanged(nameof(IsRegisterMode));
+            OnPropertyChanged(nameof(IsForgotMode));
         }
     }
 
-    public bool IsLoginMode => !IsRegisterMode;
+    public bool IsLoginMode => Mode == LoginMode.Login;
+    public bool IsRegisterMode => Mode == LoginMode.Register;
+    public bool IsForgotMode => Mode == LoginMode.Forgot;
 
     private string _error = "";
     public string Error
@@ -119,7 +156,26 @@ public class LoginViewModel : ViewModelBase
 
     private void Register()
     {
-        AuthResult result = _accounts.Register(UserName, DisplayName, Password, ConfirmPassword);
+        AuthResult result = _accounts.Register(
+            UserName, DisplayName, Password, ConfirmPassword, Phone);
+
+        if (!result.Ok)
+        {
+            Error = result.Error;
+            return;
+        }
+
+        Remember(result.Account!);
+        LoggedIn?.Invoke(result.Account!);
+    }
+
+    /// <summary>
+    /// Quên mật khẩu: khớp tên đăng nhập với số điện thoại đã khai thì đặt mật
+    /// khẩu mới rồi vào game luôn, khỏi bắt gõ lại một lần nữa ở thẻ đăng nhập.
+    /// </summary>
+    private void ResetPassword()
+    {
+        AuthResult result = _accounts.ResetPassword(UserName, Phone, Password, ConfirmPassword);
         if (!result.Ok)
         {
             Error = result.Error;

@@ -32,7 +32,18 @@ app.MapPost("/api/auth/register",
     (RegisterRequest req, AccountService accounts, TokenService tokens) =>
     {
         AuthResult result = accounts.Register(
-            req.UserName, req.DisplayName, req.Password, req.Confirm);
+            req.UserName, req.DisplayName, req.Password, req.Confirm, req.Phone);
+
+        return result.Ok ? Ok(result.Account!, tokens) : BadRequest(result.Error);
+    });
+
+// Quên mật khẩu: khai đúng số điện thoại đã đăng ký thì đặt lại mật khẩu và
+// vào luôn, khỏi phải quay ra đăng nhập lại một lần nữa
+app.MapPost("/api/auth/reset-password",
+    (ResetPasswordRequest req, AccountService accounts, TokenService tokens) =>
+    {
+        AuthResult result = accounts.ResetPassword(
+            req.UserName, req.Phone, req.NewPassword, req.Confirm);
 
         return result.Ok ? Ok(result.Account!, tokens) : BadRequest(result.Error);
     });
