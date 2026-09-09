@@ -16,12 +16,21 @@ public class GameStateService
 {
     private readonly string _accountId;
 
+    /// <summary>
+    /// Chơi khách thì KHÔNG lưu gì cả: chơi xong là mọi thứ về mặc định.
+    /// Muốn giữ điểm và kim cương thì phải đăng ký một tài khoản — cũng vì
+    /// hồ sơ khách là chung cho mọi người ngồi vào máy này, lưu vào đó thì
+    /// người sau tiếp tục ván của người trước, chẳng của ai cả.
+    /// </summary>
+    private readonly bool _isGuest;
+
     /// <param name="accountId">Mã tài khoản đang đăng nhập.</param>
     /// <param name="dbPath">Đường dẫn cơ sở dữ liệu thay thế, chỉ dùng khi test.</param>
     public GameStateService(string accountId, string? dbPath = null)
     {
         GameDatabase.EnsureReady(dbPath);
         _accountId = accountId;
+        _isGuest = accountId == Account.GuestId;
     }
 
     /// <summary>
@@ -31,6 +40,9 @@ public class GameStateService
     /// </summary>
     public PlayerProfile LoadProfile()
     {
+        // Khách luôn bắt đầu lại từ đầu, không đọc gì trong bảng
+        if (_isGuest) return new PlayerProfile();
+
         using GameDbContext db = GameDatabase.Open();
 
         PlayerState? state = db.PlayerStates
@@ -66,6 +78,9 @@ public class GameStateService
     /// <summary>Ghi tiến trình xuống bảng, đè lên lần lưu trước.</summary>
     public void SaveProfile(PlayerProfile profile)
     {
+        // Khách: tiến trình chỉ sống trong bộ nhớ của ván đang chơi
+        if (_isGuest) return;
+
         using GameDbContext db = GameDatabase.Open();
 
         // Bảng tiến trình có khóa ngoại trỏ về bảng tài khoản, tài khoản không
@@ -133,6 +148,8 @@ public class GameStateService
     /// <summary>Xóa sạch tiến trình của tài khoản này.</summary>
     public void ResetProfile()
     {
+        if (_isGuest) return;   // khách có lưu gì đâu mà xóa
+
         using GameDbContext db = GameDatabase.Open();
 
         // ExecuteDelete xóa thẳng bằng một câu lệnh SQL, không phải nạp từng
@@ -154,7 +171,7 @@ public class GameStateService
         // được sang SQL những phép nó hiểu, mà nó không nhìn được vào bên
         // trong một record vừa dựng để biết .Score là cột nào
         return db.PlayerStates
-            .Where(s => s.AccountId != "khach")
+            .Where(s => s.AccountId != Account.GuestId)
             .Join(db.Accounts, s => s.AccountId, a => a.Id, (s, a) => new
             {
                 a.DisplayName,
