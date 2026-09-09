@@ -56,6 +56,26 @@ public class ModeViewModel : ViewModelBase
 
     public string PlayerName => _account.DisplayName;
 
+    /// <summary>
+    /// Chữ cái đầu của tên, hiện trong ô vuông thay cho ảnh đại diện: "Nguyễn
+    /// An" ra "NA", tên một chữ thì lấy một chữ cái.
+    /// </summary>
+    public string Initials
+    {
+        get
+        {
+            string[] words = _account.DisplayName
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            return words.Length switch
+            {
+                0 => "?",
+                1 => words[0][..1].ToUpperInvariant(),
+                _ => (words[0][..1] + words[^1][..1]).ToUpperInvariant(),
+            };
+        }
+    }
+
     public string AccountKindText => _account.IsGuest ? "Chơi khách - offline" : "Đã đăng nhập";
 
     /// <summary>Khách không đấu được: máy chủ cần một tài khoản thật để ghi điểm.</summary>
