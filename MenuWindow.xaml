@@ -1,0 +1,373 @@
+<Window x:Class="DuoiHinhBatChu.MenuWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        mc:Ignorable="d"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:conv="clr-namespace:DuoiHinhBatChu.Converters"
+        Title="Đuổi hình bắt chữ - Chơi một mình"
+        Width="880" Height="720"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        FontFamily="Segoe UI"
+        TextOptions.TextFormattingMode="Ideal"
+        Background="{DynamicResource CanvasBrush}"
+        KeyDown="Window_KeyDown">
+
+    <Window.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+    </Window.Resources>
+
+    <Grid>
+        <Grid Margin="40,32">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>   <!-- người chơi -->
+                <RowDefinition Height="Auto"/>   <!-- tên màn hình -->
+                <RowDefinition Height="Auto"/>   <!-- bốn con số hồ sơ -->
+                <RowDefinition Height="*"/>      <!-- ba lựa chọn -->
+                <RowDefinition Height="Auto"/>   <!-- quay lại -->
+            </Grid.RowDefinitions>
+
+            <!-- === Đầu trang: người đang chơi === -->
+            <Grid Grid.Row="0">
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="46" Height="46" CornerRadius="13"
+                            Background="{DynamicResource PrimaryBrush}">
+                        <TextBlock Text="{Binding Initials}" FontSize="17" FontWeight="Bold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource OnPrimaryBrush}"/>
+                    </Border>
+
+                    <StackPanel VerticalAlignment="Center" Margin="14,0,0,0">
+                        <TextBlock Text="NGƯỜI CHƠI" Style="{StaticResource SectionLabel}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                            <TextBlock Text="{Binding PlayerName}" FontSize="20" FontWeight="Bold"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <Border Style="{StaticResource Pill}" Margin="10,0,0,0"
+                                    Background="{DynamicResource CardAltBrush}">
+                                <TextBlock Text="{Binding AccountKindText}"
+                                           Style="{StaticResource PillText}"
+                                           Foreground="{DynamicResource TextMutedBrush}"/>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+                <Button Style="{StaticResource ThemeToggleButton}"
+                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Command="{Binding ToggleThemeCommand}"/>
+            </Grid>
+
+            <!-- === Tên màn hình === -->
+            <StackPanel Grid.Row="1" HorizontalAlignment="Center" Margin="0,24,0,0">
+                <Border Style="{StaticResource Pill}" HorizontalAlignment="Center"
+                        Background="{DynamicResource PrimarySoftBrush}">
+                    <TextBlock Text="1 NGƯỜI CHƠI · OFFLINE" Style="{StaticResource PillText}"
+                               Foreground="{DynamicResource PrimaryBrush}"/>
+                </Border>
+                <TextBlock Text="Chơi một mình" FontSize="28" FontWeight="Bold"
+                           HorizontalAlignment="Center" Margin="0,8,0,0"
+                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+            </StackPanel>
+
+            <!-- === Bốn con số của hồ sơ === -->
+            <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,20,0,0" Padding="24,16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="ĐIỂM" Style="{StaticResource SectionLabel}"/>
+                        <TextBlock Text="{Binding ScoreText}" Style="{StaticResource HudValue}"
+                                   FontSize="26" Margin="0,4,0,0"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="KIM CƯƠNG" Style="{StaticResource SectionLabel}"/>
+                        <TextBlock Text="{Binding RubiesText}" Style="{StaticResource HudValue}"
+                                   FontSize="26" Margin="0,4,0,0"
+                                   Foreground="{DynamicResource TertiaryBrush}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="MẠNG" Style="{StaticResource SectionLabel}"/>
+                        <TextBlock Text="{Binding LivesText}" Style="{StaticResource HudValue}"
+                                   FontSize="26" Margin="0,4,0,0"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="3">
+                        <TextBlock Text="ĐÃ GIẢI" Style="{StaticResource SectionLabel}"/>
+                        <TextBlock Text="{Binding SolvedText}" Style="{StaticResource HudValue}"
+                                   FontSize="26" Margin="0,4,0,0"
+                                   Foreground="{DynamicResource SuccessBrush}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- === Ba lựa chọn ===
+                 Cùng khuôn với thẻ chế độ: biểu tượng + nhãn, tên, mô tả, rồi
+                 nút ghim dưới đáy. -->
+            <Grid Grid.Row="3" Margin="0,20,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- ===== Chơi tiếp: thẻ to nhất, việc người chơi hay làm nhất ===== -->
+                <Border Grid.Row="0" Style="{StaticResource Card}" Padding="20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Style="{StaticResource ModeIcon}"
+                                VerticalAlignment="Center">
+                            <!-- Tam giác "phát" -->
+                            <Viewbox Width="20" Height="20">
+                                <Canvas Width="24" Height="24">
+                                    <Path Fill="{DynamicResource PrimaryBrush}"
+                                          Data="M 7,4 L 20,12 L 7,20 Z"/>
+                                </Canvas>
+                            </Viewbox>
+                        </Border>
+
+                        <StackPanel Grid.Column="1" Margin="16,0,16,0" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding ContinueTitle}" FontSize="22"
+                                           FontWeight="Bold" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <Border Style="{StaticResource Pill}" Margin="10,0,0,0"
+                                        Background="{DynamicResource PrimarySoftBrush}">
+                                    <TextBlock Text="{Binding ContinuePill}"
+                                               Style="{StaticResource PillText}"
+                                               Foreground="{DynamicResource PrimaryBrush}"/>
+                                </Border>
+                            </StackPanel>
+                            <TextBlock Text="{Binding ContinueDetail}" TextWrapping="Wrap"
+                                       FontSize="14" LineHeight="22" Margin="0,6,0,0"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        </StackPanel>
+
+                        <Button Grid.Column="2" Style="{StaticResource PrimaryButton}"
+                                VerticalAlignment="Center"
+                                Command="{Binding ContinueCommand}" Content="Chơi ngay  →"/>
+                    </Grid>
+                </Border>
+
+                <!-- ===== Hai thẻ nhỏ ===== -->
+                <Grid Grid.Row="1" Margin="0,18,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Chơi mới -->
+                    <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,9,0"
+                            Padding="20"
+                            Visibility="{Binding HasProgress, Converter={StaticResource BoolVis}}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Biểu tượng và tên xếp ngang cho đỡ tốn chiều cao -->
+                            <StackPanel Grid.Row="0" Orientation="Horizontal">
+                                <Border Style="{StaticResource ModeIcon}">
+                                    <!-- Mũi tên vòng lại -->
+                                    <Viewbox Width="22" Height="22">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Style="{StaticResource ModeIconStroke}"
+                                                  Stroke="{DynamicResource PrimaryBrush}"
+                                                  Data="M 20,12 A 8,8 0 1 1 17,5.8"/>
+                                            <Path Fill="{DynamicResource PrimaryBrush}"
+                                                  Data="M 18,3 L 18,8.5 L 12.5,8.5 Z"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Border>
+                                <TextBlock Text="Chơi mới" FontSize="20" FontWeight="Bold"
+                                           VerticalAlignment="Center" Margin="14,0,0,0"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            </StackPanel>
+
+                            <TextBlock Grid.Row="1" TextWrapping="Wrap" FontSize="14"
+                                       LineHeight="22" Margin="0,12,0,0"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       Text="Làm lại từ câu đầu. Điểm, kim cương và câu đã giải sẽ bị xóa."/>
+
+                            <Button Grid.Row="3" Style="{StaticResource SoftButton}"
+                                    Margin="0,14,0,0" HorizontalAlignment="Left"
+                                    Command="{Binding NewGameCommand}"
+                                    Content="Chơi lại từ đầu"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Bảng xếp hạng.
+                         Tài khoản mới chưa có gì để "chơi lại", thẻ Chơi mới ẩn
+                         đi và để lại một nửa trống bên trái - nên lúc đó thẻ này
+                         trải rộng cả hai cột thay vì đứng lệch một bên. -->
+                    <Border Padding="20">
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource Card}">
+                                <Setter Property="Grid.Column" Value="1"/>
+                                <Setter Property="Margin" Value="9,0,0,0"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasProgress}" Value="False">
+                                        <Setter Property="Grid.Column" Value="0"/>
+                                        <Setter Property="Grid.ColumnSpan" Value="2"/>
+                                        <Setter Property="Margin" Value="0"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Orientation="Horizontal">
+                                <Border Style="{StaticResource ModeIcon}"
+                                        Background="{DynamicResource TertiarySoftBrush}">
+                                    <!-- Cúp -->
+                                    <Viewbox Width="22" Height="22">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Style="{StaticResource ModeIconStroke}"
+                                                  Stroke="{DynamicResource TertiaryBrush}"
+                                                  Data="M 7,3 L 17,3 L 17,9 A 5,5 0 0 1 7,9 Z"/>
+                                            <Path Style="{StaticResource ModeIconStroke}"
+                                                  Stroke="{DynamicResource TertiaryBrush}"
+                                                  Data="M 7,4.5 L 4,4.5 A 3.5,3.5 0 0 0 7.5,8.2"/>
+                                            <Path Style="{StaticResource ModeIconStroke}"
+                                                  Stroke="{DynamicResource TertiaryBrush}"
+                                                  Data="M 17,4.5 L 20,4.5 A 3.5,3.5 0 0 1 16.5,8.2"/>
+                                            <Path Style="{StaticResource ModeIconStroke}"
+                                                  Stroke="{DynamicResource TertiaryBrush}"
+                                                  Data="M 12,14 L 12,17 M 8,21 L 16,21 L 16,19 L 8,19 Z"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Border>
+                                <TextBlock Text="Bảng xếp hạng" FontSize="20" FontWeight="Bold"
+                                           VerticalAlignment="Center" Margin="14,0,0,0"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            </StackPanel>
+
+                            <TextBlock Grid.Row="1" TextWrapping="Wrap" FontSize="14"
+                                       LineHeight="22" Margin="0,12,0,0"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       Text="Ai chơi trên máy này được bao nhiêu điểm, giải được mấy câu."/>
+
+                            <Button Grid.Row="3" Style="{StaticResource SoftButton}"
+                                    Margin="0,14,0,0" HorizontalAlignment="Left"
+                                    Command="{Binding ShowLeaderboardCommand}"
+                                    Content="Xem bảng"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- === Quay lại === -->
+            <Button Grid.Row="4" Style="{StaticResource GhostButton}" Margin="0,20,0,0"
+                    HorizontalAlignment="Center"
+                    Command="{Binding BackCommand}" Content="← Đổi chế độ chơi"/>
+        </Grid>
+
+        <!-- ==================== Lớp phủ: hỏi lại trước khi xóa tiến trình ==================== -->
+        <Grid Background="{DynamicResource ScrimBrush}"
+              Visibility="{Binding IsConfirmingNewGame, Converter={StaticResource BoolVis}}">
+            <Border Style="{StaticResource Card}" CornerRadius="20" Padding="32,28" Width="460"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Text="Chơi mới từ đầu?" FontSize="22" FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock TextWrapping="Wrap" FontSize="14" LineHeight="22" Margin="0,12,0,0"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Text="Điểm, kim cương và danh sách câu đã giải sẽ bị xóa hết. Việc này không lấy lại được."/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                                Margin="0,22,0,0">
+                        <Button Style="{StaticResource GhostButton}"
+                                Command="{Binding CancelNewGameCommand}" Content="Thôi"/>
+                        <Button Style="{StaticResource PrimaryButton}" Margin="10,0,0,0"
+                                Command="{Binding ConfirmNewGameCommand}"
+                                Content="Xóa và chơi mới"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ==================== Lớp phủ: bảng xếp hạng ==================== -->
+        <Grid Background="{DynamicResource ScrimBrush}"
+              Visibility="{Binding IsLeaderboardOpen, Converter={StaticResource BoolVis}}">
+            <Border Style="{StaticResource Card}" CornerRadius="20" Padding="32,28"
+                    Width="520" MaxHeight="560"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Bảng xếp hạng"
+                               FontSize="22" FontWeight="Bold" Margin="0,0,0,4"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock DockPanel.Dock="Top" FontSize="13" Margin="0,0,0,16"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Text="Tính theo các tài khoản chơi một mình trên máy này."/>
+
+                    <Button DockPanel.Dock="Bottom" Style="{StaticResource PrimaryButton}"
+                            HorizontalAlignment="Center" Margin="0,20,0,0"
+                            Command="{Binding HideLeaderboardCommand}" Content="Đóng"/>
+
+                    <TextBlock DockPanel.Dock="Bottom" TextWrapping="Wrap" FontSize="14"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Text="Chưa ai ghi được điểm nào. Chơi vài câu rồi quay lại đây."
+                               Visibility="{Binding IsLeaderboardEmpty,
+                                            Converter={StaticResource BoolVis}}"/>
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Leaderboard}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{DynamicResource CardAltBrush}"
+                                            CornerRadius="10" Padding="14,10" Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Grid.Column="0" Text="{Binding DisplayName}"
+                                                       FontSize="15" FontWeight="SemiBold"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+                                            <TextBlock Grid.Column="1" FontSize="13"
+                                                       Margin="0,0,16,0" VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource TextMutedBrush}"
+                                                       Text="{Binding Solved, StringFormat={}{0} câu}"/>
+
+                                            <TextBlock Grid.Column="2"
+                                                       Style="{StaticResource HudValue}"
+                                                       Text="{Binding Score}"
+                                                       Foreground="{DynamicResource PrimaryBrush}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

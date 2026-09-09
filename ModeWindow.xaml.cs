@@ -28,12 +28,17 @@ public partial class ModeWindow : Window
         DataContext = _vm;
     }
 
-    /// <summary>Mở màn chơi rồi mới đóng cửa sổ này, để ứng dụng không tự thoát.</summary>
+    /// <summary>
+    /// Chọn 1 người chơi thì sang MENU, không vào thẳng màn chơi: ở đó người
+    /// chơi còn chọn chơi tiếp hay chơi mới, và xem bảng xếp hạng.
+    ///
+    /// Mở cửa sổ mới rồi mới đóng cửa sổ này, để ứng dụng không tự thoát.
+    /// </summary>
     private void StartSolo()
     {
-        var game = new MainWindow(_account, _settings);
-        Application.Current.MainWindow = game;
-        game.Show();
+        var menu = new MenuWindow(_account, _settings);
+        Application.Current.MainWindow = menu;
+        menu.Show();
         Close();
     }
 
