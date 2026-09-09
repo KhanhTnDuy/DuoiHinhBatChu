@@ -1,9 +1,9 @@
-using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
+using DuoiHinhBatChu.Data;
 using DuoiHinhBatChu.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace DuoiHinhBatChu.Services;
 
@@ -19,14 +19,19 @@ public readonly record struct AuthResult(Account? Account, string Error)
 }
 
 /// <summary>
-/// Đăng ký và đăng nhập bằng danh sách tài khoản lưu ở Data/accounts.json.
+/// Đăng ký và đăng nhập bằng bảng <c>Accounts</c> trong cơ sở dữ liệu
+/// (SQLite, file Data/game.db — xem <see cref="GameDatabase"/>).
 ///
 /// Mật khẩu băm bằng PBKDF2-SHA256, mỗi tài khoản một muối ngẫu nhiên,
 /// và so sánh theo kiểu chống dò thời gian.
 ///
-/// Lưu ý: đây là đăng nhập cục bộ trên máy người chơi, đủ để tách tiến trình
-/// giữa nhiều người dùng chung một máy. Khi làm chế độ đấu online thì việc
-/// xác thực phải chuyển lên máy chủ — xem Docs/MULTIPLAYER.md.
+/// Lớp này không giữ sẵn DbContext nào: mỗi việc mở một phiên rồi đóng ngay,
+/// nhờ vậy máy chủ dùng chung một AccountService cho nhiều người cùng lúc vẫn
+/// an toàn.
+///
+/// Lưu ý: ở máy người chơi đây là đăng nhập cục bộ, đủ để tách tiến trình giữa
+/// nhiều người dùng chung một máy. Chế độ đấu online thì tài khoản nằm trong
+/// cơ sở dữ liệu của máy chủ — xem Docs/MULTIPLAYER.md.
 /// </summary>
 public class AccountService
 {
@@ -47,21 +52,17 @@ public class AccountService
     private static readonly Regex PhonePattern =
         new("^0[0-9]{9}$", RegexOptions.Compiled);
 
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
-
-    private readonly string _filePath;
-
-    public AccountService(string? filePath = null)
-    {
-        string dir = Path.Combine(AppContext.BaseDirectory, "Data");
-        Directory.CreateDirectory(dir);
-        _filePath = filePath ?? Path.Combine(dir, "accounts.json");
-    }
+    /// <param name="dbPath">Đường dẫn cơ sở dữ liệu thay thế, chỉ dùng khi test.</param>
+    public AccountService(string? dbPath = null) => GameDatabase.EnsureReady(dbPath);
 
     /// <summary>Đã có tài khoản nào chưa — dùng để chọn mở tab Đăng nhập hay Đăng ký.</summary>
-    public bool HasAnyAccount() => Load().Count > 0;
+    public bool HasAnyAccount()
+    {
+        using GameDbContext db = GameDatabase.Open();
+        return db.Accounts.Any(a => !a.IsGuest);
+    }
 
-    /// <summary>Tạo tài khoản mới rồi ghi xuống file.</summary>
+    /// <summary>Tạo tài khoản mới rồi ghi xuống cơ sở dữ liệu.</summary>
     /// <param name="phone">
     /// Số điện thoại, dùng để lấy lại tài khoản khi quên mật khẩu.
     /// </param>
@@ -90,13 +91,16 @@ public class AccountService
         if (!PhonePattern.IsMatch(phone))
             return AuthResult.Fail("Số điện thoại phải là 10 chữ số và bắt đầu bằng 0.");
 
-        List<Account> accounts = Load();
+        using GameDbContext db = GameDatabase.Open();
 
-        if (accounts.Any(a => a.UserName.Equals(userName, StringComparison.OrdinalIgnoreCase)))
+        // SQLite so sánh chuỗi có phân biệt hoa thường, nên phải hạ cả hai bên
+        // về chữ thường thì "Nam" và "nam" mới coi là một tên
+        string lower = userName.ToLowerInvariant();
+        if (db.Accounts.Any(a => a.UserName.ToLower() == lower))
             return AuthResult.Fail("Tên đăng nhập này đã có người dùng.");
 
         // Một số chỉ gắn một tài khoản, không thì lúc quên mật khẩu không biết mở tài khoản nào
-        if (accounts.Any(a => a.Phone == phone))
+        if (db.Accounts.Any(a => a.Phone == phone))
             return AuthResult.Fail("Số điện thoại này đã dùng cho một tài khoản khác.");
 
         byte[] salt = RandomNumberGenerator.GetBytes(SaltBytes);
@@ -110,8 +114,18 @@ public class AccountService
             PasswordHash = Convert.ToBase64String(Hash(password, salt)),
         };
 
-        accounts.Add(account);
-        Save(accounts);
+        db.Accounts.Add(account);
+
+        try
+        {
+            db.SaveChanges();
+        }
+        catch (DbUpdateException)
+        {
+            // Hai người bấm đăng ký cùng lúc cùng một tên: kiểm tra ở trên lọt
+            // lưới nhưng ràng buộc duy nhất trong bảng vẫn chặn được
+            return AuthResult.Fail("Tên đăng nhập hoặc số điện thoại này vừa có người dùng.");
+        }
 
         return AuthResult.Success(account);
     }
@@ -124,11 +138,13 @@ public class AccountService
         if (userName.Length == 0 || password.Length == 0)
             return AuthResult.Fail("Nhập đủ tên đăng nhập và mật khẩu.");
 
-        Account? account = Load()
-            .FirstOrDefault(a => a.UserName.Equals(userName, StringComparison.OrdinalIgnoreCase));
+        using GameDbContext db = GameDatabase.Open();
+
+        string lower = userName.ToLowerInvariant();
+        Account? account = db.Accounts.FirstOrDefault(a => a.UserName.ToLower() == lower);
 
         // Báo lỗi chung cho cả hai trường hợp để không lộ tài khoản nào có thật
-        if (account == null || !Verify(password, account))
+        if (account == null || account.IsGuest || !Verify(password, account))
             return AuthResult.Fail("Sai tên đăng nhập hoặc mật khẩu.");
 
         return AuthResult.Success(account);
@@ -157,20 +173,23 @@ public class AccountService
         if (newPassword != confirm)
             return AuthResult.Fail("Hai lần nhập mật khẩu chưa giống nhau.");
 
-        List<Account> accounts = Load();
-        Account? account = accounts.FirstOrDefault(
-            a => a.UserName.Equals(userName, StringComparison.OrdinalIgnoreCase));
+        using GameDbContext db = GameDatabase.Open();
+
+        string lower = userName.ToLowerInvariant();
+        Account? account = db.Accounts.FirstOrDefault(a => a.UserName.ToLower() == lower);
 
         // Nói chung một câu, không tách "không có tài khoản" với "sai số điện thoại",
         // để người lạ không dò được ai đang dùng số nào
-        if (account == null || account.Phone != phone)
+        if (account == null || account.IsGuest || account.Phone != phone)
             return AuthResult.Fail("Tên đăng nhập và số điện thoại không khớp.");
 
         byte[] salt = RandomNumberGenerator.GetBytes(SaltBytes);
         account.PasswordSalt = Convert.ToBase64String(salt);
         account.PasswordHash = Convert.ToBase64String(Hash(newPassword, salt));
 
-        Save(accounts);
+        // account là đối tượng do chính phiên này lấy lên nên EF đang theo dõi
+        // nó: chỉ cần sửa thuộc tính rồi lưu, không phải gọi Update
+        db.SaveChanges();
         return AuthResult.Success(account);
     }
 
@@ -183,13 +202,15 @@ public class AccountService
     {
         if (account.IsGuest) return;
 
-        List<Account> accounts = Load();
-        Account? stored = accounts.FirstOrDefault(a => a.Id == account.Id);
+        using GameDbContext db = GameDatabase.Open();
+
+        Account? stored = db.Accounts.FirstOrDefault(a => a.Id == account.Id);
         if (stored == null) return;
 
         stored.DisplayName = displayName.Trim();
+        db.SaveChanges();
+
         account.DisplayName = stored.DisplayName;
-        Save(accounts);
     }
 
     // ----- Băm mật khẩu -----
@@ -208,38 +229,10 @@ public class AccountService
         }
         catch (FormatException)
         {
-            return false;   // file tài khoản bị sửa tay hỏng
+            return false;   // dữ liệu tài khoản bị sửa tay hỏng
         }
 
         // So sánh theo thời gian cố định, không thoát sớm ở byte đầu tiên khác nhau
         return CryptographicOperations.FixedTimeEquals(Hash(password, salt), expected);
-    }
-
-    // ----- Đọc ghi file -----
-
-    private List<Account> Load()
-    {
-        if (!File.Exists(_filePath)) return new();
-
-        try
-        {
-            string json = File.ReadAllText(_filePath);
-            return JsonSerializer.Deserialize<List<Account>>(json, JsonOptions) ?? new();
-        }
-        catch
-        {
-            return new();   // file hỏng thì coi như chưa có tài khoản nào
-        }
-    }
-
-    private void Save(List<Account> accounts)
-    {
-        try
-        {
-            File.WriteAllText(_filePath, JsonSerializer.Serialize(accounts, JsonOptions));
-        }
-        catch (IOException)
-        {
-        }
     }
 }

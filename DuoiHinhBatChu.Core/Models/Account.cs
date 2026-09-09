@@ -1,7 +1,7 @@
 namespace DuoiHinhBatChu.Models;
 
 /// <summary>
-/// Một tài khoản người chơi lưu trong Data/accounts.json.
+/// Một tài khoản người chơi, mỗi đối tượng là một dòng trong bảng Accounts.
 ///
 /// Mật khẩu không bao giờ lưu dạng chữ thường: chỉ giữ chuỗi băm PBKDF2 và
 /// muối (salt) riêng của từng tài khoản — xem <see cref="Services.AccountService"/>.

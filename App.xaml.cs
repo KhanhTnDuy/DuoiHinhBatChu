@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Threading;
+using DuoiHinhBatChu.Data;
 
 namespace DuoiHinhBatChu;
 
@@ -12,6 +13,11 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // Mở (và tạo nếu chưa có) cơ sở dữ liệu trước khi hiện màn đăng nhập,
+        // đồng thời chuyển nốt dữ liệu cũ còn nằm ở file JSON sang bảng
+        GameDatabase.EnsureReady();
+
         new LoginWindow().Show();
     }
 
