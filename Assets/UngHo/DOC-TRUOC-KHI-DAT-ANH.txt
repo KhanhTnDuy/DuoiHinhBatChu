@@ -1,0 +1,6 @@
+Dat anh ma QR ung ho vao thu muc nay (qr.png, qr.jpg... ten gi cung duoc).
+
+Man dang nhap tu lay file anh dau tien tim thay o day. Chua co anh thi cho do
+hien mot o gach dut, game van chay binh thuong.
+
+Anh vuong (vd 512x512) se dep nhat vi o hien thi la hinh vuong 96x96.
