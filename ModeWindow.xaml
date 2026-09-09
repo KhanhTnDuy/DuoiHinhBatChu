@@ -160,7 +160,7 @@
                     </StackPanel>
 
                     <Button Grid.Row="5" Style="{StaticResource PrimaryButton}"
-                            Command="{Binding PlaySoloCommand}" Content="Chơi ngay  →"/>
+                            Command="{Binding PlaySoloCommand}" Content="Chọn chế độ này  →"/>
                 </Grid>
             </Border>
 
@@ -255,7 +255,7 @@
                     </Border>
 
                     <Button Grid.Row="5" Style="{StaticResource TertiaryButton}"
-                            Command="{Binding ShowOnlineCommand}" Content="Chơi ngay  →"/>
+                            Command="{Binding ShowOnlineCommand}" Content="Nối tới máy chủ  →"/>
                 </Grid>
             </Border>
         </Grid>
