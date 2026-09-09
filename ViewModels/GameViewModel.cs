@@ -76,6 +76,8 @@ public class GameViewModel : ViewModelBase
         BoomCommand = new RelayCommand(_ => BoomExtraLetters());
         ShowHintCommand = new RelayCommand(_ => ShowHint());
         SkipCommand = new RelayCommand(_ => Skip());
+        ClearCommand = new RelayCommand(_ => ClearAnswer(), _ => CanClear);
+        SubmitCommand = new RelayCommand(_ => SubmitAnswer(), _ => CanSubmit);
         PauseCommand = new RelayCommand(_ => Pause());
         ResumeCommand = new RelayCommand(_ => Resume());
         RestartCommand = new RelayCommand(_ => Restart());
@@ -91,6 +93,8 @@ public class GameViewModel : ViewModelBase
     public RelayCommand BoomCommand { get; }
     public RelayCommand ShowHintCommand { get; }
     public RelayCommand SkipCommand { get; }
+    public RelayCommand ClearCommand { get; }
+    public RelayCommand SubmitCommand { get; }
     public RelayCommand PauseCommand { get; }
     public RelayCommand ResumeCommand { get; }
     public RelayCommand RestartCommand { get; }
@@ -426,8 +430,38 @@ public class GameViewModel : ViewModelBase
         tile.IsUsed = true;
         AudioService.Instance.PlayClick();
 
-        if (IsAnswerFull()) CheckAnswer();
+        // Điền kín ô KHÔNG còn tự chấm nữa: người chơi tự bấm "Trả lời" khi
+        // thấy ưng. Tự chấm nghĩa là chữ cuối vừa đặt xuống là mất mạng ngay,
+        // không kịp nhìn lại hay đổi ý.
     }
+
+    /// <summary>Nhả hết chữ người chơi đã đặt về ngân hàng phím.</summary>
+    private void ClearAnswer()
+    {
+        if (!CanClear) return;
+
+        foreach (AnswerSlot slot in Slots)
+        {
+            // Chữ do trợ giúp mở thì giữ nguyên - đã trả kim cương cho nó rồi
+            if (slot.IsSpace || slot.IsRevealedByHint) continue;
+            ReturnTile(slot);
+        }
+
+        AudioService.Instance.PlayClick();
+    }
+
+    private void SubmitAnswer()
+    {
+        if (!CanSubmit) return;
+        CheckAnswer();
+    }
+
+    /// <summary>Còn chữ nào người chơi tự điền để mà xóa không.</summary>
+    public bool CanClear => !_locked && !IsPaused
+        && Slots.Any(s => !s.IsSpace && s.HasValue && !s.IsRevealedByHint);
+
+    /// <summary>Phải điền kín hết ô mới trả lời được.</summary>
+    public bool CanSubmit => !_locked && !IsPaused && Slots.Count > 0 && IsAnswerFull();
 
     private void TakeBack(AnswerSlot? slot)
     {
