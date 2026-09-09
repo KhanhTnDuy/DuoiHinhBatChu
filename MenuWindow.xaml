@@ -69,6 +69,32 @@
                 <TextBlock Text="Chơi một mình" FontSize="28" FontWeight="Bold"
                            HorizontalAlignment="Center" Margin="0,8,0,0"
                            Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+                <!-- Lời nhắc cho người chơi khách. Màu hổ phách như mọi thứ
+                     "coi chừng" khác trong game, không phải màu lỗi đỏ - đây
+                     là nhắc chứ không phải báo hỏng. -->
+                <Border CornerRadius="12" Padding="16,12" Margin="0,14,0,0" Width="620"
+                        Background="{DynamicResource TertiarySoftBrush}"
+                        Visibility="{Binding IsGuest, Converter={StaticResource BoolVis}}">
+                    <!-- Grid chứ không phải StackPanel ngang: StackPanel cho con
+                         rộng vô hạn nên TextWrapping không bao giờ chạy, chữ bị
+                         cắt cụt ở mép thẻ. -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="!" FontSize="17" FontWeight="Bold"
+                                   VerticalAlignment="Center" Margin="4,0,14,0"
+                                   Foreground="{DynamicResource TertiaryBrush}"/>
+
+                        <TextBlock Grid.Column="1" TextWrapping="Wrap" FontSize="14"
+                                   LineHeight="22"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Text="Bạn đang chơi ở chế độ khách để trải nghiệm trò chơi. Hãy đăng nhập bằng tài khoản để bảo vệ tiến trình."/>
+                    </Grid>
+                </Border>
             </StackPanel>
 
             <!-- === Bốn con số của hồ sơ === -->
