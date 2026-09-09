@@ -114,6 +114,79 @@
         </Setter>
     </Style>
 
+    <!-- ===== Mảnh ghép của thẻ chọn chế độ chơi =====
+         Ô biểu tượng, viên trạng thái và chip thông tin - xếp lại thì một thẻ
+         chế độ có đủ thứ để nhìn, không còn là một hộp trống mấy dòng chữ. -->
+
+    <!-- Ô vuông bo góc đựng biểu tượng, 44x44 -->
+    <Style x:Key="ModeIcon" TargetType="Border">
+        <Setter Property="Width" Value="44"/>
+        <Setter Property="Height" Value="44"/>
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Background" Value="{DynamicResource PrimarySoftBrush}"/>
+    </Style>
+
+    <!-- Viên bo tròn hết cỡ: nhãn trạng thái OFFLINE / ONLINE -->
+    <Style x:Key="Pill" TargetType="Border">
+        <Setter Property="CornerRadius" Value="999"/>
+        <Setter Property="Padding" Value="10,4"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="PillText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Consolas, Segoe UI"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+    </Style>
+
+    <!-- Chip thông tin: một mẩu sự thật về chế độ, vd "5 mạng" -->
+    <Style x:Key="Chip" TargetType="Border">
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="9,4"/>
+        <Setter Property="Margin" Value="0,0,6,6"/>
+        <Setter Property="Background" Value="{DynamicResource CardAltBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <Style x:Key="ChipText" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+    </Style>
+
+    <!-- Nét vẽ của các biểu tượng người: dùng chung cho cả hai thẻ -->
+    <Style x:Key="ModeIconStroke" TargetType="Path">
+        <Setter Property="StrokeThickness" Value="1.8"/>
+        <Setter Property="StrokeStartLineCap" Value="Round"/>
+        <Setter Property="StrokeEndLineCap" Value="Round"/>
+    </Style>
+
+    <!-- Nút hành động màu hổ phách, cho thẻ đấu nhiều người -->
+    <Style x:Key="TertiaryButton" TargetType="Button">
+        <Setter Property="Foreground" Value="#291800"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" CornerRadius="10" Padding="22,11"
+                            Background="{DynamicResource TertiaryBrush}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.88"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Nút dạng thẻ, dùng cho hàng trợ giúp và ô chọn chế độ chơi -->
     <Style x:Key="CardButton" TargetType="Button">
         <Setter Property="Cursor" Value="Hand"/>

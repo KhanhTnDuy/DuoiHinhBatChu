@@ -23,6 +23,7 @@
     <SolidColorBrush x:Key="ErrorBrush"        Color="#FF8A8A"/>
     <SolidColorBrush x:Key="ErrorSoftBrush"    Color="#4A1717"/>
     <SolidColorBrush x:Key="SuccessBrush"      Color="#6FDA8E"/>
+    <SolidColorBrush x:Key="SuccessSoftBrush"  Color="#14301F"/>
 
     <SolidColorBrush x:Key="TileBrush"        Color="#1E2A42"/>
     <SolidColorBrush x:Key="TileBevelBrush"   Color="#0C1322"/>
