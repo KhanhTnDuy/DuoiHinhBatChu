@@ -88,21 +88,15 @@ public class MenuViewModel : ViewModelBase
 
     public string ContinueTitle => HasProgress ? "Chơi tiếp" : "Bắt đầu chơi";
 
-    public string ContinueDetail
-    {
-        get
-        {
-            // Nói thẳng ngay ở đây thay vì để người chơi khách chơi cả buổi
-            // rồi mới ngã ngửa vì mất sạch
-            if (_account.IsGuest)
-                return $"Bộ câu đố hiện có {_totalPuzzles} câu. Chơi khách thì "
-                     + "thoát ra là mất hết - đăng ký một tài khoản để giữ điểm.";
+    public string ContinueDetail => HasProgress
+        ? "Vào lại đúng câu bạn đang dở, giữ nguyên điểm và kim cương."
+        : $"Bộ câu đố hiện có {_totalPuzzles} câu.";
 
-            return HasProgress
-                ? "Vào lại đúng câu bạn đang dở, giữ nguyên điểm và kim cương."
-                : $"Bộ câu đố hiện có {_totalPuzzles} câu. Chơi tới đâu game tự lưu tới đó.";
-        }
-    }
+    /// <summary>
+    /// Đang chơi khách. Nói thẳng ngay trên menu thay vì để người ta chơi cả
+    /// buổi rồi mới ngã ngửa vì mất sạch điểm.
+    /// </summary>
+    public bool IsGuest => _account.IsGuest;
 
     /// <summary>Viên nhãn trên thẻ Chơi tiếp: "CÂU 3/6" hoặc "CHƯA CHƠI CÂU NÀO".</summary>
     public string ContinuePill => HasProgress
