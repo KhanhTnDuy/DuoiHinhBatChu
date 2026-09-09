@@ -6,9 +6,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:conv="clr-namespace:DuoiHinhBatChu.Converters"
         Title="Đuổi hình bắt chữ"
-        WindowStyle="None"
         WindowState="Maximized"
-        ResizeMode="NoResize"
+        MinWidth="1280" MinHeight="900"
         FontFamily="Segoe UI"
         TextOptions.TextFormattingMode="Ideal"
         Background="{DynamicResource CanvasBrush}"
@@ -340,7 +339,10 @@
                                HorizontalAlignment="Center" Margin="0,0,0,10"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
 
-                <Border Grid.Row="1" CornerRadius="24" Padding="10"
+                <!-- MinHeight: cửa sổ thu nhỏ hết cỡ thì hàng đáp án và bàn phím
+                     (cao bao nhiêu tùy độ dài đáp án) ăn hết chỗ, khung ảnh bị ép
+                     còn một vạch. Đặt sàn để ảnh luôn còn nhìn được. -->
+                <Border Grid.Row="1" CornerRadius="24" Padding="10" MinHeight="260"
                         Background="{DynamicResource CardBrush}"
                         BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
                     <Grid>
