@@ -136,10 +136,12 @@
                         </Border>
                     </StackPanel>
 
-                    <TextBlock Grid.Row="2" TextWrapping="Wrap" FontSize="14" LineHeight="22"
+                    <!-- Câu dẫn thay cho đoạn mô tả khô: mấy chuyện 5 mạng,
+                         trợ giúp, lưu tiến trình đã nằm ở hàng chip bên dưới -->
+                    <TextBlock Grid.Row="2" TextWrapping="Wrap" FontSize="15" LineHeight="24"
                                Margin="0,10,0,0"
                                Foreground="{DynamicResource TextSecondaryBrush}"
-                               Text="Chạy hẳn trên máy này, không cần mạng. Điểm, mạng và kim cương lưu vào hồ sơ của bạn."/>
+                               Text="Luyện tay cho chắc, rồi hãy đi giành ngôi vô địch."/>
 
                     <!-- Hàng chip: mấy điều cần biết trước khi chọn -->
                     <StackPanel Grid.Row="3" Margin="0,16,0,0">
@@ -160,7 +162,7 @@
                     </StackPanel>
 
                     <Button Grid.Row="5" Style="{StaticResource PrimaryButton}"
-                            Command="{Binding PlaySoloCommand}" Content="Chọn chế độ này  →"/>
+                            Command="{Binding PlaySoloCommand}" Content="Đi tới menu  →"/>
                 </Grid>
             </Border>
 
@@ -219,10 +221,10 @@
                         </Border>
                     </StackPanel>
 
-                    <TextBlock Grid.Row="2" TextWrapping="Wrap" FontSize="14" LineHeight="22"
+                    <TextBlock Grid.Row="2" TextWrapping="Wrap" FontSize="15" LineHeight="24"
                                Margin="0,10,0,0"
                                Foreground="{DynamicResource TextSecondaryBrush}"
-                               Text="Từ 2 người trở lên, cùng một câu đố. Trả lời ngay được gần trọn điểm, sát giờ chỉ còn 20%."/>
+                               Text="Cùng một câu đố, ai nhanh tay hơn thì thắng."/>
 
                     <StackPanel Grid.Row="3" Margin="0,16,0,0">
                         <Rectangle Height="1" Fill="{DynamicResource CardBorderBrush}"
