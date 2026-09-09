@@ -187,6 +187,32 @@
         </Setter>
     </Style>
 
+    <!-- Thanh thời gian còn lại của câu đang chơi.
+         Giá trị chạy từ 1 về 0, nên thanh ngắn dần chứ không dài ra. -->
+    <Style x:Key="TimeBar" TargetType="ProgressBar">
+        <Setter Property="Height" Value="8"/>
+        <Setter Property="Minimum" Value="0"/>
+        <Setter Property="Maximum" Value="1"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource CardAltBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ProgressBar">
+                    <Border CornerRadius="999" ClipToBounds="True"
+                            Background="{TemplateBinding Background}">
+                        <Grid>
+                            <Rectangle x:Name="PART_Track"/>
+                            <Rectangle x:Name="PART_Indicator" HorizontalAlignment="Left"
+                                       RadiusX="4" RadiusY="4"
+                                       Fill="{TemplateBinding Foreground}"/>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Nút phụ nền nhạt.
          GhostButton lấy nền CardBrush nên đặt NGAY TRONG một thẻ Card là hai
          nền trùng màu, nút gần như tàng hình. Nút này lấy nền PrimarySoftBrush

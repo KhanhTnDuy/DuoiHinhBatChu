@@ -33,6 +33,15 @@ public class GameViewModel : ViewModelBase
     private readonly Random _rng = new();
     private readonly DispatcherTimer _delay = new();
 
+    /// <summary>
+    /// Đồng hồ đếm ngược của câu đang chơi. Nhịp 0,1 giây chứ không phải 1 giây
+    /// để thanh thời gian chạy mượt, chứ không giật từng nấc.
+    /// </summary>
+    private readonly DispatcherTimer _clock =
+        new() { Interval = TimeSpan.FromMilliseconds(100) };
+
+    private double _secondsLeft = SoloScoring.MaxSeconds;
+
     private int _nextTileId;
     private bool _locked;               // đang chờ hiệu ứng -> chặn mọi thao tác
     private Action? _afterDelay;
@@ -57,6 +66,9 @@ public class GameViewModel : ViewModelBase
             _afterDelay = null;
             job?.Invoke();
         };
+
+        _clock.Tick += (_, _) => Countdown();
+        _clock.Start();
 
         PlaceLetterCommand = new RelayCommand(p => PlaceLetter(p as LetterTile));
         TakeBackCommand = new RelayCommand(p => TakeBack(p as AnswerSlot));
@@ -209,6 +221,80 @@ public class GameViewModel : ViewModelBase
         private set => SetProperty(ref _isFinished, value);
     }
 
+    // ----- Đồng hồ đếm ngược -----
+
+    /// <summary>Số giây còn lại, dạng "0:47".</summary>
+    public string TimeText
+    {
+        get
+        {
+            int whole = (int)Math.Ceiling(Math.Max(0, _secondsLeft));
+            return $"{whole / 60}:{whole % 60:D2}";
+        }
+    }
+
+    /// <summary>Phần thời gian còn lại, 1 là vừa bắt đầu và 0 là hết giờ.</summary>
+    public double TimeFraction => Math.Clamp(_secondsLeft / SoloScoring.MaxSeconds, 0, 1);
+
+    /// <summary>Còn dưới 10 giây thì đổi màu cảnh báo.</summary>
+    public bool IsTimeLow => _secondsLeft <= 10;
+
+    /// <summary>Số giây đã dùng cho câu đang chơi, để tính điểm thưởng tốc độ.</summary>
+    private double SecondsUsed => SoloScoring.MaxSeconds - _secondsLeft;
+
+    /// <summary>
+    /// Một nhịp đồng hồ. Đang khóa (chờ hiệu ứng đúng/sai, hết mạng, hết bộ câu)
+    /// thì không trừ giờ — không ai đáng bị mất thời gian vì đang xem chữ
+    /// "Chính xác" chạy.
+    /// </summary>
+    private void Countdown()
+    {
+        if (_locked) return;
+
+        _secondsLeft -= _clock.Interval.TotalSeconds;
+
+        OnPropertyChanged(nameof(TimeText));
+        OnPropertyChanged(nameof(TimeFraction));
+        OnPropertyChanged(nameof(IsTimeLow));
+
+        if (_secondsLeft <= 0) OnTimeout();
+    }
+
+    /// <summary>Hết giờ: mất một mạng như trả lời sai, nhưng không cho làm lại câu đó.</summary>
+    private void OnTimeout()
+    {
+        _secondsLeft = 0;
+        _locked = true;
+        AudioService.Instance.PlayWrong();
+
+        Lives--;
+        CorrectStreak = 0;
+        IsFeedbackGood = false;
+        FeedbackText = $"Hết giờ! Đáp án: {Current.Answer}";
+        _state.SaveProfile(_profile);
+
+        RunAfter(1.6, () =>
+        {
+            if (Lives <= 0)
+            {
+                IsGameOver = true;
+                _locked = true;
+                return;
+            }
+
+            GoNext();
+        });
+    }
+
+    private void ResetClock()
+    {
+        _secondsLeft = SoloScoring.MaxSeconds;
+
+        OnPropertyChanged(nameof(TimeText));
+        OnPropertyChanged(nameof(TimeFraction));
+        OnPropertyChanged(nameof(IsTimeLow));
+    }
+
     // ----- Nạp câu đố -----
 
     private void LoadPuzzle(int index)
@@ -216,6 +302,7 @@ public class GameViewModel : ViewModelBase
         _index = index;
         _locked = false;
         _profile.CurrentPuzzleIndex = index;
+        ResetClock();
 
         Slots.Clear();
         Tiles.Clear();
@@ -342,7 +429,11 @@ public class GameViewModel : ViewModelBase
         _locked = true;
         AudioService.Instance.PlayVictory();
 
-        Score += 10 * Math.Max(1, Current.Difficulty);
+        // Trả lời đúng trong giờ luôn được điểm nền; nhanh thì được thưởng thêm,
+        // nhanh nhất là gấp đôi
+        int bonus = SoloScoring.SpeedBonus(Current.Difficulty, SecondsUsed);
+        Score += SoloScoring.Base(Current.Difficulty) + bonus;
+
         if (!_profile.SolvedPuzzleIds.Contains(Current.Id))
             _profile.SolvedPuzzleIds.Add(Current.Id);
 
@@ -356,9 +447,10 @@ public class GameViewModel : ViewModelBase
         }
 
         IsFeedbackGood = true;
+        string speed = bonus > 0 ? $" (+{bonus} điểm nhanh tay)" : "";
         FeedbackText = earnedRuby
-            ? $"Chính xác: {Current.Answer} - đúng {StreakForRuby} câu liền, thưởng 1 kim cương!"
-            : $"Chính xác: {Current.Answer}";
+            ? $"Chính xác: {Current.Answer}{speed} - đúng {StreakForRuby} câu liền, thưởng 1 kim cương!"
+            : $"Chính xác: {Current.Answer}{speed}";
         OnPropertyChanged(nameof(SolvedText));
         _state.SaveProfile(_profile);
 
@@ -497,5 +589,12 @@ public class GameViewModel : ViewModelBase
     }
 
     /// <summary>Gọi khi đóng cửa sổ để không mất tiến trình.</summary>
-    public void Save() => _state.SaveProfile(_profile);
+    public void Save()
+    {
+        // Dừng hẳn hai đồng hồ, không thì chúng còn tích sau khi cửa sổ đã đóng
+        _clock.Stop();
+        _delay.Stop();
+
+        _state.SaveProfile(_profile);
+    }
 }
