@@ -69,17 +69,28 @@ public static class GameDatabase
     }
 
     /// <summary>
-    /// Tài khoản "khách" phải có thật trong bảng, vì bảng tiến trình có khóa
-    /// ngoại trỏ về bảng tài khoản — không có dòng này thì người chơi khách
-    /// không lưu được gì.
+    /// Giữ đúng một dòng "khách" trong bảng tài khoản, và luôn dọn sạch tiến
+    /// trình của nó.
+    ///
+    /// Khách KHÔNG được lưu tiến trình (xem <see cref="Services.GameStateService"/>):
+    /// hồ sơ khách là chung cho mọi người ngồi vào máy này, lưu vào đó thì người
+    /// sau lại tiếp tục ván của người trước. Dòng dọn ở đây là để xóa nốt dữ
+    /// liệu mà bản trước lỡ ghi vào.
     /// </summary>
     private static void SeedGuest(GameDbContext db)
     {
         Account guest = Account.Guest();
-        if (db.Accounts.Any(a => a.Id == guest.Id)) return;
 
-        db.Accounts.Add(guest);
-        db.SaveChanges();
+        if (!db.Accounts.Any(a => a.Id == guest.Id))
+        {
+            db.Accounts.Add(guest);
+            db.SaveChanges();
+        }
+
+        // ExecuteDelete chạy thẳng xuống cơ sở dữ liệu ngay, nên phải để sau
+        // SaveChanges ở trên chứ không xen vào giữa
+        db.PuzzleResults.Where(r => r.AccountId == Account.GuestId).ExecuteDelete();
+        db.PlayerStates.Where(s => s.AccountId == Account.GuestId).ExecuteDelete();
     }
 
     // ----- Chuyển dữ liệu cũ từ JSON sang -----

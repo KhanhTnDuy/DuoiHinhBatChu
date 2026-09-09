@@ -37,10 +37,16 @@ public class Account
     /// </summary>
     public bool IsGuest { get; set; }
 
+    /// <summary>
+    /// Mã của tài khoản khách. Là hằng số vì nhiều chỗ phải nhận ra khách:
+    /// không lưu tiến trình, không lên bảng xếp hạng, không đấu online.
+    /// </summary>
+    public const string GuestId = "khach";
+
     public static Account Guest() => new()
     {
-        Id = "khach",
-        UserName = "khach",
+        Id = GuestId,
+        UserName = GuestId,
         DisplayName = "Khách",
         IsGuest = true,
     };
