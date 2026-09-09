@@ -191,7 +191,8 @@
             </Grid.RowDefinitions>
 
             <!-- === Thanh HUD === -->
-            <Grid Grid.Row="0">
+            <StackPanel Grid.Row="0">
+            <Grid>
                 <Border Style="{StaticResource Card}" HorizontalAlignment="Left" Padding="18,10">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{Binding ProgressText}" FontSize="18" FontWeight="Bold"
@@ -208,6 +209,29 @@
                 </Border>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <!-- Thời gian còn lại của câu này; sát giờ thì đổi sang màu báo động -->
+                    <Border Style="{StaticResource Card}" Padding="16,10" Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="THỜI GIAN" Style="{StaticResource SectionLabel}"
+                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="{Binding TimeText}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock"
+                                           BasedOn="{StaticResource HudValue}">
+                                        <Setter Property="Foreground"
+                                                Value="{DynamicResource TextPrimaryBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsTimeLow}" Value="True">
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource ErrorBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
                     <Border Style="{StaticResource Card}" Padding="16,10" Margin="0,0,10,0">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="MẠNG" Style="{StaticResource SectionLabel}"
@@ -241,6 +265,22 @@
                             Click="Close_Click"/>
                 </StackPanel>
             </Grid>
+
+            <!-- Thanh thời gian chạy hết chiều ngang: nhìn cái biết còn bao lâu,
+                 không phải đọc con số -->
+            <ProgressBar Value="{Binding TimeFraction, Mode=OneWay}" Margin="0,12,0,0">
+                <ProgressBar.Style>
+                    <Style TargetType="ProgressBar" BasedOn="{StaticResource TimeBar}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsTimeLow}" Value="True">
+                                <Setter Property="Foreground"
+                                        Value="{DynamicResource ErrorBrush}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ProgressBar.Style>
+            </ProgressBar>
+            </StackPanel>
 
             <!-- === Ba cột: thông tin | ảnh | trợ giúp === -->
             <Grid Grid.Row="1" Margin="0,18">

@@ -6,7 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:conv="clr-namespace:DuoiHinhBatChu.Converters"
         Title="Đuổi hình bắt chữ - Chơi một mình"
-        Width="880" Height="720"
+        Width="880" Height="760"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         FontFamily="Segoe UI"
@@ -19,7 +19,7 @@
     </Window.Resources>
 
     <Grid>
-        <Grid Margin="40,32">
+        <Grid Margin="40,26">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>   <!-- người chơi -->
                 <RowDefinition Height="Auto"/>   <!-- tên màn hình -->
@@ -60,7 +60,7 @@
             </Grid>
 
             <!-- === Tên màn hình === -->
-            <StackPanel Grid.Row="1" HorizontalAlignment="Center" Margin="0,24,0,0">
+            <StackPanel Grid.Row="1" HorizontalAlignment="Center" Margin="0,20,0,0">
                 <Border Style="{StaticResource Pill}" HorizontalAlignment="Center"
                         Background="{DynamicResource PrimarySoftBrush}">
                     <TextBlock Text="1 NGƯỜI CHƠI · OFFLINE" Style="{StaticResource PillText}"
@@ -72,7 +72,7 @@
             </StackPanel>
 
             <!-- === Bốn con số của hồ sơ === -->
-            <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,20,0,0" Padding="24,16">
+            <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,16,0,0" Padding="24,14">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -114,7 +114,7 @@
             <!-- === Ba lựa chọn ===
                  Cùng khuôn với thẻ chế độ: biểu tượng + nhãn, tên, mô tả, rồi
                  nút ghim dưới đáy. -->
-            <Grid Grid.Row="3" Margin="0,20,0,0">
+            <Grid Grid.Row="3" Margin="0,16,0,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
@@ -164,7 +164,7 @@
                 </Border>
 
                 <!-- ===== Hai thẻ nhỏ ===== -->
-                <Grid Grid.Row="1" Margin="0,18,0,0">
+                <Grid Grid.Row="1" Margin="0,14,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
@@ -280,7 +280,7 @@
             </Grid>
 
             <!-- === Quay lại === -->
-            <Button Grid.Row="4" Style="{StaticResource GhostButton}" Margin="0,20,0,0"
+            <Button Grid.Row="4" Style="{StaticResource GhostButton}" Margin="0,16,0,0"
                     HorizontalAlignment="Center"
                     Command="{Binding BackCommand}" Content="← Đổi chế độ chơi"/>
         </Grid>
