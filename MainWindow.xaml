@@ -537,6 +537,9 @@
                                Foreground="{DynamicResource TextSecondaryBrush}"/>
                     <Button Style="{StaticResource PrimaryButton}" Command="{Binding RestartCommand}"
                             Content="Chơi lại" HorizontalAlignment="Center"/>
+                    <Button Style="{StaticResource GhostButton}" Margin="0,10,0,0"
+                            HorizontalAlignment="Center"
+                            Click="Close_Click" Content="Về màn hình chính"/>
                 </StackPanel>
             </Border>
         </Grid>
@@ -555,6 +558,9 @@
                                Foreground="{DynamicResource TextSecondaryBrush}"/>
                     <Button Style="{StaticResource PrimaryButton}" Command="{Binding RestartCommand}"
                             Content="Chơi lại từ đầu" HorizontalAlignment="Center"/>
+                    <Button Style="{StaticResource GhostButton}" Margin="0,10,0,0"
+                            HorizontalAlignment="Center"
+                            Click="Close_Click" Content="Về màn hình chính"/>
                 </StackPanel>
             </Border>
         </Grid>
