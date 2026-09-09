@@ -76,6 +76,8 @@ public class GameViewModel : ViewModelBase
         BoomCommand = new RelayCommand(_ => BoomExtraLetters());
         ShowHintCommand = new RelayCommand(_ => ShowHint());
         SkipCommand = new RelayCommand(_ => Skip());
+        PauseCommand = new RelayCommand(_ => Pause());
+        ResumeCommand = new RelayCommand(_ => Resume());
         RestartCommand = new RelayCommand(_ => Restart());
         ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
 
@@ -89,6 +91,8 @@ public class GameViewModel : ViewModelBase
     public RelayCommand BoomCommand { get; }
     public RelayCommand ShowHintCommand { get; }
     public RelayCommand SkipCommand { get; }
+    public RelayCommand PauseCommand { get; }
+    public RelayCommand ResumeCommand { get; }
     public RelayCommand RestartCommand { get; }
     public RelayCommand ToggleThemeCommand { get; }
 
@@ -221,6 +225,35 @@ public class GameViewModel : ViewModelBase
         private set => SetProperty(ref _isFinished, value);
     }
 
+    // ----- Tạm dừng -----
+
+    private bool _isPaused;
+
+    /// <summary>
+    /// Đang tạm dừng. Lúc này đồng hồ đứng yên, VÀ giao diện giấu hết ảnh câu
+    /// đố lẫn hàng ô đáp án — nếu không thì tạm dừng thành cái mẹo: bấm dừng
+    /// rồi ngồi ngắm ảnh nghĩ thoải mái, đồng hồ chẳng mất giây nào.
+    /// </summary>
+    public bool IsPaused
+    {
+        get => _isPaused;
+        private set => SetProperty(ref _isPaused, value);
+    }
+
+    /// <summary>
+    /// Chỉ cho dừng khi đang thật sự chơi. Đang chờ hiệu ứng đúng/sai, hết mạng
+    /// hay hết bộ câu thì bấm cũng không có gì để dừng.
+    /// </summary>
+    private void Pause()
+    {
+        if (_locked || IsGameOver || IsFinished) return;
+
+        IsPaused = true;
+        _state.SaveProfile(_profile);
+    }
+
+    private void Resume() => IsPaused = false;
+
     // ----- Đồng hồ đếm ngược -----
 
     /// <summary>Số giây còn lại, dạng "0:47".</summary>
@@ -249,7 +282,7 @@ public class GameViewModel : ViewModelBase
     /// </summary>
     private void Countdown()
     {
-        if (_locked) return;
+        if (_locked || IsPaused) return;
 
         _secondsLeft -= _clock.Interval.TotalSeconds;
 
@@ -383,7 +416,7 @@ public class GameViewModel : ViewModelBase
 
     private void PlaceLetter(LetterTile? tile)
     {
-        if (_locked || tile == null || tile.IsUsed || tile.IsEliminated) return;
+        if (_locked || IsPaused || tile == null || tile.IsUsed || tile.IsEliminated) return;
 
         AnswerSlot? slot = Slots.FirstOrDefault(s => !s.IsSpace && !s.HasValue);
         if (slot == null) return;
@@ -398,7 +431,8 @@ public class GameViewModel : ViewModelBase
 
     private void TakeBack(AnswerSlot? slot)
     {
-        if (_locked || slot == null || slot.IsSpace || !slot.HasValue || slot.IsRevealedByHint) return;
+        if (_locked || IsPaused || slot == null || slot.IsSpace || !slot.HasValue
+            || slot.IsRevealedByHint) return;
 
         ReturnTile(slot);
         AudioService.Instance.PlayClick();

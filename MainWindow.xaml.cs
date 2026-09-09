@@ -34,9 +34,22 @@ public partial class MainWindow : Window
         DataContext = _vm;
     }
 
+    /// <summary>
+    /// ESC bật/tắt tạm dừng chứ không đóng thẳng màn chơi nữa: đang chơi dở mà
+    /// lỡ tay là mất luôn ván thì tiếc.
+    /// </summary>
     private void Window_KeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Escape) Close();
+        if (e.Key != Key.Escape) return;
+
+        if (_vm == null)
+        {
+            Close();   // màn chơi mở không được, ESC là lối thoát duy nhất
+            return;
+        }
+
+        if (_vm.IsPaused) _vm.ResumeCommand.Execute(null);
+        else _vm.PauseCommand.Execute(null);
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
