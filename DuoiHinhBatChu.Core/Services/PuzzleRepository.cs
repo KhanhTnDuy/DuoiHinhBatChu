@@ -1,133 +1,97 @@
 using System.IO;
-using System.Text.Json;
+using DuoiHinhBatChu.Data;
 using DuoiHinhBatChu.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace DuoiHinhBatChu.Services;
 
 /// <summary>
-/// Dựng danh sách câu đố từ các ảnh trong <c>Assets/CauHoi</c>.
+/// Đọc câu đố từ bảng <c>Puzzles</c> trong cơ sở dữ liệu.
 ///
-/// Ảnh là nguồn chính: có ảnh nào thì có câu đó, đáp án lấy từ tên file.
-/// File <c>Data/puzzles.json</c> chỉ là phần bổ sung tùy chọn (gợi ý, độ khó),
-/// ghép vào theo đáp án; thiếu file đó thì game vẫn chạy với giá trị mặc định.
+/// Ảnh nằm trong bảng chứ không phải trên đĩa, nhưng lớp này KHÔNG nạp byte
+/// ảnh cùng lúc với danh sách câu: 50 câu là mấy chục megabyte, mà mỗi lúc chỉ
+/// hiện một ảnh. Danh sách lấy bằng <see cref="LoadAll"/>, ảnh lấy riêng bằng
+/// <see cref="LoadImage(string)"/> khi thật sự cần hiện.
+///
+/// Thư mục <c>Assets/CauHoi</c> vẫn là nơi thêm câu mới; việc chuyển ảnh vào
+/// bảng do <see cref="PuzzleSync"/> làm lúc khởi động.
 /// </summary>
 public class PuzzleRepository
 {
-    // Bỏ qua khác biệt hoa/thường giữa khóa JSON (camelCase) và thuộc tính C# (PascalCase).
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-    };
+    public PuzzleRepository() => GameDatabase.EnsureReady();
 
-    private readonly string _metaPath;
-
-    /// <summary>
-    /// Mặc định đọc phần bổ sung ở Data/puzzles.json nằm cạnh file .exe.
-    /// Có thể truyền đường dẫn khác (dùng khi test).
-    /// </summary>
-    public PuzzleRepository(string? metaPath = null)
-    {
-        _metaPath = metaPath
-            ?? Path.Combine(AppContext.BaseDirectory, "Data", "puzzles.json");
-    }
-
-    /// <summary>
-    /// Nạp toàn bộ câu đố theo đúng thứ tự đã quét được ở thư mục ảnh.
-    /// </summary>
-    /// <exception cref="InvalidDataException">Thư mục ảnh chưa có câu đố nào.</exception>
+    /// <summary>Nạp toàn bộ câu đố (không kèm ảnh), theo đúng thứ tự trong game.</summary>
+    /// <exception cref="InvalidDataException">Chưa có câu đố nào trong bảng.</exception>
     public List<Puzzle> LoadAll()
     {
-        var images = PuzzleImageLocator.Scan();
-        if (images.Count == 0)
+        using GameDbContext db = GameDatabase.Open();
+
+        // Chọn sẵn từng cột cần dùng, cố tình bỏ cột ImageBytes lại: viết
+        // db.Puzzles.ToList() là kéo cả đống ảnh lên bộ nhớ một cách vô ích
+        var rows = db.Puzzles
+            .AsNoTracking()
+            .OrderBy(p => p.Order)
+            .Select(p => new { p.Id, p.Answer, p.Hint, p.Difficulty, p.ImageName })
+            .ToList();
+
+        if (rows.Count == 0)
             throw new InvalidDataException(
                 "Chưa có câu đố nào.\n\n" +
                 $"Hãy bỏ ảnh vào thư mục:\n{PuzzleImageLocator.Folder}\n\n" +
-                "Tên file chính là đáp án, ví dụ \"CÁ HEO.png\".");
+                "Tên file chính là đáp án, ví dụ \"CÁ HEO.png\".\n" +
+                "Bỏ ảnh xong thì chạy lại game để nạp vào cơ sở dữ liệu.");
 
-        Dictionary<string, Puzzle> meta = LoadMeta();
+        // Các cách viết được chấp nhận: lấy một lượt cho cả bộ rồi gom theo câu,
+        // chứ hỏi cơ sở dữ liệu 50 lần trong vòng lặp là chậm oan
+        Dictionary<string, List<string>> accepted = db.PuzzleAnswers
+            .AsNoTracking()
+            .GroupBy(a => a.PuzzleId)
+            .ToDictionary(g => g.Key, g => g.Select(a => a.Text).ToList());
 
-        var puzzles = new List<Puzzle>();
-        int no = 1;
-
-        foreach (PuzzleImageLocator.ImageEntry img in images)
+        return rows.Select(r => new Puzzle
         {
-            meta.TryGetValue(MetaKey(img.Answer), out Puzzle? extra);
-
-            puzzles.Add(new Puzzle
-            {
-                Id = $"p{no:D3}",
-                Answer = img.Answer,
-                Image = img.Path,
-                AcceptedAnswers = extra?.AcceptedAnswers ?? new(),
-                Hint = string.IsNullOrWhiteSpace(extra?.Hint)
-                    ? DefaultHint(img.Answer)
-                    : extra!.Hint,
-                Difficulty = extra is { Difficulty: >= 1 and <= 5 }
-                    ? extra.Difficulty
-                    : DefaultDifficulty(img.Answer),
-            });
-
-            no++;
-        }
-
-        return puzzles;
+            Id = r.Id,
+            Answer = r.Answer,
+            Hint = r.Hint,
+            Difficulty = r.Difficulty,
+            ImageName = r.ImageName,
+            AcceptedAnswers = accepted.TryGetValue(r.Id, out List<string>? list) ? list : new(),
+        }).ToList();
     }
 
-    /// <summary>Đọc phần bổ sung, lập chỉ mục theo đáp án đã chuẩn hóa.</summary>
-    private Dictionary<string, Puzzle> LoadMeta()
+    /// <summary>Số câu đố đang có, đếm ngay trong cơ sở dữ liệu.</summary>
+    public int Count()
     {
-        var map = new Dictionary<string, Puzzle>();
-        if (!File.Exists(_metaPath)) return map;
-
-        string json = File.ReadAllText(_metaPath);
-        if (string.IsNullOrWhiteSpace(json)) return map;
-
-        List<Puzzle> list;
-        try
-        {
-            list = JsonSerializer.Deserialize<List<Puzzle>>(json, JsonOptions) ?? new();
-        }
-        catch (JsonException ex)
-        {
-            throw new InvalidDataException(
-                $"File {_metaPath} sai định dạng JSON: {ex.Message}", ex);
-        }
-
-        foreach (Puzzle p in list)
-        {
-            if (string.IsNullOrWhiteSpace(p.Answer)) continue;
-            map.TryAdd(MetaKey(p.Answer), p);
-        }
-
-        return map;
+        using GameDbContext db = GameDatabase.Open();
+        return db.Puzzles.Count();
     }
 
-    /// <summary>"CÁ HEO" và "ca heo" cùng cho ra "caheo" để ghép được với nhau.</summary>
-    private static string MetaKey(string answer) =>
-        AnswerChecker.Normalize(answer).Replace(" ", "");
-
-    /// <summary>Gợi ý mặc định khi puzzles.json chưa khai báo gì cho câu này.</summary>
-    private static string DefaultHint(string answer)
+    /// <summary>Byte ảnh của một câu, lấy theo mã câu. Không có thì trả về null.</summary>
+    public byte[]? LoadImage(string puzzleId)
     {
-        int letters = answer.Count(char.IsLetter);
-        int words = answer.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+        using GameDbContext db = GameDatabase.Open();
 
-        return words > 1
-            ? $"Đáp án gồm {words} tiếng, tất cả {letters} chữ cái."
-            : $"Đáp án là một tiếng gồm {letters} chữ cái.";
+        return db.Puzzles
+            .AsNoTracking()
+            .Where(p => p.Id == puzzleId)
+            .Select(p => p.ImageBytes)
+            .FirstOrDefault();
     }
 
-    /// <summary>Đáp án càng dài thì càng khó, dùng khi puzzles.json không ghi độ khó.</summary>
-    private static int DefaultDifficulty(string answer)
+    /// <summary>
+    /// Byte ảnh lấy theo tên file, kèm kiểu nội dung — dùng cho đường dẫn
+    /// <c>GET /api/puzzles/{imageName}/image</c> của máy chủ.
+    /// </summary>
+    public (byte[] Bytes, string ContentType)? LoadImageByName(string imageName)
     {
-        int letters = answer.Count(char.IsLetter);
-        return letters switch
-        {
-            <= 5 => 1,
-            <= 7 => 2,
-            <= 9 => 3,
-            <= 12 => 4,
-            _ => 5,
-        };
+        using GameDbContext db = GameDatabase.Open();
+
+        var row = db.Puzzles
+            .AsNoTracking()
+            .Where(p => p.ImageName == imageName)
+            .Select(p => new { p.ImageBytes, p.ContentType })
+            .FirstOrDefault();
+
+        return row == null ? null : (row.ImageBytes, row.ContentType);
     }
 }

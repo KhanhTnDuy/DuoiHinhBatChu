@@ -18,6 +18,10 @@ public partial class App : Application
         // đồng thời chuyển nốt dữ liệu cũ còn nằm ở file JSON sang bảng
         GameDatabase.EnsureReady();
 
+        // Ảnh mới bỏ vào Assets/CauHoi được nạp vào bảng câu đố ở đây.
+        // Ảnh không đổi thì bỏ qua, nên lần khởi động sau gần như không tốn gì.
+        PuzzleSync.Sync();
+
         new LoginWindow().Show();
     }
 

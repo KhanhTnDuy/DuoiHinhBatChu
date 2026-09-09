@@ -23,6 +23,12 @@ public class GameDbContext : DbContext
     /// <summary>Bảng câu đã giải, mỗi tài khoản nhiều dòng.</summary>
     public DbSet<PuzzleResult> PuzzleResults => Set<PuzzleResult>();
 
+    /// <summary>Bảng câu đố, chứa luôn byte ảnh.</summary>
+    public DbSet<StoredPuzzle> Puzzles => Set<StoredPuzzle>();
+
+    /// <summary>Bảng các cách viết khác cũng được chấm đúng.</summary>
+    public DbSet<StoredAnswer> PuzzleAnswers => Set<StoredAnswer>();
+
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Account>(e =>
@@ -63,6 +69,34 @@ public class GameDbContext : DbContext
             e.HasOne<Account>()
              .WithMany()
              .HasForeignKey(r => r.AccountId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+            // Cố ý KHÔNG đặt khóa ngoại sang bảng Puzzles: bạn có thể tạm rút
+            // một ảnh câu đố ra khỏi Assets/CauHoi rồi bỏ lại, mà tiến trình
+            // của người chơi thì không nên biến mất theo.
+        });
+
+        b.Entity<StoredPuzzle>(e =>
+        {
+            e.HasKey(p => p.Id);
+
+            // Tên file ảnh là địa chỉ máy chủ dùng để gửi ảnh, phải là duy nhất
+            e.HasIndex(p => p.ImageName).IsUnique();
+
+            e.Property(p => p.Answer).IsRequired().HasMaxLength(120);
+            e.Property(p => p.ImageName).IsRequired().HasMaxLength(260);
+            e.Property(p => p.ContentType).HasMaxLength(60);
+        });
+
+        b.Entity<StoredAnswer>(e =>
+        {
+            e.HasKey(a => a.Id);
+            e.HasIndex(a => new { a.PuzzleId, a.Text }).IsUnique();
+            e.Property(a => a.Text).IsRequired().HasMaxLength(120);
+
+            e.HasOne<StoredPuzzle>()
+             .WithMany()
+             .HasForeignKey(a => a.PuzzleId)
              .OnDelete(DeleteBehavior.Cascade);
         });
     }

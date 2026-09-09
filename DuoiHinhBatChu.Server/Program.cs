@@ -19,8 +19,11 @@ var app = builder.Build();
 GameDatabase.EnsureReady();
 app.Logger.LogInformation("Cơ sở dữ liệu: {Path}", GameDatabase.FilePath);
 
-// Nạp câu đố ngay lúc khởi động để sai đường dẫn ảnh thì biết luôn,
-// chứ không đợi tới lúc có người bấm chơi
+// Đối chiếu thư mục ảnh với bảng câu đố. Phải chạy TRƯỚC khi lấy RoomManager,
+// vì RoomManager nạp danh sách câu ngay trong hàm dựng.
+PuzzleSync.Report sync = PuzzleSync.Sync();
+app.Logger.LogInformation("Câu đố: {Sync}", sync);
+
 var rooms = app.Services.GetRequiredService<RoomManager>();
 app.Logger.LogInformation("Đã nạp {Count} câu đố", rooms.PuzzleCount);
 
@@ -66,15 +69,14 @@ app.MapPost("/api/auth/login",
 
 app.MapGet("/api/puzzles/{imageName}/image", (string imageName, RoomManager rooms) =>
 {
-    // Chặn đi ngược thư mục kiểu "../../secret.txt"
-    if (imageName.Contains('/') || imageName.Contains('\\') || imageName.Contains(".."))
-        return Results.BadRequest(new ErrorResponse("Tên ảnh không hợp lệ."));
+    // Ảnh nằm trong cơ sở dữ liệu chứ không phải trên đĩa, nên không còn cửa
+    // cho trò đi ngược thư mục kiểu "../../secret.txt": tên nào không có trong
+    // bảng thì chỉ ra 404.
+    var image = rooms.Image(imageName);
 
-    string? path = rooms.ImagePath(imageName);
-    if (path == null || !File.Exists(path))
-        return Results.NotFound(new ErrorResponse("Không có ảnh này."));
-
-    return Results.File(path, ContentType(path));
+    return image == null
+        ? Results.NotFound(new ErrorResponse("Không có ảnh này."))
+        : Results.File(image.Value.Bytes, image.Value.ContentType);
 });
 
 app.MapHub<GameHub>("/game");
@@ -87,11 +89,3 @@ static Results<Ok<AuthResponse>, BadRequest<ErrorResponse>> Ok(Account account, 
 
 static Results<Ok<AuthResponse>, BadRequest<ErrorResponse>> BadRequest(string error)
     => TypedResults.BadRequest(new ErrorResponse(error));
-
-static string ContentType(string path) => Path.GetExtension(path).ToLowerInvariant() switch
-{
-    ".jpg" or ".jpeg" => "image/jpeg",
-    ".webp" => "image/webp",
-    ".bmp" => "image/bmp",
-    _ => "image/png",
-};

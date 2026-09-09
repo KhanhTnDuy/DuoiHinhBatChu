@@ -30,24 +30,18 @@ public partial class LoginWindow : Window
         Loaded += (_, _) => UserNameBox.Focus();
     }
 
-    /// <summary>Đuôi file ảnh nhận làm mã QR.</summary>
-    private static readonly string[] QrExtensions = [".png", ".jpg", ".jpeg", ".bmp"];
+    /// <summary>Tên tài nguyên của ảnh mã QR trong Assets/TaiNguyen.</summary>
+    private const string QrResourceName = "qr-ung-ho";
 
     /// <summary>
-    /// Nạp ảnh QR ủng hộ từ thư mục Assets/UngHo, lấy file ảnh đầu tiên tìm
-    /// thấy nên đặt tên gì cũng được.
+    /// Nạp ảnh QR ủng hộ từ thư mục ảnh tài nguyên.
     ///
     /// Chưa có ảnh thì cứ để nguyên ô gạch đứt chỉ chỗ đặt — thiếu ảnh không
     /// phải là lý do để cả màn đăng nhập hỏng.
     /// </summary>
     private void LoadQrImage()
     {
-        string dir = Path.Combine(AppContext.BaseDirectory, "Assets", "UngHo");
-        if (!Directory.Exists(dir)) return;
-
-        string? file = Directory.EnumerateFiles(dir)
-            .FirstOrDefault(f => QrExtensions.Contains(Path.GetExtension(f).ToLowerInvariant()));
-
+        string? file = AppImageLocator.Find(QrResourceName);
         if (file == null) return;
 
         try

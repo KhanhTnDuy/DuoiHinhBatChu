@@ -26,6 +26,7 @@ public class GameViewModel : ViewModelBase
 
     private readonly Account _account;
     private readonly AppSettings _settings;
+    private readonly PuzzleRepository _repository = new();
     private readonly List<Puzzle> _puzzles;
     private readonly GameStateService _state;
     private readonly PlayerProfile _profile;
@@ -43,7 +44,7 @@ public class GameViewModel : ViewModelBase
         _account = account;
         _settings = settings;
         _state = new GameStateService(account.Id);
-        _puzzles = new PuzzleRepository().LoadAll();
+        _puzzles = _repository.LoadAll();
         _profile = _state.LoadProfile();
         _profile.PlayerName = account.DisplayName;
         AudioService.Instance.IsEnabled = _profile.IsSoundEnabled;
@@ -267,20 +268,25 @@ public class GameViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// Lấy ảnh của câu đang chơi. Ảnh nằm trong cơ sở dữ liệu nên phải đọc ra
+    /// mảng byte rồi dựng ảnh từ luồng nhớ, chứ không mở file như trước.
+    /// </summary>
     private void LoadImage(Puzzle p)
     {
-        if (string.IsNullOrEmpty(p.Image) || !File.Exists(p.Image))
+        byte[]? bytes = _repository.LoadImage(p.Id);
+
+        if (bytes == null || bytes.Length == 0)
         {
             ImageSource = null;
             return;
         }
 
-        string path = p.Image;
-
         var bmp = new BitmapImage();
         bmp.BeginInit();
-        bmp.CacheOption = BitmapCacheOption.OnLoad;   // đọc xong nhả file, không khóa
-        bmp.UriSource = new Uri(path);
+        // OnLoad: giải mã hết ngay tại đây, để đóng luồng nhớ xong ảnh vẫn dùng được
+        bmp.CacheOption = BitmapCacheOption.OnLoad;
+        bmp.StreamSource = new MemoryStream(bytes);
         bmp.EndInit();
         bmp.Freeze();
         ImageSource = bmp;

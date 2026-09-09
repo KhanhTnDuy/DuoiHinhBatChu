@@ -68,10 +68,15 @@ public class RoomManager
 {
     private readonly ConcurrentDictionary<string, Room> _rooms = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<Puzzle> _puzzles;
+    private readonly PuzzleRepository _repository;
     private readonly Random _rng = new();
 
     public RoomManager(PuzzleRepository puzzles)
     {
+        _repository = puzzles;
+
+        // Danh sách câu giữ luôn trong bộ nhớ vì mỗi ván đấu bốc câu liên tục;
+        // riêng byte ảnh thì KHÔNG giữ, chỉ lấy từ cơ sở dữ liệu khi có người tải
         _puzzles = puzzles.LoadAll();
     }
 
@@ -156,7 +161,7 @@ public class RoomManager
         return new RoundInfo(
             room.RoundNumber,
             room.TotalRounds,
-            Path.GetFileName(puzzle.Image),
+            puzzle.ImageName,
             round.WordLengths,
             new string(round.Tiles.Select(t => t.Character).ToArray()),
             puzzle.Difficulty,
@@ -187,9 +192,10 @@ public class RoomManager
         }
     }
 
-    /// <summary>Tìm file ảnh của một câu theo tên file, để phục vụ GET ảnh.</summary>
-    public string? ImagePath(string imageName) => _puzzles
-        .FirstOrDefault(p => string.Equals(
-            Path.GetFileName(p.Image), imageName, StringComparison.OrdinalIgnoreCase))
-        ?.Image;
+    /// <summary>
+    /// Lấy byte ảnh của một câu theo tên file, để phục vụ GET ảnh.
+    /// Đọc thẳng từ cơ sở dữ liệu mỗi lần hỏi, không có thì trả về null.
+    /// </summary>
+    public (byte[] Bytes, string ContentType)? Image(string imageName) =>
+        _repository.LoadImageByName(imageName);
 }

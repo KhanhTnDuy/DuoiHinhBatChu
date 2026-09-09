@@ -1,0 +1,13 @@
+Thu muc anh TAI NGUYEN cua app: ma QR ung ho, logo, hinh trang tri...
+(Anh cau hoi KHONG de o day - anh cau hoi nam trong Assets/CauHoi va duoc nap
+vao co so du lieu.)
+
+Quy uoc giong het anh cau hoi: TEN FILE CHINH LA TEN TAI NGUYEN, duoi file gi
+cung duoc (png, jpg, jpeg, webp, bmp, gif).
+
+Cac tai nguyen app dang tim:
+
+  qr-ung-ho    -> ma QR ung ho nha phat trien, hien trong bang huong dan "?"
+                  o man dang nhap. Anh vuong (vd 512x512) se dep nhat.
+
+Thieu file nao thi cho do hien o gach dut chi cho dat, app van chay binh thuong.

@@ -1,0 +1,213 @@
+using System.IO;
+using System.Text.Json;
+using DuoiHinhBatChu.Models;
+using DuoiHinhBatChu.Services;
+using Microsoft.EntityFrameworkCore;
+
+namespace DuoiHinhBatChu.Data;
+
+/// <summary>
+/// Đối chiếu thư mục <c>Assets/CauHoi</c> với bảng <c>Puzzles</c> trong cơ sở
+/// dữ liệu, chạy mỗi lần khởi động.
+///
+/// Chia việc rõ ràng: **thư mục ảnh là nơi bạn soạn**, còn **cơ sở dữ liệu là
+/// nơi game đọc**. Bỏ thêm một ảnh vào thư mục rồi chạy lại là có câu mới; xóa
+/// ảnh đi là câu đó biến mất khỏi bảng.
+///
+/// Ảnh nào không đổi thì không đọc lại byte: so kích thước và giờ sửa file,
+/// giống nhau là bỏ qua. Nhờ vậy khởi động lần thứ hai gần như không tốn gì,
+/// dù bộ ảnh có nặng.
+/// </summary>
+public static class PuzzleSync
+{
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
+
+    /// <summary>Số câu thêm mới, cập nhật và xóa của một lần đối chiếu.</summary>
+    public readonly record struct Report(int Added, int Updated, int Removed, int Total)
+    {
+        public bool Changed => Added > 0 || Updated > 0 || Removed > 0;
+
+        public override string ToString() =>
+            $"{Total} câu đố (thêm {Added}, cập nhật {Updated}, xóa {Removed})";
+    }
+
+    /// <summary>Nơi khai gợi ý và độ khó bổ sung cho từng đáp án (tùy chọn).</summary>
+    private static string DefaultMetaPath =>
+        Path.Combine(AppContext.BaseDirectory, "Data", "puzzles.json");
+
+    /// <param name="metaPath">Đường dẫn puzzles.json thay thế, chỉ dùng khi test.</param>
+    public static Report Sync(string? metaPath = null)
+    {
+        GameDatabase.EnsureReady();
+
+        List<PuzzleImageLocator.ImageEntry> images = PuzzleImageLocator.Scan();
+        Dictionary<string, Puzzle> meta = LoadMeta(metaPath ?? DefaultMetaPath);
+
+        using GameDbContext db = GameDatabase.Open();
+
+        var stored = db.Puzzles.ToDictionary(p => p.Id);
+        var seen = new HashSet<string>();
+        int added = 0, updated = 0, order = 1;
+
+        foreach (PuzzleImageLocator.ImageEntry img in images)
+        {
+            string id = MakeId(img.Answer);
+            if (!seen.Add(id)) continue;   // hai file cùng ra một đáp án
+
+            var file = new FileInfo(img.Path);
+            meta.TryGetValue(id, out Puzzle? extra);
+
+            stored.TryGetValue(id, out StoredPuzzle? row);
+            bool isNew = row == null;
+
+            if (row == null)
+            {
+                row = new StoredPuzzle { Id = id };
+                db.Puzzles.Add(row);
+            }
+
+            // File có đổi không: so kích thước và giờ sửa, khỏi phải đọc byte
+            bool imageChanged = isNew
+                || row.SourceSize != file.Length
+                || row.SourceModifiedUtc != file.LastWriteTimeUtc
+                || row.ImageName != file.Name;
+
+            string hint = string.IsNullOrWhiteSpace(extra?.Hint)
+                ? DefaultHint(img.Answer)
+                : extra!.Hint;
+
+            int difficulty = extra is { Difficulty: >= 1 and <= 5 }
+                ? extra.Difficulty
+                : DefaultDifficulty(img.Answer);
+
+            bool metaChanged = row.Answer != img.Answer
+                || row.Hint != hint
+                || row.Difficulty != difficulty
+                || row.Order != order;
+
+            if (imageChanged)
+            {
+                row.ImageName = file.Name;
+                row.ContentType = ContentType(file.Extension);
+                row.ImageBytes = File.ReadAllBytes(img.Path);
+                row.SourceSize = file.Length;
+                row.SourceModifiedUtc = file.LastWriteTimeUtc;
+                row.ImportedAt = DateTime.Now;
+            }
+
+            row.Answer = img.Answer;
+            row.Hint = hint;
+            row.Difficulty = difficulty;
+            row.Order = order++;
+
+            if (isNew) added++;
+            else if (imageChanged || metaChanged) updated++;
+
+            SyncAnswers(db, id, extra?.AcceptedAnswers);
+        }
+
+        // Ảnh đã bị xóa khỏi thư mục thì bỏ luôn câu đó khỏi bảng
+        List<StoredPuzzle> gone = stored.Values.Where(p => !seen.Contains(p.Id)).ToList();
+        db.Puzzles.RemoveRange(gone);
+
+        db.SaveChanges();
+
+        return new Report(added, updated, gone.Count, seen.Count);
+    }
+
+    /// <summary>
+    /// Cập nhật các cách viết được chấp nhận của một câu: thêm cái thiếu, xóa
+    /// cái không còn khai trong puzzles.json.
+    /// </summary>
+    private static void SyncAnswers(GameDbContext db, string puzzleId, List<string>? accepted)
+    {
+        var want = new HashSet<string>(
+            (accepted ?? []).Select(a => a.Trim()).Where(a => a.Length > 0),
+            StringComparer.OrdinalIgnoreCase);
+
+        List<StoredAnswer> have = db.PuzzleAnswers.Where(a => a.PuzzleId == puzzleId).ToList();
+
+        foreach (StoredAnswer a in have)
+        {
+            if (!want.Remove(a.Text)) db.PuzzleAnswers.Remove(a);
+        }
+
+        foreach (string text in want)
+            db.PuzzleAnswers.Add(new StoredAnswer { PuzzleId = puzzleId, Text = text });
+    }
+
+    /// <summary>
+    /// Mã câu lấy từ đáp án đã chuẩn hóa: "CÁ HEO" và "ca heo" cùng ra "CAHEO".
+    /// Đổi tên file mà đáp án vẫn thế thì mã không đổi, nên tiến trình người
+    /// chơi không mất.
+    /// </summary>
+    public static string MakeId(string answer) =>
+        AnswerChecker.Normalize(answer).Replace(" ", "").ToUpperInvariant();
+
+    private static string ContentType(string extension) => extension.ToLowerInvariant() switch
+    {
+        ".jpg" or ".jpeg" => "image/jpeg",
+        ".webp" => "image/webp",
+        ".bmp" => "image/bmp",
+        ".gif" => "image/gif",
+        _ => "image/png",
+    };
+
+    // ----- Phần bổ sung tùy chọn trong Data/puzzles.json -----
+
+    /// <summary>Đọc gợi ý và độ khó khai thêm, lập chỉ mục theo mã câu.</summary>
+    private static Dictionary<string, Puzzle> LoadMeta(string path)
+    {
+        var map = new Dictionary<string, Puzzle>();
+        if (!File.Exists(path)) return map;
+
+        string json = File.ReadAllText(path);
+        if (string.IsNullOrWhiteSpace(json)) return map;
+
+        List<Puzzle> list;
+        try
+        {
+            list = JsonSerializer.Deserialize<List<Puzzle>>(json, JsonOptions) ?? new();
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidDataException($"File {path} sai định dạng JSON: {ex.Message}", ex);
+        }
+
+        foreach (Puzzle p in list)
+        {
+            if (string.IsNullOrWhiteSpace(p.Answer)) continue;
+            map.TryAdd(MakeId(p.Answer), p);
+        }
+
+        return map;
+    }
+
+    /// <summary>Gợi ý mặc định khi puzzles.json chưa khai báo gì cho câu này.</summary>
+    private static string DefaultHint(string answer)
+    {
+        int letters = answer.Count(char.IsLetter);
+        int words = answer.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+
+        return words > 1
+            ? $"Đáp án gồm {words} tiếng, tất cả {letters} chữ cái."
+            : $"Đáp án là một tiếng gồm {letters} chữ cái.";
+    }
+
+    /// <summary>Đáp án càng dài thì càng khó, dùng khi puzzles.json không ghi độ khó.</summary>
+    private static int DefaultDifficulty(string answer)
+    {
+        int letters = answer.Count(char.IsLetter);
+        return letters switch
+        {
+            <= 5 => 1,
+            <= 7 => 2,
+            <= 9 => 3,
+            <= 12 => 4,
+            _ => 5,
+        };
+    }
+}

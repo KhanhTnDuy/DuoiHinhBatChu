@@ -46,10 +46,12 @@ public static class GameDatabase
 
             using var db = new GameDbContext(_options);
 
-            // Tạo bảng theo đúng hình dáng khai trong GameDbContext.
-            // Sau này đổi cấu trúc bảng thì phải chuyển sang EF Migrations,
-            // vì EnsureCreated chỉ tạo mới chứ không sửa bảng đã có.
-            db.Database.EnsureCreated();
+            // Chạy các bước chuyển trong thư mục Migrations: chưa có file thì
+            // tạo mới toàn bộ bảng, có rồi thì chỉ áp những bước còn thiếu.
+            //
+            // Trước đây dùng EnsureCreated, nhưng nó chỉ biết tạo mới: thêm một
+            // bảng là những máy đã có game.db không bao giờ nhận được bảng đó.
+            db.Database.Migrate();
 
             SeedGuest(db);
             ImportLegacyJson(db, Path.GetDirectoryName(path)!);
