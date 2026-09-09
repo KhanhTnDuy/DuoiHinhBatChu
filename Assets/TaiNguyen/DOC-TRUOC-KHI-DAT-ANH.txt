@@ -7,7 +7,10 @@ cung duoc (png, jpg, jpeg, webp, bmp, gif).
 
 Cac tai nguyen app dang tim:
 
-  qr-ung-ho    -> ma QR ung ho nha phat trien, hien trong bang huong dan "?"
-                  o man dang nhap. Anh vuong (vd 512x512) se dep nhat.
+  qr-ung-ho    -> ma QR ung ho nha phat trien.
+                  (dat ten "QR UNG HO.jpg" hay "qr_ung_ho.png" deu duoc:
+                  khoang trang, gach noi va hoa/thuong deu bo qua)
+                  Hien trong bang huong dan "?" o man dang nhap.
+                  Anh vuong (vd 512x512) se dep nhat.
 
 Thieu file nao thi cho do hien o gach dut chi cho dat, app van chay binh thuong.
