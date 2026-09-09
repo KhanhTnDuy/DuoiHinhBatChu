@@ -2,12 +2,12 @@ namespace DuoiHinhBatChu.Models;
 
 /// <summary>
 /// Một câu đố đuổi hình bắt chữ.
-/// Đáp án và ảnh dựng từ file trong Assets/CauHoi; gợi ý và độ khó có thể
-/// khai báo thêm trong Data/puzzles.json (xem PuzzleRepository).
+/// Câu đố đọc từ bảng Puzzles trong cơ sở dữ liệu. Nguồn ban đầu vẫn là ảnh
+/// trong Assets/CauHoi (tên file là đáp án), chuyển vào bảng bởi PuzzleSync.
 /// </summary>
 public class Puzzle
 {
-    /// <summary>Mã câu tự sinh theo thứ tự quét được (p001, p002...).</summary>
+    /// <summary>Mã câu, sinh từ đáp án đã chuẩn hóa (vd "CAHEO").</summary>
     public string Id { get; set; } = "";
 
     /// <summary>Đáp án hiển thị khi trả lời đúng hoặc khi bỏ qua.</summary>
@@ -16,8 +16,13 @@ public class Puzzle
     /// <summary>Các cách gõ được chấp nhận (có dấu / không dấu).</summary>
     public List<string> AcceptedAnswers { get; set; } = new();
 
-    /// <summary>Đường dẫn đầy đủ tới file ảnh trong Assets/CauHoi.</summary>
-    public string Image { get; set; } = "";
+    /// <summary>
+    /// Tên file ảnh, vd "CÁ HEO.png". Đây chỉ là **tên gọi** của ảnh, không
+    /// phải đường dẫn: byte ảnh nằm trong cơ sở dữ liệu, lấy ra bằng
+    /// <c>PuzzleRepository.LoadImage</c>. Máy chủ cũng dùng tên này làm địa chỉ
+    /// gửi ảnh cho máy người chơi.
+    /// </summary>
+    public string ImageName { get; set; } = "";
 
     /// <summary>Gợi ý bằng chữ.</summary>
     public string Hint { get; set; } = "";

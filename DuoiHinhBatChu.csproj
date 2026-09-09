@@ -30,8 +30,8 @@
     <Content Include="Assets\CauHoi\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <!-- Ảnh mã QR ủng hộ nhà phát triển, hiện ở màn đăng nhập (tùy chọn) -->
-    <Content Include="Assets\UngHo\**\*.*">
+    <!-- Ảnh tài nguyên của app: mã QR ủng hộ, logo... (xem AppImageLocator) -->
+    <Content Include="Assets\TaiNguyen\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <!-- Gợi ý và độ khó bổ sung cho từng đáp án (tùy chọn) -->

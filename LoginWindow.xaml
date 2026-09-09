@@ -325,9 +325,10 @@
                                        Text="Đăng nhập để giữ điểm, kim cương và tiến trình của riêng bạn, và để đấu với người khác. Chưa có tài khoản thì bấm Đăng ký. Bấm Khách thì vào chơi được ngay, nhưng chỉ chơi một mình và mọi người dùng chung một hồ sơ khách."/>
 
                             <!-- ===== Ủng hộ nhà phát triển =====
-                                 Ảnh QR để trong Assets/UngHo/, tên gì cũng được.
-                                 Chưa có ảnh thì hiện ô gạch đứt chỉ chỗ đặt, chứ
-                                 không để game nổ lỗi - xem LoadQrImage(). -->
+                                 Ảnh QR để trong Assets/TaiNguyen, đặt tên
+                                 "qr-ung-ho", đuôi gì cũng được. Chưa có ảnh thì
+                                 hiện ô gạch đứt chỉ chỗ đặt, chứ không để game
+                                 nổ lỗi - xem LoadQrImage() và AppImageLocator. -->
                             <TextBlock Text="ỦNG HỘ NHÀ PHÁT TRIỂN"
                                        Style="{StaticResource SectionLabel}"/>
                             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
@@ -336,7 +337,7 @@
                                             BorderThickness="2"
                                             Background="{DynamicResource CardAltBrush}"
                                             BorderBrush="{DynamicResource SlotEmptyBrush}">
-                                        <TextBlock Text="Đặt ảnh QR vào&#10;Assets/UngHo/"
+                                        <TextBlock Text="Đặt ảnh QR vào&#10;Assets/TaiNguyen/&#10;tên qr-ung-ho"
                                                    TextAlignment="Center" FontSize="11"
                                                    LineHeight="16"
                                                    HorizontalAlignment="Center"
