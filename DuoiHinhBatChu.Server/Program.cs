@@ -1,3 +1,4 @@
+using DuoiHinhBatChu.Data;
 using DuoiHinhBatChu.Models;
 using DuoiHinhBatChu.Server;
 using DuoiHinhBatChu.Services;
@@ -12,6 +13,11 @@ builder.Services.AddSingleton<PuzzleRepository>(_ => new PuzzleRepository());
 builder.Services.AddSingleton<RoomManager>();
 
 var app = builder.Build();
+
+// Mở (và tạo nếu chưa có) cơ sở dữ liệu ngay lúc khởi động: sai đường dẫn hay
+// hỏng file thì báo ngay, chứ không đợi tới lúc có người bấm đăng nhập
+GameDatabase.EnsureReady();
+app.Logger.LogInformation("Cơ sở dữ liệu: {Path}", GameDatabase.FilePath);
 
 // Nạp câu đố ngay lúc khởi động để sai đường dẫn ảnh thì biết luôn,
 // chứ không đợi tới lúc có người bấm chơi
