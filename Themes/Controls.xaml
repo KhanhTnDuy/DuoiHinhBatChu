@@ -187,6 +187,38 @@
         </Setter>
     </Style>
 
+    <!-- Nút phụ nền nhạt.
+         GhostButton lấy nền CardBrush nên đặt NGAY TRONG một thẻ Card là hai
+         nền trùng màu, nút gần như tàng hình. Nút này lấy nền PrimarySoftBrush
+         nên vẫn nổi trên mặt thẻ, mà không tranh chỗ với nút chính. -->
+    <Style x:Key="SoftButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" CornerRadius="10" Padding="16,10"
+                            Background="{DynamicResource PrimarySoftBrush}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background"
+                                    Value="{DynamicResource PrimaryBrush}"/>
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource OnPrimaryBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Nút dạng thẻ, dùng cho hàng trợ giúp và ô chọn chế độ chơi -->
     <Style x:Key="CardButton" TargetType="Button">
         <Setter Property="Cursor" Value="Hand"/>
