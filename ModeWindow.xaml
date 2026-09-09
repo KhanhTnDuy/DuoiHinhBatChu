@@ -53,7 +53,7 @@
             <Button Grid.Column="0" Style="{StaticResource CardButton}" Margin="0,0,10,0"
                     Command="{Binding PlaySoloCommand}">
                 <StackPanel Margin="10">
-                    <TextBlock Text="Chơi một mình" FontSize="24" FontWeight="Bold"
+                    <TextBlock Text="1 người chơi" FontSize="24" FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="OFFLINE" Style="{StaticResource SectionLabel}"
                                Foreground="{DynamicResource PrimaryBrush}" Margin="0,6,0,0"/>
@@ -67,7 +67,7 @@
             <Button Grid.Column="1" Style="{StaticResource CardButton}" Margin="10,0,0,0"
                     Command="{Binding ShowOnlineCommand}">
                 <StackPanel Margin="10">
-                    <TextBlock Text="Đấu nhiều người" FontSize="24" FontWeight="Bold"
+                    <TextBlock Text="Nhiều người chơi" FontSize="24" FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="ONLINE - CẦN MÁY CHỦ" Style="{StaticResource SectionLabel}"
                                Foreground="{DynamicResource TertiaryBrush}" Margin="0,6,0,0"/>
