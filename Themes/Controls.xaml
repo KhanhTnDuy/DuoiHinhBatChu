@@ -23,6 +23,34 @@
         <Setter Property="FontFamily" Value="Consolas, Segoe UI"/>
     </Style>
 
+    <!-- ===== Danh sách các bước đánh số (dùng ở màn đăng nhập) =====
+         Một hàng = ô tròn đánh số + một dòng chữ. Tách ra thành style để ba
+         bước giống hệt nhau, sửa một chỗ là đổi cả ba. -->
+    <Style x:Key="StepNumber" TargetType="Border">
+        <Setter Property="Width" Value="26"/>
+        <Setter Property="Height" Value="26"/>
+        <Setter Property="CornerRadius" Value="13"/>
+        <Setter Property="VerticalAlignment" Value="Top"/>
+        <Setter Property="Background" Value="{DynamicResource PrimarySoftBrush}"/>
+    </Style>
+
+    <Style x:Key="StepNumberText" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+    </Style>
+
+    <Style x:Key="StepText" TargetType="TextBlock">
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="LineHeight" Value="21"/>
+        <Setter Property="MaxWidth" Value="340"/>
+        <Setter Property="Margin" Value="12,2,0,0"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+    </Style>
+
     <!-- Số liệu HUD: chữ đơn cách để con số không nhảy khi tăng -->
     <Style x:Key="HudValue" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="Consolas, Segoe UI"/>

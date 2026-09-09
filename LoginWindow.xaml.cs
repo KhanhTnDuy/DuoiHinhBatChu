@@ -1,6 +1,8 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using DuoiHinhBatChu.Models;
 using DuoiHinhBatChu.Services;
 using DuoiHinhBatChu.ViewModels;
@@ -23,7 +25,50 @@ public partial class LoginWindow : Window
         _vm.LoggedIn += StartGame;
         DataContext = _vm;
 
+        LoadQrImage();
+
         Loaded += (_, _) => UserNameBox.Focus();
+    }
+
+    /// <summary>Đuôi file ảnh nhận làm mã QR.</summary>
+    private static readonly string[] QrExtensions = [".png", ".jpg", ".jpeg", ".bmp"];
+
+    /// <summary>
+    /// Nạp ảnh QR ủng hộ từ thư mục Assets/UngHo, lấy file ảnh đầu tiên tìm
+    /// thấy nên đặt tên gì cũng được.
+    ///
+    /// Chưa có ảnh thì cứ để nguyên ô gạch đứt chỉ chỗ đặt — thiếu ảnh không
+    /// phải là lý do để cả màn đăng nhập hỏng.
+    /// </summary>
+    private void LoadQrImage()
+    {
+        string dir = Path.Combine(AppContext.BaseDirectory, "Assets", "UngHo");
+        if (!Directory.Exists(dir)) return;
+
+        string? file = Directory.EnumerateFiles(dir)
+            .FirstOrDefault(f => QrExtensions.Contains(Path.GetExtension(f).ToLowerInvariant()));
+
+        if (file == null) return;
+
+        try
+        {
+            var image = new BitmapImage();
+            image.BeginInit();
+            // OnLoad: đọc hết ảnh vào bộ nhớ rồi nhả file ra ngay, không thì
+            // file bị giữ và người chơi không thay ảnh khác vào được
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.UriSource = new Uri(file);
+            image.EndInit();
+            image.Freeze();
+
+            QrImage.Source = image;
+            QrImage.Visibility = Visibility.Visible;
+            QrPlaceholder.Visibility = Visibility.Collapsed;
+        }
+        catch
+        {
+            // File hỏng hay không phải ảnh thật: giữ nguyên ô gạch đứt
+        }
     }
 
     /// <summary>
