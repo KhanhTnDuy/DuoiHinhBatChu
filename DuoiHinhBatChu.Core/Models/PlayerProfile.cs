@@ -20,7 +20,12 @@ public class PlayerProfile
     public int CorrectStreak { get; set; } = 0;
     public int Lives { get; set; } = 5;
     public int MaxLives { get; set; } = 5;
-    public int CurrentPuzzleIndex { get; set; } = 0;
+
+    /// <summary>
+    /// Mã câu đang chơi dở, rỗng nghĩa là chưa chơi câu nào.
+    /// Lưu bằng mã chứ không phải số thứ tự — xem <see cref="Data.PlayerState.CurrentPuzzleId"/>.
+    /// </summary>
+    public string CurrentPuzzleId { get; set; } = "";
     public List<string> SolvedPuzzleIds { get; set; } = new();
     public Dictionary<string, int> PuzzleStars { get; set; } = new();
     public bool IsSoundEnabled { get; set; } = true;

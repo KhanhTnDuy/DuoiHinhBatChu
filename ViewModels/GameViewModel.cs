@@ -83,7 +83,24 @@ public class GameViewModel : ViewModelBase
         RestartCommand = new RelayCommand(_ => Restart());
         ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
 
-        LoadPuzzle(Math.Clamp(_profile.CurrentPuzzleIndex, 0, _puzzles.Count - 1));
+        LoadPuzzle(ResumeIndex());
+    }
+
+    /// <summary>
+    /// Vào chơi ở câu nào. Hồ sơ giữ MÃ câu chứ không phải số thứ tự, nên phải
+    /// tra ngược ra vị trí trong bộ câu hiện tại.
+    ///
+    /// Mã không còn trong bộ (ảnh bị xóa hoặc đổi đáp án) thì không quay về câu
+    /// đầu — làm vậy là bắt người chơi giải lại từ đầu chỉ vì một câu biến mất.
+    /// Nhảy tới câu đầu tiên chưa giải là đúng ý người chơi hơn.
+    /// </summary>
+    private int ResumeIndex()
+    {
+        int saved = _puzzles.FindIndex(p => p.Id == _profile.CurrentPuzzleId);
+        if (saved >= 0) return saved;
+
+        int unsolved = _puzzles.FindIndex(p => !_profile.SolvedPuzzleIds.Contains(p.Id));
+        return unsolved >= 0 ? unsolved : 0;
     }
 
     // ----- Lệnh cho giao diện -----
@@ -343,7 +360,7 @@ public class GameViewModel : ViewModelBase
     {
         _index = index;
         _locked = false;
-        _profile.CurrentPuzzleIndex = index;
+        _profile.CurrentPuzzleId = _puzzles[index].Id;
         ResetClock();
 
         Slots.Clear();
