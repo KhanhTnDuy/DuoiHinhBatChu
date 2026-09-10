@@ -525,9 +525,20 @@
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>
 
-                    <Button Grid.Column="2" Style="{StaticResource PrimaryButton}"
+                    <!-- Bỏ qua mất 1 mạng, nên nói giá ngay trên nút và bỏ kiểu
+                         nút chính (xanh đậm) đi: đây không phải việc nên mời
+                         người chơi bấm, chỉ là lối thoát khi bí. -->
+                    <Button Grid.Column="2" Style="{StaticResource SoftButton}"
                             HorizontalAlignment="Right" VerticalAlignment="Center"
-                            Command="{Binding SkipCommand}" Content="Bỏ qua"/>
+                            Command="{Binding SkipCommand}">
+                        <StackPanel>
+                            <TextBlock Text="Bỏ qua" FontSize="14" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="−1 ♥" FontSize="12" HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource ErrorBrush}"/>
+                        </StackPanel>
+                    </Button>
                 </Grid>
             </Border>
         </Grid>

@@ -674,13 +674,39 @@ public class GameViewModel : ViewModelBase
         _state.SaveProfile(_profile);
     }
 
-    /// <summary>Bỏ qua cũng làm đứt chuỗi: chuỗi là "đúng liên tiếp", không phải "không sai".</summary>
+    /// <summary>
+    /// Bỏ qua câu này: mất 1 mạng và mất chuỗi, đổi lại được biết đáp án.
+    ///
+    /// Trước đây bỏ qua không mất gì cả, nên nó là cái nút đi hết bộ câu miễn
+    /// phí — bí câu nào bấm câu đó, chẳng phải nghĩ. Tính đúng bằng giá của hết
+    /// giờ thì bỏ qua mới là một lựa chọn thật: chịu mất một mạng để khỏi ngồi
+    /// hết 60 giây cho một câu mình biết chắc là không ra.
+    /// </summary>
     private void Skip()
     {
-        if (_locked) return;
+        if (_locked || IsPaused) return;
 
+        _locked = true;
+        AudioService.Instance.PlayWrong();
+
+        Lives--;
         CorrectStreak = 0;
-        GoNext();
+        IsFeedbackGood = false;
+        FeedbackText = $"Bỏ qua - mất 1 mạng. Đáp án: {Current.Answer}";
+        _state.SaveProfile(_profile);
+
+        RunAfter(1.6, () =>
+        {
+            if (Lives <= 0)
+            {
+                IsGameOver = true;
+                _locked = true;
+                EndRun();
+                return;
+            }
+
+            GoNext();
+        });
     }
 
     private void GoNext()
