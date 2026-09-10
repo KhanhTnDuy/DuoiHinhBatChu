@@ -112,7 +112,7 @@ public class MenuViewModel : ViewModelBase
 
     public string ContinueDetail => HasProgress
         ? "Vào lại đúng câu bạn đang dở, giữ nguyên điểm ván và kim cương."
-        : "Bắt đầu từ câu đầu tiên, với 5 mạng và 3 kim cương.";
+        : "Bắt đầu từ câu đầu tiên, với 5 mạng và 2 kim cương.";
 
     /// <summary>
     /// Đang chơi khách. Nói thẳng ngay trên menu thay vì để người ta chơi cả
