@@ -15,7 +15,11 @@ public class MenuViewModel : ViewModelBase
     private readonly Account _account;
     private readonly AppSettings _settings;
     private readonly GameStateService _state;
+    private readonly PuzzleRepository _puzzles = new();
     private readonly int _totalPuzzles;
+
+    /// <summary>Câu đang chơi dở là câu thứ mấy (đếm từ 1); 0 là không còn/chưa có.</summary>
+    private int _currentPosition;
 
     /// <summary>
     /// Hỏi một lần lúc dựng màn, TRƯỚC khi người chơi kịp bấm gì.
@@ -43,7 +47,8 @@ public class MenuViewModel : ViewModelBase
         _profile = _state.LoadProfile();
 
         // Chỉ cần con số tổng, đếm thẳng trong cơ sở dữ liệu chứ không nạp cả bộ câu
-        _totalPuzzles = new PuzzleRepository().Count();
+        _totalPuzzles = _puzzles.Count();
+        _currentPosition = _puzzles.PositionOf(_profile.CurrentPuzzleId);
 
         ContinueCommand = new RelayCommand(_ => StartGame?.Invoke());
         NewGameCommand = new RelayCommand(_ => AskNewGame());
@@ -101,7 +106,7 @@ public class MenuViewModel : ViewModelBase
     /// nút đổi tên thành Bắt đầu chơi và thẻ Chơi mới ẩn đi.
     /// </summary>
     public bool HasProgress =>
-        _profile.CurrentPuzzleIndex > 0 || _profile.Score > 0 || _profile.SolvedPuzzleIds.Count > 0;
+        _currentPosition > 1 || _profile.Score > 0 || _profile.SolvedPuzzleIds.Count > 0;
 
     public string ContinueTitle => HasProgress ? "Chơi tiếp" : "Bắt đầu chơi";
 
@@ -118,13 +123,12 @@ public class MenuViewModel : ViewModelBase
     /// <summary>
     /// Viên nhãn trên thẻ Chơi tiếp: "CÂU 3" hoặc "VÁN MỚI".
     ///
-    /// Vẫn kẹp theo tổng số câu — chơi hết bộ rồi thì số đang lưu là "câu thứ 7"
-    /// của bộ 6 câu, hiện thẳng ra là sai — nhưng KHÔNG hiện tổng ra ngoài,
-    /// cùng lý do với <see cref="SolvedText"/>.
+    /// Vị trí tính lại từ mã câu đang lưu, nên không cần kẹp theo tổng số câu
+    /// nữa: mã nào không còn trong bộ thì trả về 0 và hiện "VÁN MỚI". KHÔNG
+    /// hiện tổng ra ngoài, cùng lý do với <see cref="SolvedText"/>.
     /// </summary>
-    public string ContinuePill => HasProgress
-        ? $"CÂU {Math.Min(_profile.CurrentPuzzleIndex + 1, _totalPuzzles)}"
-        : "VÁN MỚI";
+    public string ContinuePill =>
+        HasProgress && _currentPosition > 0 ? $"CÂU {_currentPosition}" : "VÁN MỚI";
 
     public string ScoreText => _profile.Score.ToString();
     public string RubiesText => _profile.Rubies.ToString();
@@ -145,6 +149,7 @@ public class MenuViewModel : ViewModelBase
     public void Refresh()
     {
         _profile = _state.LoadProfile();
+        _currentPosition = _puzzles.PositionOf(_profile.CurrentPuzzleId);
 
         OnPropertyChanged(nameof(HasProgress));
         OnPropertyChanged(nameof(ContinueTitle));

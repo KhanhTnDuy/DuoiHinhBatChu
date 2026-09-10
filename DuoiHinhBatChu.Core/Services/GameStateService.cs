@@ -73,7 +73,7 @@ public class GameStateService
             CorrectStreak = state.CorrectStreak,
             Lives = state.Lives,
             MaxLives = state.MaxLives,
-            CurrentPuzzleIndex = state.CurrentPuzzleIndex,
+            CurrentPuzzleId = state.CurrentPuzzleId,
             IsSoundEnabled = state.IsSoundEnabled,
             IsBgmEnabled = state.IsBgmEnabled,
             IsTimerEnabled = state.IsTimerEnabled,
@@ -114,7 +114,7 @@ public class GameStateService
         state.CorrectStreak = profile.CorrectStreak;
         state.Lives = profile.Lives;
         state.MaxLives = profile.MaxLives;
-        state.CurrentPuzzleIndex = profile.CurrentPuzzleIndex;
+        state.CurrentPuzzleId = profile.CurrentPuzzleId;
         state.IsSoundEnabled = profile.IsSoundEnabled;
         state.IsBgmEnabled = profile.IsBgmEnabled;
         state.IsTimerEnabled = profile.IsTimerEnabled;

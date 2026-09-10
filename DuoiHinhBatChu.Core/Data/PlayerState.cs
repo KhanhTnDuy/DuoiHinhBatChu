@@ -18,7 +18,18 @@ public class PlayerState
     public int CorrectStreak { get; set; }
     public int Lives { get; set; } = 5;
     public int MaxLives { get; set; } = 5;
-    public int CurrentPuzzleIndex { get; set; }
+
+    /// <summary>
+    /// Mã câu đang chơi dở. Rỗng nghĩa là chưa vào ván nào.
+    ///
+    /// Trước đây chỗ này giữ SỐ THỨ TỰ của câu, và đó là chỗ hỏng: thứ tự câu
+    /// là thứ tự tên file trong <c>Assets/CauHoi</c>, nên chỉ cần thêm một ảnh
+    /// mới có tên đứng trước là mọi con số đã lưu trỏ sang câu khác — ai đang
+    /// chơi dở cũng bị đá sang một câu chẳng liên quan. Mã câu thì gắn với
+    /// chính đáp án (xem <see cref="PuzzleSync.MakeId"/>), thêm bớt ảnh bao
+    /// nhiêu cũng không xê dịch.
+    /// </summary>
+    public string CurrentPuzzleId { get; set; } = "";
 
     public bool IsSoundEnabled { get; set; } = true;
     public bool IsBgmEnabled { get; set; } = true;
