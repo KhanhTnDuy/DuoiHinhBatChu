@@ -53,8 +53,14 @@ public class GameViewModel : ViewModelBase
         _account = account;
         _settings = settings;
         _state = new GameStateService(account.Id);
-        _puzzles = _repository.LoadAll();
         _profile = _state.LoadProfile();
+
+        // Ván mới thì bốc hạt giống mới; ván đang dở thì dùng lại hạt giống cũ
+        // để dựng đúng thứ tự câu hôm trước
+        bool isNewRun = _profile.RunSeed == 0;
+        if (isNewRun) _profile.RunSeed = NewSeed();
+
+        _puzzles = Shuffle(_repository.LoadAll(), _profile.RunSeed);
         _profile.PlayerName = account.DisplayName;
         AudioService.Instance.IsEnabled = _profile.IsSoundEnabled;
         ThemeService.Apply(_settings.IsDarkTheme);
@@ -84,12 +90,40 @@ public class GameViewModel : ViewModelBase
         CancelHelpCommand = new RelayCommand(_ => CancelHelp());
         ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
 
-        LoadPuzzle(ResumeIndex());
+        // Ván mới thì vào câu đầu của thứ tự vừa xáo; ván dở thì tìm lại chỗ cũ
+        LoadPuzzle(isNewRun ? 0 : ResumeIndex());
     }
 
     /// <summary>
-    /// Vào chơi ở câu nào. Hồ sơ giữ MÃ câu chứ không phải số thứ tự, nên phải
-    /// tra ngược ra vị trí trong bộ câu hiện tại.
+    /// Hạt giống cho một ván mới. Tránh số 0 vì 0 là dấu hiệu "chưa có ván nào".
+    /// </summary>
+    private static int NewSeed() => Random.Shared.Next(1, int.MaxValue);
+
+    /// <summary>
+    /// Xáo bộ câu theo hạt giống của ván.
+    ///
+    /// Cùng một hạt giống luôn cho ra cùng một thứ tự, nên chỉ cần lưu đúng con
+    /// số đó là dựng lại được ván đang dở — khỏi phải lưu cả danh sách. Hạt
+    /// giống mới mỗi ván nên chơi lại không bao giờ gặp lại đúng thứ tự cũ.
+    ///
+    /// Fisher-Yates: mỗi hoán vị có xác suất như nhau.
+    /// </summary>
+    private static List<Puzzle> Shuffle(List<Puzzle> puzzles, int seed)
+    {
+        var rng = new Random(seed);
+
+        for (int i = puzzles.Count - 1; i > 0; i--)
+        {
+            int j = rng.Next(i + 1);
+            (puzzles[i], puzzles[j]) = (puzzles[j], puzzles[i]);
+        }
+
+        return puzzles;
+    }
+
+    /// <summary>
+    /// Vào lại chỗ cũ của ván đang dở. Hồ sơ giữ MÃ câu chứ không phải số thứ
+    /// tự, nên phải tra ngược ra vị trí trong thứ tự vừa dựng lại.
     ///
     /// Mã không còn trong bộ (ảnh bị xóa hoặc đổi đáp án) thì không quay về câu
     /// đầu — làm vậy là bắt người chơi giải lại từ đầu chỉ vì một câu biến mất.
@@ -859,13 +893,13 @@ public class GameViewModel : ViewModelBase
     /// Giữ lại điểm cũ là cộng dồn hai ván làm một, đúng cái kiểu tính điểm vừa
     /// bỏ đi.
     ///
-    /// Riêng TIẾN ĐỘ bộ câu thì giữ: thua ở câu 22 thì ván mới vẫn vào câu 22,
-    /// vì bộ câu là chặng đường dài chung cho mọi ván, không thuộc về ván nào.
-    /// Chỉ khi đã đi hết bộ mới quay về câu đầu và xóa danh sách đã giải.
+    /// Bộ câu cũng được XÁO LẠI: mỗi ván một thứ tự mới, nên chơi lại không gặp
+    /// lại đúng dãy câu vừa rồi. Vì thế ván mới luôn bắt đầu từ đầu danh sách
+    /// vừa xáo — "vào lại đúng câu đang dở" chỉ còn nghĩa trong cùng một ván.
     /// </summary>
     private void Restart()
     {
-        bool restartFromStart = IsFinished;
+        bool clearSolved = IsFinished;
 
         Score = 0;
         CorrectStreak = 0;
@@ -875,13 +909,18 @@ public class GameViewModel : ViewModelBase
         IsNewRecord = false;
         _runEnded = false;
 
-        if (restartFromStart)
+        _profile.RunSeed = NewSeed();
+        Shuffle(_puzzles, _profile.RunSeed);
+
+        // Đi hết cả bộ thì danh sách "đã giải" mới về 0; thua giữa chừng thì
+        // những câu đã giải vẫn là đã giải
+        if (clearSolved)
         {
             _profile.SolvedPuzzleIds.Clear();
             OnPropertyChanged(nameof(SolvedText));
         }
 
-        LoadPuzzle(restartFromStart ? 0 : _index);
+        LoadPuzzle(0);
     }
 
     // ----- Tiện ích -----

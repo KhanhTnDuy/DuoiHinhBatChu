@@ -31,6 +31,16 @@ public class PlayerState
     public int MaxLives { get; set; } = 5;
 
     /// <summary>
+    /// Hạt giống dùng để xáo thứ tự câu của ván này. 0 = chưa có ván nào.
+    ///
+    /// Mỗi ván mới bốc một hạt giống mới, nên thứ tự câu lần nào cũng khác.
+    /// Lưu HẠT GIỐNG chứ không lưu cả danh sách đã xáo: một số nguyên là đủ
+    /// dựng lại y nguyên thứ tự đó, nhờ vậy thoát ra rồi vào lại vẫn đúng ván
+    /// cũ chứ không bị xáo lại giữa chừng.
+    /// </summary>
+    public int RunSeed { get; set; }
+
+    /// <summary>
     /// Mã câu đang chơi dở. Rỗng nghĩa là chưa vào ván nào.
     ///
     /// Trước đây chỗ này giữ SỐ THỨ TỰ của câu, và đó là chỗ hỏng: thứ tự câu

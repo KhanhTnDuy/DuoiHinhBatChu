@@ -15,11 +15,15 @@ public class MenuViewModel : ViewModelBase
     private readonly Account _account;
     private readonly AppSettings _settings;
     private readonly GameStateService _state;
-    private readonly PuzzleRepository _puzzles = new();
-    private readonly int _totalPuzzles;
-
-    /// <summary>Câu đang chơi dở là câu thứ mấy (đếm từ 1); 0 là không còn/chưa có.</summary>
-    private int _currentPosition;
+    /// <summary>
+    /// Có ván nào đang chơi dở không.
+    ///
+    /// Dấu hiệu là hạt giống xáo bài: mỗi ván có một hạt giống, và ván kết thúc
+    /// thì nó về 0 (xem <see cref="GameStateService.SaveEndOfRun"/>). KHÔNG dựa
+    /// vào "đã giải câu nào chưa" nữa — chơi xong một ván là danh sách đã giải
+    /// có tên, mà lúc đó đâu còn ván nào để "tiếp".
+    /// </summary>
+    private bool _hasRun;
 
     /// <summary>
     /// Hỏi một lần lúc dựng màn, TRƯỚC khi người chơi kịp bấm gì.
@@ -46,9 +50,7 @@ public class MenuViewModel : ViewModelBase
         _hasPlayedBefore = _state.HasPlayedBefore();
         _profile = _state.LoadProfile();
 
-        // Chỉ cần con số tổng, đếm thẳng trong cơ sở dữ liệu chứ không nạp cả bộ câu
-        _totalPuzzles = _puzzles.Count();
-        _currentPosition = _puzzles.PositionOf(_profile.CurrentPuzzleId);
+        _hasRun = _profile.RunSeed != 0;
 
         ContinueCommand = new RelayCommand(_ => StartGame?.Invoke());
         NewGameCommand = new RelayCommand(_ => AskNewGame());
@@ -105,8 +107,7 @@ public class MenuViewModel : ViewModelBase
     /// Đã chơi dở hay chưa. Tài khoản mới tinh thì không có gì để "tiếp", nên
     /// nút đổi tên thành Bắt đầu chơi và thẻ Chơi mới ẩn đi.
     /// </summary>
-    public bool HasProgress =>
-        _currentPosition > 1 || _profile.Score > 0 || _profile.SolvedPuzzleIds.Count > 0;
+    public bool HasProgress => _hasRun;
 
     public string ContinueTitle => HasProgress ? "Chơi tiếp" : "Bắt đầu chơi";
 
@@ -121,14 +122,13 @@ public class MenuViewModel : ViewModelBase
     public bool IsGuest => _account.IsGuest;
 
     /// <summary>
-    /// Viên nhãn trên thẻ Chơi tiếp: "CÂU 3" hoặc "VÁN MỚI".
+    /// Viên nhãn trên thẻ Chơi tiếp.
     ///
-    /// Vị trí tính lại từ mã câu đang lưu, nên không cần kẹp theo tổng số câu
-    /// nữa: mã nào không còn trong bộ thì trả về 0 và hiện "VÁN MỚI". KHÔNG
-    /// hiện tổng ra ngoài, cùng lý do với <see cref="SolvedText"/>.
+    /// Từng hiện "CÂU 22". Bỏ con số đi vì thứ tự câu nay xáo lại mỗi ván, nên
+    /// "câu thứ 22" không nói lên điều gì: nó không phải câu thứ 22 của bộ, mà
+    /// là câu thứ 22 của một thứ tự chỉ ván này mới có.
     /// </summary>
-    public string ContinuePill =>
-        HasProgress && _currentPosition > 0 ? $"CÂU {_currentPosition}" : "VÁN MỚI";
+    public string ContinuePill => HasProgress ? "ĐANG DỞ" : "VÁN MỚI";
 
     /// <summary>
     /// Kỷ lục, KHÔNG phải điểm ván đang dở.
@@ -156,7 +156,7 @@ public class MenuViewModel : ViewModelBase
     public void Refresh()
     {
         _profile = _state.LoadProfile();
-        _currentPosition = _puzzles.PositionOf(_profile.CurrentPuzzleId);
+        _hasRun = _profile.RunSeed != 0;
 
         OnPropertyChanged(nameof(HasProgress));
         OnPropertyChanged(nameof(ContinueTitle));

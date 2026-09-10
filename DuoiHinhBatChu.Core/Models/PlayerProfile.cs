@@ -32,6 +32,12 @@ public class PlayerProfile
     public int MaxLives { get; set; } = 5;
 
     /// <summary>
+    /// Hạt giống xáo bài của ván đang chơi; 0 nghĩa là chưa có ván nào.
+    /// Xem <see cref="Data.PlayerState.RunSeed"/>.
+    /// </summary>
+    public int RunSeed { get; set; } = 0;
+
+    /// <summary>
     /// Mã câu đang chơi dở, rỗng nghĩa là chưa chơi câu nào.
     /// Lưu bằng mã chứ không phải số thứ tự — xem <see cref="Data.PlayerState.CurrentPuzzleId"/>.
     /// </summary>

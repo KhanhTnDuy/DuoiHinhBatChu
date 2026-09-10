@@ -1,4 +1,4 @@
-using DuoiHinhBatChu.Data;
+﻿using DuoiHinhBatChu.Data;
 using DuoiHinhBatChu.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -74,6 +74,7 @@ public class GameStateService
             CorrectStreak = state.CorrectStreak,
             Lives = state.Lives,
             MaxLives = state.MaxLives,
+            RunSeed = state.RunSeed,
             CurrentPuzzleId = state.CurrentPuzzleId,
             IsSoundEnabled = state.IsSoundEnabled,
             IsBgmEnabled = state.IsBgmEnabled,
@@ -116,6 +117,7 @@ public class GameStateService
         state.CorrectStreak = profile.CorrectStreak;
         state.Lives = profile.Lives;
         state.MaxLives = profile.MaxLives;
+        state.RunSeed = profile.RunSeed;
         state.CurrentPuzzleId = profile.CurrentPuzzleId;
         state.IsSoundEnabled = profile.IsSoundEnabled;
         state.IsBgmEnabled = profile.IsBgmEnabled;
@@ -187,11 +189,14 @@ public class GameStateService
             Rubies = profile.Rubies,            // kim cương: của tài khoản, không phải của ván
             SolvedPuzzleIds = profile.SolvedPuzzleIds,
             PuzzleStars = profile.PuzzleStars,
-            CurrentPuzzleId = profile.CurrentPuzzleId,
             IsSoundEnabled = profile.IsSoundEnabled,
             IsBgmEnabled = profile.IsBgmEnabled,
             IsTimerEnabled = profile.IsTimerEnabled,
 
+            RunSeed = 0,                        // ván sau xáo lại thứ tự câu
+            // Đi cùng RunSeed: ván sau xáo lại thì câu đang dở của ván cũ không
+            // còn nghĩa gì, giữ lại là ván mới nhảy vào giữa danh sách vừa xáo
+            CurrentPuzzleId = "",
             Score = 0,                          // ván sau bắt đầu từ 0
             CorrectStreak = 0,
             Lives = fresh.Lives,
@@ -227,6 +232,7 @@ public class GameStateService
         state.Rubies = fresh.Rubies;
         state.Lives = fresh.Lives;
         state.MaxLives = fresh.MaxLives;
+        state.RunSeed = 0;
         state.CurrentPuzzleId = "";
         state.UpdatedAt = DateTime.Now;
         // state.BestScore: cố ý không đụng tới
