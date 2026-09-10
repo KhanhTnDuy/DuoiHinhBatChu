@@ -1,4 +1,4 @@
-namespace DuoiHinhBatChu.Data;
+﻿namespace DuoiHinhBatChu.Data;
 
 /// <summary>
 /// Một dòng trong bảng <c>PlayerStates</c>: tiến trình chơi đơn của một tài khoản.
@@ -25,7 +25,7 @@ public class PlayerState
     /// </summary>
     public int BestScore { get; set; }
 
-    public int Rubies { get; set; } = 3;
+    public int Rubies { get; set; } = 2;
     public int CorrectStreak { get; set; }
     public int Lives { get; set; } = 5;
     public int MaxLives { get; set; } = 5;

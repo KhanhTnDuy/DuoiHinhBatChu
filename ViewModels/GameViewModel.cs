@@ -14,8 +14,9 @@ namespace DuoiHinhBatChu.ViewModels;
 public class GameViewModel : ViewModelBase
 {
     // Giá các trợ giúp: trợ giúp nào cũng đúng 1 kim cương.
-    // Kim cương giờ hiếm (tài khoản mới có 3, đúng 5 câu liền mới được thêm 1)
-    // nên không cần bảng giá nhiều bậc nữa - dùng hết là phải tự nghĩ.
+    // Kim cương rất hiếm (tài khoản mới có 2, đúng 5 câu liền mới được thêm 1)
+    // nên không cần bảng giá nhiều bậc - dùng hết là phải tự nghĩ. Vì hiếm như
+    // vậy nên mỗi lần tiêu đều hỏi lại một câu, xem AskHelp.
     public const int CostReveal = 1;    // mở 1 chữ
     public const int CostBoom = 1;      // xóa bớt chữ thừa
 
@@ -79,6 +80,8 @@ public class GameViewModel : ViewModelBase
         PauseCommand = new RelayCommand(_ => Pause());
         ResumeCommand = new RelayCommand(_ => Resume());
         RestartCommand = new RelayCommand(_ => Restart());
+        ConfirmHelpCommand = new RelayCommand(_ => ConfirmHelp());
+        CancelHelpCommand = new RelayCommand(_ => CancelHelp());
         ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
 
         LoadPuzzle(ResumeIndex());
@@ -112,6 +115,8 @@ public class GameViewModel : ViewModelBase
     public RelayCommand PauseCommand { get; }
     public RelayCommand ResumeCommand { get; }
     public RelayCommand RestartCommand { get; }
+    public RelayCommand ConfirmHelpCommand { get; }
+    public RelayCommand CancelHelpCommand { get; }
     public RelayCommand ToggleThemeCommand { get; }
 
     // ----- Dữ liệu hiển thị -----
@@ -308,6 +313,7 @@ public class GameViewModel : ViewModelBase
 
         IsPaused = true;
         IsPickingReveal = false;
+        CancelHelp();
         _state.SaveProfile(_profile);
     }
 
@@ -395,6 +401,7 @@ public class GameViewModel : ViewModelBase
         _index = index;
         _locked = false;
         IsPickingReveal = false;
+        CancelHelp();
         _profile.CurrentPuzzleId = _puzzles[index].Id;
         ResetClock();
 
@@ -644,6 +651,64 @@ public class GameViewModel : ViewModelBase
         private set => SetProperty(ref _isPickingReveal, value);
     }
 
+    // ----- Hỏi lại trước khi tiêu kim cương -----
+
+    private Action? _pendingHelp;
+
+    private bool _isConfirmingHelp;
+    /// <summary>
+    /// Đang hỏi lại "có chắc dùng trợ giúp không".
+    ///
+    /// Kim cương giờ chỉ có 2 và kiếm rất chậm (đúng 5 câu liền mới được 1), nên
+    /// một cú bấm nhầm là mất nửa số vốn. Hỏi lại một câu buộc người chơi dừng
+    /// một nhịp — đó chính là chỗ họ nhìn lại hình thêm lần nữa và nhiều khi ra
+    /// đáp án mà chẳng cần tiêu gì.
+    /// </summary>
+    public bool IsConfirmingHelp
+    {
+        get => _isConfirmingHelp;
+        private set => SetProperty(ref _isConfirmingHelp, value);
+    }
+
+    private string _confirmHelpTitle = "";
+    public string ConfirmHelpTitle
+    {
+        get => _confirmHelpTitle;
+        private set => SetProperty(ref _confirmHelpTitle, value);
+    }
+
+    private string _confirmHelpDetail = "";
+    public string ConfirmHelpDetail
+    {
+        get => _confirmHelpDetail;
+        private set => SetProperty(ref _confirmHelpDetail, value);
+    }
+
+    /// <summary>
+    /// Hỏi lại rồi mới làm. Đồng hồ VẪN CHẠY trong lúc hỏi — dừng nó thì hộp
+    /// thoại này thành mẹo câu giờ, bấm trợ giúp rồi ngồi ngắm hình thoải mái.
+    /// </summary>
+    private void AskHelp(string title, string detail, Action job)
+    {
+        _pendingHelp = job;
+        ConfirmHelpTitle = title;
+        ConfirmHelpDetail = detail;
+        IsConfirmingHelp = true;
+    }
+
+    private void ConfirmHelp()
+    {
+        Action? job = _pendingHelp;
+        CancelHelp();
+        job?.Invoke();
+    }
+
+    private void CancelHelp()
+    {
+        _pendingHelp = null;
+        IsConfirmingHelp = false;
+    }
+
     /// <summary>Bật chế độ chọn ô; bấm lần nữa là hủy. Kim cương chưa trừ ở đây.</summary>
     private void RevealLetter()
     {
@@ -667,10 +732,25 @@ public class GameViewModel : ViewModelBase
     /// Mở ô người chơi vừa chỉ. Chỉ tới đây kim cương mới bị trừ — chọn hụt
     /// hay đổi ý thì không mất gì.
     /// </summary>
+    /// <summary>
+    /// Người chơi vừa chỉ vào một ô. Hỏi lại rồi mới mở — hỏi ở ĐÂY chứ không
+    /// phải lúc bấm nút trợ giúp, vì đây mới là lúc kim cương thật sự ra đi, và
+    /// lúc này họ đã thấy rõ mình sắp mở ô nào.
+    /// </summary>
     private void RevealSlot(AnswerSlot slot)
     {
         IsPickingReveal = false;
 
+        if (slot.IsSpace || slot.IsRevealedByHint || Rubies < CostReveal) return;
+
+        AskHelp("Mở ô này?",
+                $"Tốn {CostReveal} kim cương, còn lại {Rubies - CostReveal}. " +
+                "Thử nhìn lại hình một lần nữa xem sao.",
+                () => DoRevealSlot(slot));
+    }
+
+    private void DoRevealSlot(AnswerSlot slot)
+    {
         if (slot.IsSpace || slot.IsRevealedByHint || Rubies < CostReveal) return;
 
         // Ô đang có chữ người chơi tự đặt: nhả phím đó về ngân hàng trước, không
@@ -697,10 +777,21 @@ public class GameViewModel : ViewModelBase
 
     private void BoomExtraLetters()
     {
-        if (_locked || Rubies < CostBoom) return;
+        if (_locked || IsPaused || IsPickingReveal || Rubies < CostBoom) return;
 
         var extras = Tiles.Where(t => !t.IsCorrectLetter && !t.IsEliminated && !t.IsUsed).ToList();
         if (extras.Count == 0) return;
+
+        AskHelp("Xóa bớt chữ thừa?",
+                $"Tốn {CostBoom} kim cương, còn lại {Rubies - CostBoom}. " +
+                $"Sẽ bỏ đi {Math.Max(1, extras.Count / 2)} phím gây nhiễu.",
+                DoBoomExtraLetters);
+    }
+
+    private void DoBoomExtraLetters()
+    {
+        var extras = Tiles.Where(t => !t.IsCorrectLetter && !t.IsEliminated && !t.IsUsed).ToList();
+        if (extras.Count == 0 || Rubies < CostBoom) return;
 
         Rubies -= CostBoom;
         int remove = Math.Max(1, extras.Count / 2);

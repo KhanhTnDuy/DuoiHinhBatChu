@@ -601,6 +601,41 @@
             </Border>
         </Grid>
 
+        <!-- ==================== Lớp phủ: hỏi lại trước khi tiêu kim cương ====================
+             Phủ kín cửa sổ để nuốt mọi cú bấm ra ngoài hộp thoại, giống lớp tạm
+             dừng. Nhưng KHÁC ở chỗ không giấu ảnh câu đố: cả mục đích của câu
+             hỏi này là để người chơi nhìn hình thêm một lần nữa trước khi tiêu. -->
+        <Grid Grid.ColumnSpan="2" Background="{DynamicResource ScrimBrush}"
+              Visibility="{Binding IsConfirmingHelp, Converter={StaticResource BoolVis}}">
+            <Border Style="{StaticResource Card}" CornerRadius="20" Padding="36,30"
+                    Width="420" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Text="{Binding ConfirmHelpTitle}" FontSize="22" FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+                    <TextBlock Text="{Binding ConfirmHelpDetail}" TextWrapping="Wrap"
+                               FontSize="14" LineHeight="22" Margin="0,12,0,0"
+                               HorizontalAlignment="Center" TextAlignment="Center"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+
+                    <!-- Nhắc luôn là đồng hồ không dừng, để không ai tưởng đây là
+                         chỗ nghỉ rồi ngồi lâu mất giờ oan -->
+                    <TextBlock Text="Đồng hồ vẫn chạy" FontSize="12" Margin="0,10,0,0"
+                               HorizontalAlignment="Center"
+                               Foreground="{DynamicResource TextMutedBrush}"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                Margin="0,22,0,0">
+                        <Button Style="{StaticResource SoftButton}"
+                                Command="{Binding CancelHelpCommand}" Content="Để tôi nghĩ thêm"/>
+                        <Button Style="{StaticResource PrimaryButton}" Margin="10,0,0,0"
+                                Command="{Binding ConfirmHelpCommand}" Content="Dùng ◆ 1"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+
         <!-- ==================== Lớp phủ: hết mạng ==================== -->
         <Grid Grid.ColumnSpan="2" Background="{DynamicResource ScrimBrush}"
               Visibility="{Binding IsGameOver, Converter={StaticResource BoolVis}}">
