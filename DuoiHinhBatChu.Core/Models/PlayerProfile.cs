@@ -8,7 +8,11 @@ namespace DuoiHinhBatChu.Models;
 public class PlayerProfile
 {
     public string PlayerName { get; set; } = "Người chơi";
+    /// <summary>Điểm của ván đang chơi; ván mới là về 0.</summary>
     public int Score { get; set; } = 0;
+
+    /// <summary>Điểm ván cao nhất từ trước tới nay — cái lên bảng xếp hạng.</summary>
+    public int BestScore { get; set; } = 0;
 
     /// <summary>Vốn ban đầu của tài khoản mới: đủ dùng ba lần trợ giúp.</summary>
     public int Rubies { get; set; } = 3;

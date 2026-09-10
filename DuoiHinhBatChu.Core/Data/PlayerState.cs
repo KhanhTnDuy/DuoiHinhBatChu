@@ -13,7 +13,18 @@ public class PlayerState
     /// <summary>Khóa chính, đồng thời là khóa ngoại trỏ về <c>Accounts.Id</c>.</summary>
     public string AccountId { get; set; } = "";
 
+    /// <summary>Điểm của VÁN đang chơi dở. Ván mới bắt đầu là về 0.</summary>
     public int Score { get; set; }
+
+    /// <summary>
+    /// Điểm ván cao nhất từ trước tới nay — con số duy nhất được lên bảng xếp hạng.
+    ///
+    /// Trước đây bảng xếp hạng lấy thẳng <see cref="Score"/>, mà điểm hồi đó
+    /// cộng dồn vĩnh viễn qua mọi ván: ai ngồi lâu thì cao, không liên quan tới
+    /// giỏi hay dở. Tách làm hai con số thì "điểm" mới có chỗ để dừng lại và so.
+    /// </summary>
+    public int BestScore { get; set; }
+
     public int Rubies { get; set; } = 3;
     public int CorrectStreak { get; set; }
     public int Lives { get; set; } = 5;

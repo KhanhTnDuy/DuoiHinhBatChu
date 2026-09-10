@@ -1,4 +1,4 @@
-using DuoiHinhBatChu.Models;
+﻿using DuoiHinhBatChu.Models;
 using DuoiHinhBatChu.Services;
 
 namespace DuoiHinhBatChu.ViewModels;
@@ -111,7 +111,7 @@ public class MenuViewModel : ViewModelBase
     public string ContinueTitle => HasProgress ? "Chơi tiếp" : "Bắt đầu chơi";
 
     public string ContinueDetail => HasProgress
-        ? "Vào lại đúng câu bạn đang dở, giữ nguyên điểm và kim cương."
+        ? "Vào lại đúng câu bạn đang dở, giữ nguyên điểm ván và kim cương."
         : "Bắt đầu từ câu đầu tiên, với 5 mạng và 3 kim cương.";
 
     /// <summary>
@@ -130,7 +130,14 @@ public class MenuViewModel : ViewModelBase
     public string ContinuePill =>
         HasProgress && _currentPosition > 0 ? $"CÂU {_currentPosition}" : "VÁN MỚI";
 
-    public string ScoreText => _profile.Score.ToString();
+    /// <summary>
+    /// Kỷ lục, KHÔNG phải điểm ván đang dở.
+    ///
+    /// Menu là chỗ nhìn lại thành tích, mà điểm ván đang dở thì nay còn mai mất
+    /// — thua một ván là nó về 0. Con số đáng khoe ở đây là điểm ván cao nhất.
+    /// Điểm ván đang chạy vẫn hiện đầy đủ trên thanh trạng thái màn chơi.
+    /// </summary>
+    public string BestScoreText => _profile.BestScore.ToString();
     public string RubiesText => _profile.Rubies.ToString();
     public string LivesText => $"{Math.Max(0, _profile.Lives)}/{_profile.MaxLives}";
     /// <summary>
@@ -155,7 +162,7 @@ public class MenuViewModel : ViewModelBase
         OnPropertyChanged(nameof(ContinueTitle));
         OnPropertyChanged(nameof(ContinueDetail));
         OnPropertyChanged(nameof(ContinuePill));
-        OnPropertyChanged(nameof(ScoreText));
+        OnPropertyChanged(nameof(BestScoreText));
         OnPropertyChanged(nameof(RubiesText));
         OnPropertyChanged(nameof(LivesText));
         OnPropertyChanged(nameof(SolvedText));
