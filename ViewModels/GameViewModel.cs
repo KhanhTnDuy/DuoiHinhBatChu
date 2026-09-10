@@ -580,8 +580,10 @@ public class GameViewModel : ViewModelBase
         slot.IsRevealedByHint = true;
         AudioService.Instance.PlayHint();
 
-        if (IsAnswerFull()) CheckAnswer();
-        else _state.SaveProfile(_profile);
+        // KHÔNG tự chấm dù chữ vừa mở làm kín hết ô. Trước đây có, và đó là cái
+        // bẫy: mấy ô còn lại đang điền sai thì mua trợ giúp xong là mất luôn
+        // một mạng, chưa kịp bấm "Trả lời". Cùng lý do với PlaceLetter.
+        _state.SaveProfile(_profile);
     }
 
     private void BoomExtraLetters()
