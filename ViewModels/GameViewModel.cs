@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -18,7 +18,6 @@ public class GameViewModel : ViewModelBase
     // nên không cần bảng giá nhiều bậc nữa - dùng hết là phải tự nghĩ.
     public const int CostReveal = 1;    // mở 1 chữ
     public const int CostBoom = 1;      // xóa bớt chữ thừa
-    public const int CostHint = 1;      // xem gợi ý bằng lời
 
     /// <summary>Đúng liên tiếp đủ chừng này câu thì được thưởng kim cương.</summary>
     public const int StreakForRuby = 5;
@@ -74,7 +73,6 @@ public class GameViewModel : ViewModelBase
         TakeBackCommand = new RelayCommand(p => TakeBack(p as AnswerSlot));
         RevealLetterCommand = new RelayCommand(_ => RevealLetter());
         BoomCommand = new RelayCommand(_ => BoomExtraLetters());
-        ShowHintCommand = new RelayCommand(_ => ShowHint());
         SkipCommand = new RelayCommand(_ => Skip());
         ClearCommand = new RelayCommand(_ => ClearAnswer(), _ => CanClear);
         SubmitCommand = new RelayCommand(_ => SubmitAnswer(), _ => CanSubmit);
@@ -108,7 +106,6 @@ public class GameViewModel : ViewModelBase
     public RelayCommand TakeBackCommand { get; }
     public RelayCommand RevealLetterCommand { get; }
     public RelayCommand BoomCommand { get; }
-    public RelayCommand ShowHintCommand { get; }
     public RelayCommand SkipCommand { get; }
     public RelayCommand ClearCommand { get; }
     public RelayCommand SubmitCommand { get; }
@@ -258,13 +255,6 @@ public class GameViewModel : ViewModelBase
 
     public bool HasImage => ImageSource != null;
 
-    private string _hintText = "";
-    public string HintText
-    {
-        get => _hintText;
-        private set => SetProperty(ref _hintText, value);
-    }
-
     private string _feedbackText = "";
     public string FeedbackText
     {
@@ -408,7 +398,6 @@ public class GameViewModel : ViewModelBase
 
         Slots.Clear();
         Tiles.Clear();
-        HintText = "";
         FeedbackText = "";
         IsFeedbackGood = false;
 
@@ -660,16 +649,6 @@ public class GameViewModel : ViewModelBase
         foreach (LetterTile t in extras.OrderBy(_ => _rng.Next()).Take(remove))
             t.IsEliminated = true;
 
-        AudioService.Instance.PlayHint();
-        _state.SaveProfile(_profile);
-    }
-
-    private void ShowHint()
-    {
-        if (_locked || HintText.Length > 0 || Rubies < CostHint) return;
-
-        Rubies -= CostHint;
-        HintText = "Gợi ý: " + Current.Hint;
         AudioService.Instance.PlayHint();
         _state.SaveProfile(_profile);
     }

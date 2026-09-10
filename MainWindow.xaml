@@ -345,14 +345,6 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Gợi ý bằng lời, chỉ hiện sau khi mua -->
-                        <Border CornerRadius="12" Padding="12" Margin="0,10,0,0"
-                                Background="{DynamicResource TertiarySoftBrush}"
-                                Visibility="{Binding HintText, Converter={StaticResource StrVis}}">
-                            <TextBlock Text="{Binding HintText}" TextWrapping="Wrap" FontSize="13"
-                                       LineHeight="20"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
-                        </Border>
                     </StackPanel>
                 </Border>
 
@@ -437,19 +429,13 @@
                             </Grid>
                         </Button>
 
-                        <Button Style="{StaticResource CardButton}" Command="{Binding ShowHintCommand}">
-                            <Grid>
-                                <StackPanel>
-                                    <TextBlock Text="Gợi ý" FontSize="14" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                    <TextBlock Text="Xem mô tả đáp án" FontSize="12"
-                                               Foreground="{DynamicResource TextMutedBrush}"/>
-                                </StackPanel>
-                                <TextBlock Text="1" Style="{StaticResource HudValue}" FontSize="15"
-                                           HorizontalAlignment="Right"
-                                           Foreground="{DynamicResource TertiaryBrush}"/>
-                            </Grid>
-                        </Button>
+                        <!-- Từng có trợ giúp thứ ba, "Gợi ý", bán mô tả đáp án lấy
+                             1 kim cương. Bỏ đi vì chủ đề ("Danh nhân", "Thể thao",
+                             "Hoa quả"…) đã hiện ngay dưới câu hỏi và cho không —
+                             mua thêm một câu mô tả nữa gần như không nói thêm được
+                             gì, mà 12/39 câu còn chưa soạn gợi ý nên thứ bán ra chỉ
+                             là "đáp án gồm 2 tiếng, tất cả 9 chữ cái", đúng cái
+                             người chơi đang nhìn thấy ở thẻ bên trái. -->
                     </StackPanel>
                 </Border>
             </Grid>
