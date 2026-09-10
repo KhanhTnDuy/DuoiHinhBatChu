@@ -307,6 +307,7 @@ public class GameViewModel : ViewModelBase
         if (_locked || IsGameOver || IsFinished) return;
 
         IsPaused = true;
+        IsPickingReveal = false;
         _state.SaveProfile(_profile);
     }
 
@@ -393,6 +394,7 @@ public class GameViewModel : ViewModelBase
     {
         _index = index;
         _locked = false;
+        IsPickingReveal = false;
         _profile.CurrentPuzzleId = _puzzles[index].Id;
         ResetClock();
 
@@ -475,7 +477,10 @@ public class GameViewModel : ViewModelBase
 
     private void PlaceLetter(LetterTile? tile)
     {
-        if (_locked || IsPaused || tile == null || tile.IsUsed || tile.IsEliminated) return;
+        // Đang chờ chỉ ô để mở thì bàn phím chữ tạm khóa: lúc đó cú bấm của
+        // người chơi đang dành cho hàng ô đáp án, không phải cho phím chữ
+        if (_locked || IsPaused || IsPickingReveal
+            || tile == null || tile.IsUsed || tile.IsEliminated) return;
 
         AnswerSlot? slot = Slots.FirstOrDefault(s => !s.IsSpace && !s.HasValue);
         if (slot == null) return;
@@ -518,10 +523,21 @@ public class GameViewModel : ViewModelBase
     /// <summary>Phải điền kín hết ô mới trả lời được.</summary>
     public bool CanSubmit => !_locked && !IsPaused && Slots.Count > 0 && IsAnswerFull();
 
+    /// <summary>
+    /// Bấm vào một ô đáp án. Bình thường là lấy chữ ra; đang chọn ô để mở thì
+    /// cú bấm đó có nghĩa khác hẳn — chính là ô người chơi muốn mở.
+    /// </summary>
     private void TakeBack(AnswerSlot? slot)
     {
-        if (_locked || IsPaused || slot == null || slot.IsSpace || !slot.HasValue
-            || slot.IsRevealedByHint) return;
+        if (_locked || IsPaused || slot == null || slot.IsSpace) return;
+
+        if (IsPickingReveal)
+        {
+            RevealSlot(slot);
+            return;
+        }
+
+        if (!slot.HasValue || slot.IsRevealedByHint) return;
 
         ReturnTile(slot);
         AudioService.Instance.PlayClick();
@@ -611,14 +627,56 @@ public class GameViewModel : ViewModelBase
 
     // ----- Trợ giúp -----
 
+    private bool _isPickingReveal;
+
+    /// <summary>
+    /// Đang chờ người chơi chỉ vào ô muốn mở.
+    ///
+    /// Trước đây trợ giúp này bốc ngẫu nhiên một ô trống. Bốc ngẫu nhiên hay
+    /// trúng chữ giữa tiếng, gần như không giúp được gì cho việc đoán — trả 1
+    /// kim cương mà không biết mình mua được cái gì. Để người chơi tự chọn thì
+    /// họ mở đúng chỗ đang bí, và trợ giúp thành một nước đi có tính toán chứ
+    /// không phải một lần quay số.
+    /// </summary>
+    public bool IsPickingReveal
+    {
+        get => _isPickingReveal;
+        private set => SetProperty(ref _isPickingReveal, value);
+    }
+
+    /// <summary>Bật chế độ chọn ô; bấm lần nữa là hủy. Kim cương chưa trừ ở đây.</summary>
     private void RevealLetter()
     {
-        if (_locked || Rubies < CostReveal) return;
+        if (_locked || IsPaused) return;
 
-        var empty = Slots.Where(s => !s.IsSpace && !s.HasValue).ToList();
-        if (empty.Count == 0) return;
+        if (IsPickingReveal)
+        {
+            IsPickingReveal = false;    // bấm lại nút = đổi ý
+            return;
+        }
 
-        AnswerSlot slot = empty[_rng.Next(empty.Count)];
+        if (Rubies < CostReveal) return;
+
+        // Không còn ô nào để mở thì đừng bật chế độ chọn cho người ta bấm hụt
+        if (!Slots.Any(s => !s.IsSpace && !s.IsRevealedByHint)) return;
+
+        IsPickingReveal = true;
+    }
+
+    /// <summary>
+    /// Mở ô người chơi vừa chỉ. Chỉ tới đây kim cương mới bị trừ — chọn hụt
+    /// hay đổi ý thì không mất gì.
+    /// </summary>
+    private void RevealSlot(AnswerSlot slot)
+    {
+        IsPickingReveal = false;
+
+        if (slot.IsSpace || slot.IsRevealedByHint || Rubies < CostReveal) return;
+
+        // Ô đang có chữ người chơi tự đặt: nhả phím đó về ngân hàng trước, không
+        // thì phím vừa bị đánh dấu đã dùng mà chữ trong ô lại bị thay
+        if (slot.HasValue) ReturnTile(slot);
+
         Rubies -= CostReveal;
 
         // Dùng luôn một phím chữ tương ứng để số phím còn lại vẫn khớp số ô trống
