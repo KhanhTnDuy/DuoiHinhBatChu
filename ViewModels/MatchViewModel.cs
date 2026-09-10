@@ -53,6 +53,12 @@ public class MatchViewModel : ViewModelBase
     private readonly DispatcherTimer _tick = new() { Interval = TimeSpan.FromMilliseconds(100) };
     private readonly DispatcherTimer _flash = new() { Interval = WrongFlash };
 
+    /// <summary>Đếm ngược quãng chờ sau khi đoán sai.</summary>
+    private readonly DispatcherTimer _cooldown =
+        new() { Interval = TimeSpan.FromMilliseconds(200) };
+
+    private DateTime _blockedUntil;
+
     private DateTime _roundStartedLocal;
     private double _secondsAllowed = 1;
     private int _nextTileId;
@@ -75,6 +81,7 @@ public class MatchViewModel : ViewModelBase
 
         _tick.Tick += (_, _) => OnPropertyChanged(nameof(SecondsLeftText));
         _flash.Tick += (_, _) => { _flash.Stop(); ClearSlots(); };
+        _cooldown.Tick += (_, _) => ShowCooldownLeft();
 
         CreateRoomCommand = new RelayCommand(async _ => await CreateRoomAsync(), _ => !IsBusy);
         JoinRoomCommand = new RelayCommand(async _ => await JoinRoomAsync(), _ => !IsBusy);
@@ -246,6 +253,14 @@ public class MatchViewModel : ViewModelBase
         private set => SetProperty(ref _isAnswered, value);
     }
 
+    private bool _isCoolingDown;
+    /// <summary>Đang trong quãng chờ vì vừa đoán sai; bàn phím chữ tạm khóa.</summary>
+    public bool IsCoolingDown
+    {
+        get => _isCoolingDown;
+        private set => SetProperty(ref _isCoolingDown, value);
+    }
+
     private string _revealedAnswer = "";
     /// <summary>Đáp án của câu vừa xong, chỉ có sau khi máy chủ báo hết câu.</summary>
     public string RevealedAnswer
@@ -347,6 +362,11 @@ public class MatchViewModel : ViewModelBase
         RevealedAnswer = "";
         FeedbackText = "";
 
+        // Câu mới thì quãng phạt của câu cũ hết hiệu lực - máy chủ cũng dọn
+        // đúng như vậy trong Room.ResetAnswers()
+        _cooldown.Stop();
+        IsCoolingDown = false;
+
         ProgressText = $"Câu {round.RoundNumber}/{round.TotalRounds}";
         DifficultyText = $"{round.Difficulty}/5";
 
@@ -430,16 +450,51 @@ public class MatchViewModel : ViewModelBase
         else
         {
             IsFeedbackGood = false;
-            FeedbackText = "Chưa đúng, thử lại!";
             foreach (AnswerSlot slot in Slots) slot.IsWrong = !slot.IsSpace;
             _flash.Start();
+            StartCooldown(result.CooldownSeconds);
         }
+    }
+
+    /// <summary>
+    /// Bắt đầu quãng chờ sau khi đoán sai. Máy chủ mới là bên thật sự chặn
+    /// (xem <c>RoomManager.Judge</c>); phần này chỉ để người chơi nhìn thấy còn
+    /// phải chờ bao lâu, thay vì bấm mãi mà không hiểu sao không ăn thua.
+    /// </summary>
+    private void StartCooldown(double seconds)
+    {
+        if (seconds <= 0)
+        {
+            FeedbackText = "Chưa đúng, thử lại!";
+            return;
+        }
+
+        _blockedUntil = DateTime.UtcNow.AddSeconds(seconds);
+        IsCoolingDown = true;
+        ShowCooldownLeft();
+        _cooldown.Start();
+    }
+
+    private void ShowCooldownLeft()
+    {
+        double left = (_blockedUntil - DateTime.UtcNow).TotalSeconds;
+
+        if (left <= 0)
+        {
+            _cooldown.Stop();
+            IsCoolingDown = false;
+            FeedbackText = "Thử lại đi!";
+            return;
+        }
+
+        FeedbackText = $"Chưa đúng — chờ {Math.Ceiling(left):0}s";
     }
 
     private void EndRound(RoundEnded ended)
     {
         _tick.Stop();
         _flash.Stop();
+        _cooldown.Stop();
 
         RevealedAnswer = ended.Answer;
         ApplyScores(ended.Scores);
@@ -455,6 +510,7 @@ public class MatchViewModel : ViewModelBase
     {
         _tick.Stop();
         _flash.Stop();
+        _cooldown.Stop();
 
         ApplyScores(ended.Scores);
         IsPlaying = false;
@@ -519,7 +575,7 @@ public class MatchViewModel : ViewModelBase
 
     private void PlaceLetter(LetterTile? tile)
     {
-        if (tile == null || tile.IsUsed || IsAnswered || !IsPlaying) return;
+        if (tile == null || tile.IsUsed || IsAnswered || IsCoolingDown || !IsPlaying) return;
 
         AnswerSlot? slot = Slots.FirstOrDefault(s => !s.IsSpace && !s.HasValue);
         if (slot == null) return;
@@ -599,6 +655,7 @@ public class MatchViewModel : ViewModelBase
     {
         _tick.Stop();
         _flash.Stop();
+        _cooldown.Stop();
 
         try
         {

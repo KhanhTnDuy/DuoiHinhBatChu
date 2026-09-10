@@ -43,8 +43,12 @@ public record RoundInfo(int RoundNumber, int TotalRounds, string ImageName,
                         double SecondsAllowed);
 
 /// <param name="Seconds">Thời gian trả lời, do máy chủ đo.</param>
+/// <param name="CooldownSeconds">
+/// Đoán sai thì phải chờ chừng này giây mới được gửi tiếp; 0 là gửi được ngay.
+/// Máy chủ mới là bên giữ mốc chờ — số này chỉ để client hiện ra cho biết.
+/// </param>
 public record AnswerResult(string AccountId, string DisplayName, bool Correct,
-                           int Points, double Seconds);
+                           int Points, double Seconds, double CooldownSeconds);
 
 /// <param name="Answer">Đáp án đầy đủ có dấu, chỉ lộ ra khi câu đã kết thúc.</param>
 public record RoundEnded(int RoundNumber, string Answer, IReadOnlyList<PlayerInfo> Scores);
