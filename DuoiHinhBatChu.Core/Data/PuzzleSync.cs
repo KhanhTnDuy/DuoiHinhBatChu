@@ -28,8 +28,6 @@ public static class PuzzleSync
     /// <summary>Số câu thêm mới, cập nhật và xóa của một lần đối chiếu.</summary>
     public readonly record struct Report(int Added, int Updated, int Removed, int Total)
     {
-        public bool Changed => Added > 0 || Updated > 0 || Removed > 0;
-
         public override string ToString() =>
             $"{Total} câu đố (thêm {Added}, cập nhật {Updated}, xóa {Removed})";
     }
@@ -75,6 +73,10 @@ public static class PuzzleSync
                 || row.SourceModifiedUtc != file.LastWriteTimeUtc
                 || row.ImageName != file.Name;
 
+            string category = string.IsNullOrWhiteSpace(extra?.Category)
+                ? DefaultCategory(img.Answer)
+                : extra!.Category.Trim();
+
             string hint = string.IsNullOrWhiteSpace(extra?.Hint)
                 ? DefaultHint(img.Answer)
                 : extra!.Hint;
@@ -84,6 +86,7 @@ public static class PuzzleSync
                 : DefaultDifficulty(img.Answer);
 
             bool metaChanged = row.Answer != img.Answer
+                || row.Category != category
                 || row.Hint != hint
                 || row.Difficulty != difficulty
                 || row.Order != order;
@@ -99,6 +102,7 @@ public static class PuzzleSync
             }
 
             row.Answer = img.Answer;
+            row.Category = category;
             row.Hint = hint;
             row.Difficulty = difficulty;
             row.Order = order++;
@@ -184,6 +188,18 @@ public static class PuzzleSync
         }
 
         return map;
+    }
+
+    /// <summary>
+    /// Chủ đề mặc định khi puzzles.json chưa khai cho câu này. Máy không đoán
+    /// nổi "CÁ HEO" là con vật, nên chỉ tách được hai loại theo độ dài: đáp án
+    /// dài cỡ một câu thì gần như chắc chắn là ca dao / tục ngữ, còn lại xếp
+    /// tạm vào "Cụm từ" cho tới khi bạn khai chủ đề thật trong puzzles.json.
+    /// </summary>
+    private static string DefaultCategory(string answer)
+    {
+        int words = answer.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+        return words >= 6 ? "Ca dao - tục ngữ" : "Cụm từ";
     }
 
     /// <summary>Gợi ý mặc định khi puzzles.json chưa khai báo gì cho câu này.</summary>

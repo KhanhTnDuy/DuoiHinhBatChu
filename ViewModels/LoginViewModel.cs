@@ -7,7 +7,7 @@ namespace DuoiHinhBatChu.ViewModels;
 /// Màn đăng nhập: hai thẻ Đăng nhập / Đăng ký, cộng lối vào nhanh cho khách.
 ///
 /// Chọn chế độ chơi cũng nằm ở đây:
-///   - Chơi một mình: chạy offline, không cần tài khoản.
+///   - Cổ điển: chạy offline, không cần tài khoản.
 ///   - Đấu nhiều người: cần tài khoản và cần máy chủ, sẽ mở ở phần sau
 ///     (xem Docs/MULTIPLAYER.md).
 /// </summary>

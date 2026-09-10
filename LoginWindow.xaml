@@ -11,7 +11,7 @@
         ResizeMode="NoResize"
         FontFamily="Segoe UI"
         TextOptions.TextFormattingMode="Ideal"
-        Background="{DynamicResource CanvasBrush}"
+        Background="{DynamicResource SkyBrush}"
         KeyDown="Window_KeyDown">
 
     <Window.Resources>
@@ -266,7 +266,7 @@
                 <Rectangle Height="1" Fill="{DynamicResource CardBorderBrush}" Margin="0,0,0,16"/>
                 <Button Style="{StaticResource GhostButton}"
                         Command="{Binding PlayAsGuestCommand}"
-                        ToolTip="Vào ngay, không cần tài khoản - chỉ chơi được một mình"
+                        ToolTip="Vào ngay, không cần tài khoản - chỉ chơi được chế độ Cổ điển"
                         Content="Khách"/>
             </StackPanel>
         </Grid>
@@ -322,7 +322,7 @@
                             <TextBlock TextWrapping="Wrap" FontSize="14" LineHeight="22"
                                        Margin="0,6,0,18"
                                        Foreground="{DynamicResource TextSecondaryBrush}"
-                                       Text="Đăng nhập để giữ điểm, kim cương và tiến trình của riêng bạn, và để đấu với người khác. Chưa có tài khoản thì bấm Đăng ký. Bấm Khách thì vào chơi được ngay, nhưng chỉ chơi một mình và mọi người dùng chung một hồ sơ khách."/>
+                                       Text="Đăng nhập để giữ điểm, kim cương và tiến trình của riêng bạn, và để đấu với người khác. Chưa có tài khoản thì bấm Đăng ký. Bấm Khách thì vào chơi được ngay, nhưng chỉ chơi được chế độ Cổ điển và mọi người dùng chung một hồ sơ khách."/>
 
                             <!-- ===== Ủng hộ nhà phát triển =====
                                  Ảnh QR để trong Assets/TaiNguyen, đặt tên

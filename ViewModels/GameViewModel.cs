@@ -111,6 +111,13 @@ public class GameViewModel : ViewModelBase
 
     public string DifficultyText => $"{Current.Difficulty}/5";
 
+    /// <summary>
+    /// Chủ đề của đáp án ("Đồ vật", "Ca dao - tục ngữ"…). Cho không, hiện ngay
+    /// dưới câu hỏi: nhìn hình mà không ra thì ít ra cũng biết đang tìm cái gì,
+    /// đỡ phải tiêu kim cương chỉ để có hướng nghĩ.
+    /// </summary>
+    public string CategoryText => Current.Category;
+
     /// <summary>Số ô chữ cái của đáp án (không tính khoảng trắng).</summary>
     public string LetterCountText => $"{Slots.Count(x => !x.IsSpace)} chữ cái";
 
@@ -128,10 +135,8 @@ public class GameViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Tên hiện ở cột trái; tài khoản khách thì ghi rõ là khách.</summary>
+    /// <summary>Tên hiện ở cột trái, để giữa trận vẫn biết đang chơi bằng tài khoản nào.</summary>
     public string PlayerName => _account.DisplayName;
-
-    public string AccountKindText => _account.IsGuest ? "Chơi khách - offline" : "Đã đăng nhập";
 
     private void ToggleTheme()
     {
@@ -359,6 +364,7 @@ public class GameViewModel : ViewModelBase
 
         OnPropertyChanged(nameof(ProgressText));
         OnPropertyChanged(nameof(DifficultyText));
+        OnPropertyChanged(nameof(CategoryText));
         OnPropertyChanged(nameof(LetterCountText));
         _state.SaveProfile(_profile);
     }

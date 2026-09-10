@@ -34,6 +34,16 @@
     <Content Include="Assets\TaiNguyen\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!--
+      Ảnh nền bầu trời của màn menu (sáng / tối).
+      Build Action = Resource chứ không phải Content: hai ảnh này được XAML gọi
+      thẳng bằng đường dẫn "/Assets/NenTroi/..." trong Themes/Light.xaml và
+      Dark.xaml, nên chúng phải nằm TRONG file .exe, không phải nằm cạnh nó.
+      Đổi ảnh thì phải build lại — đúng như vậy, vì ảnh nền là một phần của bộ
+      màu giao diện, không phải tài nguyên thả tay như Assets/TaiNguyen.
+    -->
+    <Resource Include="Assets\NenTroi\**\*.png" />
+
     <!-- Gợi ý và độ khó bổ sung cho từng đáp án (tùy chọn) -->
     <Content Include="Data\puzzles.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

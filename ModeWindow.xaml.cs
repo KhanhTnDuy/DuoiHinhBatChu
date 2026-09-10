@@ -29,7 +29,7 @@ public partial class ModeWindow : Window
     }
 
     /// <summary>
-    /// Chọn 1 người chơi thì sang MENU, không vào thẳng màn chơi: ở đó người
+    /// Chọn Cổ điển thì sang MENU, không vào thẳng màn chơi: ở đó người
     /// chơi còn chọn chơi tiếp hay chơi mới, và xem bảng xếp hạng.
     ///
     /// Mở cửa sổ mới rồi mới đóng cửa sổ này, để ứng dụng không tự thoát.

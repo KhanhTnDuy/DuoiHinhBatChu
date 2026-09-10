@@ -31,7 +31,7 @@ public class PuzzleRepository
         var rows = db.Puzzles
             .AsNoTracking()
             .OrderBy(p => p.Order)
-            .Select(p => new { p.Id, p.Answer, p.Hint, p.Difficulty, p.ImageName })
+            .Select(p => new { p.Id, p.Answer, p.Category, p.Hint, p.Difficulty, p.ImageName })
             .ToList();
 
         if (rows.Count == 0)
@@ -52,6 +52,7 @@ public class PuzzleRepository
         {
             Id = r.Id,
             Answer = r.Answer,
+            Category = r.Category,
             Hint = r.Hint,
             Difficulty = r.Difficulty,
             ImageName = r.ImageName,

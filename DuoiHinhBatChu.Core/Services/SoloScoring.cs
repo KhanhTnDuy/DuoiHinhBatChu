@@ -1,11 +1,11 @@
 namespace DuoiHinhBatChu.Services;
 
 /// <summary>
-/// Cách tính điểm và giới hạn giờ cho chế độ 1 người chơi.
+/// Cách tính điểm và giới hạn giờ cho chế độ Cổ điển.
 ///
 /// Khác chỗ nào với <see cref="MatchScoring"/> của ván đấu nhiều người:
 /// đấu nhiều người là cuộc đua, ai chậm thì gần như mất trắng, nên hết giờ là
-/// 0 điểm. Chơi một mình thì không đua với ai, mục đích là luyện tay — nên trả
+/// 0 điểm. Chơi Cổ điển thì không đua với ai, mục đích là luyện tay — nên trả
 /// lời đúng trong giờ luôn được **điểm nền**, còn nhanh thì được **thưởng thêm**
 /// tối đa bằng đúng điểm nền (tức là nhanh nhất thì gấp đôi).
 /// </summary>

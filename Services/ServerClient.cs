@@ -100,11 +100,9 @@ public class ServerClient
         PostAuthAsync(address, "register",
                       new RegisterRequest(userName, displayName, password, password, phone));
 
-    /// <summary>Quên mật khẩu trên máy chủ: khớp số điện thoại thì đặt lại.</summary>
-    public Task<ServerAuth> ResetPasswordAsync(
-        string address, string userName, string phone, string newPassword) =>
-        PostAuthAsync(address, "reset-password",
-                      new ResetPasswordRequest(userName, phone, newPassword, newPassword));
+    // Máy chủ có sẵn đường /api/auth/reset-password, nhưng màn đăng nhập máy chủ
+    // chưa có mục "Quên mật khẩu?" nên client chưa gọi tới. Thêm màn đó thì viết
+    // lại một hàm ResetPasswordAsync theo đúng khuôn hai hàm trên.
 
     // ----- Nội bộ -----
 
