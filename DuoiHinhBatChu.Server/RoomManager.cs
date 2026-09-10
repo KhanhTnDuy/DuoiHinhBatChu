@@ -50,7 +50,15 @@ public class Room
     public required string Code { get; init; }
     public required string HostAccountId { get; set; }
 
-    public List<Player> Players { get; } = new();
+    /// <summary>
+    /// Người trong phòng. ĐỂ RIÊNG TƯ có lý do: ván đấu chạy nền (GameHub.RunMatch)
+    /// duyệt danh sách này mỗi 200ms, trong khi lời gọi JoinRoom / rớt mạng lại
+    /// sửa nó từ luồng khác. Một cú vào phòng đúng lúc vòng lặp đang duyệt là
+    /// "Collection was modified" — ván chết giữa chừng, mọi người treo ở màn chờ.
+    /// Nên mọi lối đọc và ghi đều phải đi qua các hàm bên dưới, tất cả nằm
+    /// trong <see cref="Gate"/>.
+    /// </summary>
+    private readonly List<Player> _players = new();
 
     public bool IsPlaying { get; set; }
     public int RoundNumber { get; set; }
@@ -71,14 +79,73 @@ public class Room
     public static string NewCode(Random rng) =>
         new(Enumerable.Range(0, 6).Select(_ => CodeChars[rng.Next(CodeChars.Length)]).ToArray());
 
-    public RoomState ToState() => new(
-        Code, HostAccountId, IsPlaying, RoundNumber, TotalRounds,
-        Players.Select(p => p.ToInfo(HostAccountId)).ToList());
+    // ----- Lối vào danh sách người chơi, tất cả đều khóa -----
 
-    public IReadOnlyList<PlayerInfo> Scores() => Players
-        .OrderByDescending(p => p.Score)
-        .Select(p => p.ToInfo(HostAccountId))
-        .ToList();
+    public int PlayerCount { get { lock (Gate) return _players.Count; } }
+
+    public void Add(Player player) { lock (Gate) _players.Add(player); }
+
+    /// <summary>Bỏ một người ra; trả về true khi phòng không còn ai.</summary>
+    public bool Remove(Player player)
+    {
+        lock (Gate)
+        {
+            _players.Remove(player);
+            if (_players.Count == 0) return true;
+
+            // Chủ phòng rời đi thì người vào sớm nhất còn lại lên thay
+            if (HostAccountId == player.AccountId) HostAccountId = _players[0].AccountId;
+            return false;
+        }
+    }
+
+    public bool HasAccount(string accountId)
+    {
+        lock (Gate) return _players.Any(p => p.AccountId == accountId);
+    }
+
+    public Player? ByAccount(string accountId)
+    {
+        lock (Gate) return _players.FirstOrDefault(p => p.AccountId == accountId);
+    }
+
+    public Player? ByConnection(string connectionId)
+    {
+        lock (Gate) return _players.FirstOrDefault(p => p.ConnectionId == connectionId);
+    }
+
+    /// <summary>Bắt đầu một câu mới: xóa dấu "đã trả lời" của mọi người.</summary>
+    public void ResetAnswers()
+    {
+        lock (Gate) foreach (Player p in _players) p.NewRound();
+    }
+
+    /// <summary>Còn ai chưa trả lời đúng không — điều kiện để câu chạy tiếp.</summary>
+    public bool AnyUnanswered()
+    {
+        lock (Gate) return _players.Any(p => !p.AnsweredThisRound);
+    }
+
+    public void ResetScores()
+    {
+        lock (Gate) foreach (Player p in _players) p.Score = 0;
+    }
+
+    public RoomState ToState()
+    {
+        lock (Gate)
+            return new RoomState(Code, HostAccountId, IsPlaying, RoundNumber, TotalRounds,
+                                 _players.Select(p => p.ToInfo(HostAccountId)).ToList());
+    }
+
+    public IReadOnlyList<PlayerInfo> Scores()
+    {
+        lock (Gate)
+            return _players
+                .OrderByDescending(p => p.Score)
+                .Select(p => p.ToInfo(HostAccountId))
+                .ToList();
+    }
 }
 
 /// <summary>
@@ -110,7 +177,7 @@ public class RoomManager
         do { code = Room.NewCode(_rng); } while (_rooms.ContainsKey(code));
 
         var room = new Room { Code = code, HostAccountId = host.AccountId };
-        room.Players.Add(host);
+        room.Add(host);
         _rooms[code] = room;
 
         return room;
@@ -121,24 +188,15 @@ public class RoomManager
 
     /// <summary>Tìm phòng theo mã kết nối, dùng khi ai đó rớt mạng.</summary>
     public Room? FindByConnection(string connectionId) =>
-        _rooms.Values.FirstOrDefault(r => r.Players.Any(p => p.ConnectionId == connectionId));
+        _rooms.Values.FirstOrDefault(r => r.ByConnection(connectionId) != null);
 
     /// <summary>
     /// Bỏ một người khỏi phòng. Phòng trống thì xóa luôn; chủ phòng rời đi thì
-    /// người vào sớm nhất còn lại lên làm chủ.
+    /// người vào sớm nhất còn lại lên làm chủ (việc đó do <see cref="Room.Remove"/> lo).
     /// </summary>
     public void Remove(Room room, Player player)
     {
-        room.Players.Remove(player);
-
-        if (room.Players.Count == 0)
-        {
-            _rooms.TryRemove(room.Code, out _);
-            return;
-        }
-
-        if (room.HostAccountId == player.AccountId)
-            room.HostAccountId = room.Players[0].AccountId;
+        if (room.Remove(player)) _rooms.TryRemove(room.Code, out _);
     }
 
     /// <summary>Bốc ngẫu nhiên danh sách câu cho cả ván.</summary>
@@ -151,7 +209,7 @@ public class RoomManager
         room.RoundNumber = 0;
         room.IsPlaying = true;
 
-        foreach (Player p in room.Players) p.Score = 0;
+        room.ResetScores();
     }
 
     /// <summary>Dựng câu tiếp theo, hoặc null khi đã hết ván.</summary>
@@ -177,7 +235,7 @@ public class RoomManager
         room.CurrentRound = round;
         room.RoundStartedUtc = DateTime.UtcNow;
 
-        foreach (Player p in room.Players) p.AnsweredThisRound = false;
+        room.ResetAnswers();
 
         return new RoundInfo(
             room.RoundNumber,

@@ -69,10 +69,10 @@ public class GameHub : Hub
         if (room.IsPlaying)
             throw new HubException("Phòng đang chơi dở, chờ ván này xong đã.");
 
-        if (room.Players.Any(p => p.AccountId == account.Id))
+        if (room.HasAccount(account.Id))
             throw new HubException("Tài khoản này đã ở trong phòng rồi.");
 
-        room.Players.Add(new Player
+        room.Add(new Player
         {
             ConnectionId = Context.ConnectionId,
             AccountId = account.Id,
@@ -104,7 +104,7 @@ public class GameHub : Hub
         if (room.HostAccountId != account.Id)
             throw new HubException("Chỉ chủ phòng mới bắt đầu được.");
 
-        if (room.Players.Count < 2)
+        if (room.PlayerCount < 2)
             throw new HubException("Cần ít nhất 2 người mới đấu được.");
 
         if (room.IsPlaying)
@@ -128,7 +128,7 @@ public class GameHub : Hub
         Room room = _rooms.FindByConnection(Context.ConnectionId)
             ?? throw new HubException("Bạn chưa ở trong phòng nào.");
 
-        Player? player = room.Players.FirstOrDefault(p => p.AccountId == account.Id);
+        Player? player = room.ByAccount(account.Id);
         if (player == null || !room.IsPlaying) return;
 
         AnswerResult result = _rooms.Judge(room, player, answer);
@@ -160,8 +160,8 @@ public class GameHub : Hub
                 // Kết thúc câu khi mọi người đã trả lời đúng, hoặc khi hết giờ
                 DateTime deadline = room.RoundStartedUtc.AddSeconds(round.SecondsAllowed);
                 while (DateTime.UtcNow < deadline &&
-                       room.Players.Count > 0 &&
-                       room.Players.Any(p => !p.AnsweredThisRound))
+                       room.PlayerCount > 0 &&
+                       room.AnyUnanswered())
                 {
                     await Task.Delay(200);
                 }
@@ -171,7 +171,7 @@ public class GameHub : Hub
                                 .SendAsync("RoundEnded",
                                            new RoundEnded(round.RoundNumber, answer, room.Scores()));
 
-                if (room.Players.Count == 0) break;
+                if (room.PlayerCount == 0) break;
                 await Task.Delay(BreakBetweenRounds);
             }
 
@@ -187,13 +187,13 @@ public class GameHub : Hub
 
     private async Task RemoveFromRoom(Room room, string connectionId)
     {
-        Player? player = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
+        Player? player = room.ByConnection(connectionId);
         if (player == null) return;
 
         _rooms.Remove(room, player);
         await Groups.RemoveFromGroupAsync(connectionId, room.Code);
 
-        if (room.Players.Count > 0)
+        if (room.PlayerCount > 0)
             await Clients.Group(room.Code).SendAsync("RoomChanged", room.ToState());
     }
 
