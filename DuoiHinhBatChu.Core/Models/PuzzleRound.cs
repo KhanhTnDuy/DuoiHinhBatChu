@@ -61,12 +61,20 @@ public sealed class PuzzleRound
     /// <param name="rng">Nguồn ngẫu nhiên, truyền vào để test lặp lại được.</param>
     /// <param name="minTiles">Số phím tối thiểu, cho bàn phím đỡ trống trải.</param>
     /// <param name="maxTiles">Số phím tối đa, cho bàn phím khỏi tràn màn hình.</param>
+    /// <param name="minFiller">
+    /// Số chữ nhiễu ít nhất phải có. Trần <paramref name="maxTiles"/> là để bàn
+    /// phím khỏi tràn màn hình, nhưng câu ca dao dài hơn cả trần thì trần ăn
+    /// mất sạch phần nhiễu: mọi phím đều là chữ thật, người chơi biết chắc
+    /// không có chữ nào thừa và câu khó nhất bộ hóa ra lại dễ nhất. Sàn này
+    /// thắng trần, vì thà bàn phím thêm một hàng còn hơn hỏng luật chơi.
+    /// </param>
     public static PuzzleRound Create(
         string answer,
         IEnumerable<string> otherAnswers,
         Random rng,
         int minTiles = 12,
-        int maxTiles = 21)
+        int maxTiles = 21,
+        int minFiller = 4)
     {
         string slotText = ToSlotText(answer);
 
@@ -74,7 +82,9 @@ public sealed class PuzzleRound
         int answerLetters = letters.Count;
 
         char[] pool = FillerPool(otherAnswers, minTiles);
-        int total = Math.Clamp(answerLetters + 6, minTiles, maxTiles);
+        int total = Math.Max(
+            Math.Clamp(answerLetters + 6, minTiles, maxTiles),
+            answerLetters + minFiller);
         while (letters.Count < total)
             letters.Add(pool[rng.Next(pool.Length)]);
 
