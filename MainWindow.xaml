@@ -18,6 +18,37 @@
         <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
         <conv:StringToVisibilityConverter x:Key="StrVis"/>
 
+        <!-- ============ Tổng kết một ván ============
+             Dùng chung cho cả hai lớp phủ kết thúc (hết mạng / hết bộ câu):
+             hai màn đó chỉ khác nhau ở câu tiêu đề, còn phần số liệu thì y hệt,
+             nên để một bản rồi cắm vào hai chỗ. -->
+        <DataTemplate x:Key="RunSummary">
+            <StackPanel HorizontalAlignment="Center">
+
+                <!-- Điểm ván vừa xong: to nhất, vì đó là kết quả người chơi đợi -->
+                <TextBlock Text="ĐIỂM VÁN NÀY" Style="{StaticResource SectionLabel}"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding Score}" Style="{StaticResource HudValue}"
+                           FontSize="52" HorizontalAlignment="Center" Margin="0,2,0,0"
+                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+                <!-- Phá kỷ lục: hiện thay cho dòng kỷ lục cũ -->
+                <Border CornerRadius="999" Padding="16,7" Margin="0,14,0,0"
+                        HorizontalAlignment="Center"
+                        Background="{DynamicResource TertiaryBrush}"
+                        Visibility="{Binding IsNewRecord, Converter={StaticResource BoolVis}}">
+                    <TextBlock Text="★  KỶ LỤC MỚI!" FontWeight="Bold" FontSize="15"
+                               Foreground="{DynamicResource OnTertiaryBrush}"/>
+                </Border>
+
+                <TextBlock Margin="0,14,0,0" FontSize="15" HorizontalAlignment="Center"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           Text="{Binding BestScore, StringFormat=Kỷ lục của bạn: {0}}"
+                           Visibility="{Binding IsNewRecord, Converter={StaticResource BoolVis},
+                                        ConverterParameter=Invert}"/>
+            </StackPanel>
+        </DataTemplate>
+
         <!-- ============ Ô ký tự trong hàng đáp án ============ -->
         <DataTemplate x:Key="SlotTemplate">
             <Button Command="{Binding DataContext.TakeBackCommand,
@@ -544,11 +575,10 @@
                     <TextBlock Text="Hết mạng rồi!" FontSize="34" FontWeight="Bold"
                                HorizontalAlignment="Center"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="{Binding Score, StringFormat=Điểm của bạn: {0}}"
-                               FontSize="18" Margin="0,12,0,24" HorizontalAlignment="Center"
-                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <ContentControl ContentTemplate="{StaticResource RunSummary}"
+                                    Content="{Binding}" Margin="0,18,0,24"/>
                     <Button Style="{StaticResource PrimaryButton}" Command="{Binding RestartCommand}"
-                            Content="Chơi lại" HorizontalAlignment="Center"/>
+                            Content="Chơi ván mới" HorizontalAlignment="Center"/>
                     <Button Style="{StaticResource GhostButton}" Margin="0,10,0,0"
                             HorizontalAlignment="Center"
                             Click="Close_Click" Content="Về màn hình chính"/>
@@ -565,9 +595,8 @@
                     <TextBlock Text="Bạn đã chơi hết bộ câu đố!" FontSize="30" FontWeight="Bold"
                                HorizontalAlignment="Center"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="{Binding Score, StringFormat=Tổng điểm: {0}}"
-                               FontSize="18" Margin="0,12,0,24" HorizontalAlignment="Center"
-                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <ContentControl ContentTemplate="{StaticResource RunSummary}"
+                                    Content="{Binding}" Margin="0,18,0,24"/>
                     <Button Style="{StaticResource PrimaryButton}" Command="{Binding RestartCommand}"
                             Content="Chơi lại từ đầu" HorizontalAlignment="Center"/>
                     <Button Style="{StaticResource GhostButton}" Margin="0,10,0,0"

@@ -168,6 +168,48 @@ public class GameViewModel : ViewModelBase
         private set { _profile.Score = value; OnPropertyChanged(); }
     }
 
+    /// <summary>Điểm ván cao nhất từ trước tới nay.</summary>
+    public int BestScore
+    {
+        get => _profile.BestScore;
+        private set { _profile.BestScore = value; OnPropertyChanged(); }
+    }
+
+    private bool _isNewRecord;
+    /// <summary>Ván vừa xong có phá kỷ lục không — để lớp phủ kết thúc khoe.</summary>
+    public bool IsNewRecord
+    {
+        get => _isNewRecord;
+        private set => SetProperty(ref _isNewRecord, value);
+    }
+
+    /// <summary>
+    /// Chốt sổ một ván: điểm dừng lại ở đây, đem so với kỷ lục cũ.
+    ///
+    /// Gọi đúng hai chỗ — hết mạng và hết bộ câu — vì đó là hai cách duy nhất
+    /// một ván kết thúc. Thoát giữa chừng KHÔNG tính: ván còn dở thì điểm còn
+    /// chạy, đóng cửa sổ rồi vào lại là chơi tiếp chính ván đó.
+    /// </summary>
+    private void EndRun()
+    {
+        _runEnded = true;
+
+        IsNewRecord = Score > BestScore;
+        if (IsNewRecord) BestScore = Score;
+
+        // Lưu KIỂU KẾT THÚC VÁN chứ không phải lưu thường: bảng phải nhận
+        // trạng thái ván sau (0 điểm, đầy mạng), còn màn hình vẫn giữ điểm ván
+        // vừa xong để hiện lên lớp phủ.
+        _state.SaveEndOfRun(_profile);
+    }
+
+    /// <summary>
+    /// Ván đã chốt sổ chưa. Cần nhớ vì <see cref="Save"/> chạy lúc đóng cửa sổ,
+    /// mà nếu lúc đó nó ghi đè hồ sơ đang cầm trên tay thì điểm và số mạng của
+    /// ván vừa chết quay lại bảng, xóa mất trạng thái ván mới.
+    /// </summary>
+    private bool _runEnded;
+
     public int Rubies
     {
         get => _profile.Rubies;
@@ -338,6 +380,7 @@ public class GameViewModel : ViewModelBase
             {
                 IsGameOver = true;
                 _locked = true;
+                EndRun();
                 return;
             }
 
@@ -571,7 +614,9 @@ public class GameViewModel : ViewModelBase
             FeedbackText = "";
             _locked = Lives <= 0;
             IsGameOver = Lives <= 0;
-            _state.SaveProfile(_profile);
+
+            if (IsGameOver) EndRun();
+            else _state.SaveProfile(_profile);
         });
     }
 
@@ -648,21 +693,36 @@ public class GameViewModel : ViewModelBase
         {
             IsFinished = true;
             _locked = true;
+            EndRun();
         }
     }
 
-    /// <summary>Chơi lại: hồi đầy mạng; nếu đã hết bộ câu đố thì quay về câu đầu.</summary>
+    /// <summary>
+    /// Bắt đầu một ván mới sau khi ván cũ đã chốt sổ.
+    ///
+    /// Điểm LUÔN về 0, kể cả khi thua giữa chừng: điểm giờ là điểm của một ván,
+    /// mà ván cũ vừa kết thúc và đã đem so kỷ lục ở <see cref="EndRun"/> rồi.
+    /// Giữ lại điểm cũ là cộng dồn hai ván làm một, đúng cái kiểu tính điểm vừa
+    /// bỏ đi.
+    ///
+    /// Riêng TIẾN ĐỘ bộ câu thì giữ: thua ở câu 22 thì ván mới vẫn vào câu 22,
+    /// vì bộ câu là chặng đường dài chung cho mọi ván, không thuộc về ván nào.
+    /// Chỉ khi đã đi hết bộ mới quay về câu đầu và xóa danh sách đã giải.
+    /// </summary>
     private void Restart()
     {
         bool restartFromStart = IsFinished;
 
+        Score = 0;
+        CorrectStreak = 0;
         Lives = _profile.MaxLives;
         IsGameOver = false;
         IsFinished = false;
+        IsNewRecord = false;
+        _runEnded = false;
 
         if (restartFromStart)
         {
-            Score = 0;
             _profile.SolvedPuzzleIds.Clear();
             OnPropertyChanged(nameof(SolvedText));
         }
@@ -688,6 +748,9 @@ public class GameViewModel : ViewModelBase
         _clock.Stop();
         _delay.Stop();
 
-        _state.SaveProfile(_profile);
+        // Ván đã kết thúc thì EndRun ghi xong rồi, và cái nó ghi là trạng thái
+        // ván MỚI. Ghi đè bằng hồ sơ đang cầm là kéo ván chết sống lại.
+        if (_runEnded) _state.SaveEndOfRun(_profile);
+        else _state.SaveProfile(_profile);
     }
 }

@@ -26,6 +26,8 @@
     <SolidColorBrush x:Key="SecondaryBrush"    Color="#00A8CC"/>
     <SolidColorBrush x:Key="TertiaryBrush"     Color="#FFAA00"/>
     <SolidColorBrush x:Key="TertiarySoftBrush" Color="#FFF4DE"/>
+    <!-- Hổ phách sáng ở cả hai bộ màu, nên chữ đặt lên nó luôn phải là màu tối -->
+    <SolidColorBrush x:Key="OnTertiaryBrush"   Color="#3D2B00"/>
     <SolidColorBrush x:Key="ErrorBrush"        Color="#BA1A1A"/>
     <SolidColorBrush x:Key="ErrorSoftBrush"    Color="#FFDAD6"/>
     <SolidColorBrush x:Key="SuccessBrush"      Color="#1B7F3B"/>
