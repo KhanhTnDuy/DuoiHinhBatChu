@@ -1,4 +1,4 @@
-<Window x:Class="DuoiHinhBatChu.ModeWindow"
+﻿<Window x:Class="DuoiHinhBatChu.ModeWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         mc:Ignorable="d"
@@ -145,7 +145,7 @@
                                 <TextBlock Text="❤ 5 mạng" Style="{StaticResource ChipText}"/>
                             </Border>
                             <Border Style="{StaticResource Chip}">
-                                <TextBlock Text="◆ 3 trợ giúp" Style="{StaticResource ChipText}"/>
+                                <TextBlock Text="◆ 2 trợ giúp" Style="{StaticResource ChipText}"/>
                             </Border>
                             <Border Style="{StaticResource Chip}">
                                 <TextBlock Text="↺ Lưu tiến trình"
