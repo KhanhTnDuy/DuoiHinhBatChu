@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using DuoiHinhBatChu.Data;
 using DuoiHinhBatChu.Models;
 using Microsoft.EntityFrameworkCore;
@@ -65,32 +65,6 @@ public class PuzzleRepository
     {
         using GameDbContext db = GameDatabase.Open();
         return db.Puzzles.Count();
-    }
-
-    /// <summary>
-    /// Câu này là câu thứ mấy trong bộ (đếm từ 1); 0 nghĩa là không còn câu đó.
-    ///
-    /// Chỉ dùng để HIỆN cho người chơi xem ("CÂU 7"). Bản thân tiến trình lưu
-    /// bằng mã câu, nên con số này tính lại mỗi lần hỏi và có xê dịch khi thêm
-    /// bớt ảnh cũng không sao.
-    /// </summary>
-    public int PositionOf(string puzzleId)
-    {
-        if (string.IsNullOrEmpty(puzzleId)) return 0;
-
-        using GameDbContext db = GameDatabase.Open();
-
-        int? order = db.Puzzles
-            .AsNoTracking()
-            .Where(p => p.Id == puzzleId)
-            .Select(p => (int?)p.Order)
-            .FirstOrDefault();
-
-        if (order == null) return 0;
-
-        // Order do PuzzleSync đánh, có thể thưa nếu bộ câu vừa đổi — nên đếm
-        // xem có bao nhiêu câu đứng trước, chứ không lấy thẳng Order làm vị trí
-        return db.Puzzles.Count(p => p.Order <= order) ;
     }
 
     /// <summary>Byte ảnh của một câu, lấy theo mã câu. Không có thì trả về null.</summary>
