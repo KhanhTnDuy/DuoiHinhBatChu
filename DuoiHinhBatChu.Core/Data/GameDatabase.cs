@@ -1,5 +1,4 @@
 using System.IO;
-using System.Text.Json;
 using DuoiHinhBatChu.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,10 +7,8 @@ namespace DuoiHinhBatChu.Data;
 /// <summary>
 /// Nơi duy nhất biết cơ sở dữ liệu nằm ở đâu và mở nó ra thế nào.
 ///
-/// Lần gọi đầu tiên sẽ tạo file <c>Data/game.db</c> nếu chưa có, thêm sẵn tài
-/// khoản "khách", rồi chuyển nốt dữ liệu cũ từ thời còn lưu bằng JSON
-/// (<c>Data/accounts.json</c> và <c>Data/saves/*.json</c>) vào bảng — người
-/// đang chơi dở không mất tiến trình.
+/// Lần gọi đầu tiên sẽ tạo file <c>Data/game.db</c> nếu chưa có (hoặc áp nốt
+/// các bước Migrations còn thiếu) rồi thêm sẵn tài khoản "khách".
 /// </summary>
 public static class GameDatabase
 {
@@ -54,7 +51,6 @@ public static class GameDatabase
             db.Database.Migrate();
 
             SeedGuest(db);
-            ImportLegacyJson(db, Path.GetDirectoryName(path)!);
         }
     }
 
@@ -91,103 +87,5 @@ public static class GameDatabase
         // SaveChanges ở trên chứ không xen vào giữa
         db.PuzzleResults.Where(r => r.AccountId == Account.GuestId).ExecuteDelete();
         db.PlayerStates.Where(s => s.AccountId == Account.GuestId).ExecuteDelete();
-    }
-
-    // ----- Chuyển dữ liệu cũ từ JSON sang -----
-
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
-
-    private static void ImportLegacyJson(GameDbContext db, string dataDir)
-    {
-        ImportAccounts(db, Path.Combine(dataDir, "accounts.json"));
-        ImportSaves(db, Path.Combine(dataDir, "saves"));
-    }
-
-    private static void ImportAccounts(GameDbContext db, string file)
-    {
-        if (!File.Exists(file)) return;
-
-        try
-        {
-            var old = JsonSerializer.Deserialize<List<Account>>(File.ReadAllText(file), JsonOptions);
-            if (old != null)
-            {
-                foreach (Account a in old)
-                {
-                    // Bỏ qua tài khoản đã có trong bảng, kể cả trùng tên hay
-                    // trùng số điện thoại, vì hai cột đó không cho trùng
-                    bool trung = db.Accounts.Any(x =>
-                        x.Id == a.Id || x.UserName == a.UserName || x.Phone == a.Phone);
-
-                    if (!trung) db.Accounts.Add(a);
-                }
-                db.SaveChanges();
-            }
-
-            // Đổi tên file cũ để lần chạy sau không nhập lại lần nữa
-            File.Move(file, file + ".bak", overwrite: true);
-        }
-        catch
-        {
-            // File cũ hỏng thì thôi, thà mất dữ liệu cũ còn hơn không mở được game
-        }
-    }
-
-    private static void ImportSaves(GameDbContext db, string dir)
-    {
-        if (!Directory.Exists(dir)) return;
-
-        foreach (string file in Directory.GetFiles(dir, "*.json"))
-        {
-            string accountId = Path.GetFileNameWithoutExtension(file);
-
-            try
-            {
-                if (!db.Accounts.Any(a => a.Id == accountId)) continue;
-                if (db.PlayerStates.Any(s => s.AccountId == accountId)) continue;
-
-                var p = JsonSerializer.Deserialize<PlayerProfile>(
-                    File.ReadAllText(file), JsonOptions);
-                if (p == null) continue;
-
-                db.PlayerStates.Add(new PlayerState
-                {
-                    AccountId = accountId,
-                    Score = p.Score,
-                    Rubies = p.Rubies,
-                    CorrectStreak = p.CorrectStreak,
-                    Lives = p.Lives,
-                    MaxLives = p.MaxLives,
-                    CurrentPuzzleIndex = p.CurrentPuzzleIndex,
-                    IsSoundEnabled = p.IsSoundEnabled,
-                    IsBgmEnabled = p.IsBgmEnabled,
-                    IsTimerEnabled = p.IsTimerEnabled,
-                });
-
-                foreach (string puzzleId in p.SolvedPuzzleIds.Distinct())
-                {
-                    db.PuzzleResults.Add(new PuzzleResult
-                    {
-                        AccountId = accountId,
-                        PuzzleId = puzzleId,
-                        Stars = p.PuzzleStars.TryGetValue(puzzleId, out int s) ? s : 0,
-                    });
-                }
-
-                db.SaveChanges();
-            }
-            catch
-            {
-                // Một file lưu hỏng thì bỏ qua file đó, vẫn nhập tiếp các file còn lại
-            }
-        }
-
-        try
-        {
-            Directory.Move(dir, dir + "-bak-" + DateTime.Now.ToString("yyyyMMddHHmmss"));
-        }
-        catch
-        {
-        }
     }
 }

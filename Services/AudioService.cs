@@ -24,24 +24,6 @@ public class AudioService
         });
     }
 
-    public void PlayCorrect()
-    {
-        if (!IsEnabled) return;
-        Task.Run(() =>
-        {
-            try
-            {
-                // Âm thanh vui tươi hai âm điệu tăng dần
-                Console.Beep(659, 120); // E5
-                Console.Beep(880, 200); // A5
-            }
-            catch
-            {
-                SystemSounds.Asterisk.Play();
-            }
-        });
-    }
-
     public void PlayWrong()
     {
         if (!IsEnabled) return;

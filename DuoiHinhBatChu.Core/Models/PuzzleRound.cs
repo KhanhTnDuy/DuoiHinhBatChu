@@ -14,7 +14,7 @@ public readonly record struct RoundTile(char Character, bool IsAnswerLetter);
 /// Một lượt chơi đã dựng sẵn: chuỗi ô đáp án và ngân hàng phím chữ.
 ///
 /// Đặt ở Core vì cả hai bên đều cần đúng một luật:
-///   - Chơi một mình: <c>GameViewModel</c> dựng lượt ngay trên máy.
+///   - Cổ điển: <c>GameViewModel</c> dựng lượt ngay trên máy.
 ///   - Đấu nhiều người: máy chủ dựng lượt rồi phát cho mọi người chơi, để ai
 ///     cũng nhận đúng một bộ phím và đáp án không rời khỏi máy chủ.
 /// </summary>

@@ -7,7 +7,7 @@ using DuoiHinhBatChu.ViewModels;
 namespace DuoiHinhBatChu;
 
 /// <summary>
-/// Menu của chế độ 1 người chơi. Chọn chế độ xong là tới đây, chứ không vào
+/// Menu của chế độ Cổ điển. Chọn chế độ xong là tới đây, chứ không vào
 /// thẳng màn chơi nữa.
 ///
 /// Cửa sổ này không đóng khi vào chơi mà chỉ ẩn đi, rồi hiện lại lúc màn chơi

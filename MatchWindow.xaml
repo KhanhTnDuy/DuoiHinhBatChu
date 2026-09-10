@@ -11,7 +11,7 @@
         ResizeMode="NoResize"
         FontFamily="Segoe UI"
         TextOptions.TextFormattingMode="Ideal"
-        Background="{DynamicResource CanvasBrush}"
+        Background="{DynamicResource SkyBrush}"
         KeyDown="Window_KeyDown"
         Closing="Window_Closing">
 
@@ -19,7 +19,7 @@
         <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
         <conv:StringToVisibilityConverter x:Key="StrVis"/>
 
-        <!-- Ô ký tự trong hàng đáp án: giống màn chơi một mình, nhưng không có
+        <!-- Ô ký tự trong hàng đáp án: giống màn Cổ điển, nhưng không có
              trạng thái "mở bằng trợ giúp" vì ván đấu không bán trợ giúp -->
         <DataTemplate x:Key="SlotTemplate">
             <Button Command="{Binding DataContext.TakeBackCommand,

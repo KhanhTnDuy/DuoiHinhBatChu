@@ -11,7 +11,7 @@
         ResizeMode="NoResize"
         FontFamily="Segoe UI"
         TextOptions.TextFormattingMode="Ideal"
-        Background="{DynamicResource CanvasBrush}">
+        Background="{DynamicResource SkyBrush}">
 
     <Window.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
@@ -37,20 +37,13 @@
                                Foreground="{DynamicResource OnPrimaryBrush}"/>
                 </Border>
 
-                <StackPanel VerticalAlignment="Center" Margin="14,0,0,0">
-                    <TextBlock Text="NGƯỜI CHƠI" Style="{StaticResource SectionLabel}"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
-                        <TextBlock Text="{Binding PlayerName}" FontSize="20" FontWeight="Bold"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
-                        <Border Style="{StaticResource Pill}" Margin="10,0,0,0"
-                                Background="{DynamicResource CardAltBrush}">
-                            <TextBlock Text="{Binding AccountKindText}"
-                                       Style="{StaticResource PillText}"
-                                       Foreground="{DynamicResource TextMutedBrush}"/>
-                        </Border>
-                    </StackPanel>
-                </StackPanel>
+                <!-- Lời chào thay cho "NGƯỜI CHƠI" + tên + nhãn loại tài khoản:
+                     tên đã nằm trong câu chào, còn chuyện khách hay không thì
+                     hai thẻ chế độ bên dưới đã nói rõ hơn nhiều -->
+                <TextBlock Text="{Binding Greeting}" FontSize="20" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="14,0,0,0"
+                           TextTrimming="CharacterEllipsis"
+                           Foreground="{DynamicResource TextPrimaryBrush}"/>
             </StackPanel>
 
             <Button Style="{StaticResource ThemeToggleButton}"
@@ -70,7 +63,7 @@
             <TextBlock Text="Chọn chế độ chơi" FontSize="28" FontWeight="Bold"
                        HorizontalAlignment="Center" Margin="0,8,0,0"
                        Foreground="{DynamicResource TextPrimaryBrush}"/>
-            <TextBlock Text="Chơi một mình cho thong thả, hay đua với bạn bè cho vui?"
+            <TextBlock Text="Chơi Cổ điển cho thong thả, hay đua với bạn bè cho vui?"
                        FontSize="14" HorizontalAlignment="Center" Margin="0,4,0,0"
                        Foreground="{DynamicResource TextMutedBrush}"/>
         </StackPanel>
@@ -88,7 +81,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- ===== Một mình ===== -->
+            <!-- ===== Cổ điển ===== -->
             <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,9,0" Padding="20">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -124,7 +117,7 @@
 
                     <!-- Tên chế độ + nhãn phụ -->
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,16,0,0">
-                        <TextBlock Text="1 người chơi" FontSize="22" FontWeight="Bold"
+                        <TextBlock Text="Cổ điển" FontSize="22" FontWeight="Bold"
                                    VerticalAlignment="Center"
                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
                         <Border Style="{StaticResource Chip}" Margin="10,0,0,0"
@@ -202,7 +195,7 @@
 
                         <Border Style="{StaticResource Pill}" HorizontalAlignment="Right"
                                 Background="{DynamicResource SuccessSoftBrush}">
-                            <TextBlock Text="ONLINE · CẦN MÁY CHỦ"
+                            <TextBlock Text="ONLINE"
                                        Style="{StaticResource PillText}"
                                        Foreground="{DynamicResource SuccessBrush}"/>
                         </Border>
@@ -257,7 +250,7 @@
                     </Border>
 
                     <Button Grid.Row="5" Style="{StaticResource TertiaryButton}"
-                            Command="{Binding ShowOnlineCommand}" Content="Nối tới máy chủ  →"/>
+                            Command="{Binding ShowOnlineCommand}" Content="Tạo phòng ngay  →"/>
                 </Grid>
             </Border>
         </Grid>
@@ -266,7 +259,7 @@
         <TextBlock Grid.Row="3" Margin="0,20,0,0" FontSize="13"
                    HorizontalAlignment="Center"
                    Foreground="{DynamicResource TextMutedBrush}"
-                   Text="Mẹo: chơi một mình để luyện, rồi rủ bạn vào đấu cho biết ai nhanh hơn."
+                   Text="Mẹo: chơi Cổ điển để luyện, rồi rủ bạn vào đấu cho biết ai nhanh hơn."
                    Visibility="{Binding IsOnlinePanelOpen, Converter={StaticResource BoolVis},
                                 ConverterParameter=Invert}"/>
 

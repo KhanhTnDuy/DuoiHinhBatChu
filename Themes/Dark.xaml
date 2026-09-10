@@ -4,7 +4,9 @@
     <!-- ===== Chế độ TỐI - cùng bộ khóa với Light.xaml để đổi nóng được ===== -->
 
     <SolidColorBrush x:Key="CanvasBrush"      Color="#0B1220"/>
-    <SolidColorBrush x:Key="SidebarBrush"     Color="#111A2B"/>
+    <!-- Kính mờ, xem chú thích ở Light.xaml. Bên tối để đục hơn một chút: nền
+         là trời sao, để trong quá thì sao lọt lên sau chữ, đọc mỏi mắt. -->
+    <SolidColorBrush x:Key="SidebarBrush"     Color="#111A2B" Opacity="0.78"/>
     <SolidColorBrush x:Key="CardBrush"        Color="#162033"/>
     <SolidColorBrush x:Key="CardAltBrush"     Color="#1B2740"/>
     <SolidColorBrush x:Key="CardBorderBrush"  Color="#26334A"/>
@@ -35,5 +37,11 @@
     <SolidColorBrush x:Key="SlotFilledTextBrush"  Color="#FFFFFF"/>
 
     <SolidColorBrush x:Key="ScrimBrush" Color="#060B14" Opacity="0.82"/>
+
+    <!-- ===== Nền màn menu: bầu trời sao =====
+         Cùng khóa "SkyBrush" với Light.xaml (bầu trời ban ngày). Xem chú thích
+         bên đó về UniformToFill. -->
+    <ImageBrush x:Key="SkyBrush" Stretch="UniformToFill"
+                ImageSource="/Assets/NenTroi/troi-dem.png"/>
 
 </ResourceDictionary>

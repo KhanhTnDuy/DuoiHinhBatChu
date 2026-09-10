@@ -34,6 +34,21 @@ public class GameStateService
     }
 
     /// <summary>
+    /// Tài khoản này đã chơi lần nào chưa.
+    ///
+    /// Dấu hiệu là có dòng tiến trình trong bảng hay không: <see cref="SaveProfile"/>
+    /// chỉ ghi dòng đó khi người chơi đã thực sự vào chơi, nên "có dòng" đúng
+    /// bằng "đã chơi rồi". Khách luôn trả về false vì khách không được lưu gì.
+    /// </summary>
+    public bool HasPlayedBefore()
+    {
+        if (_isGuest) return false;
+
+        using GameDbContext db = GameDatabase.Open();
+        return db.PlayerStates.Any(s => s.AccountId == _accountId);
+    }
+
+    /// <summary>
     /// Lấy tiến trình đã lưu. Tài khoản mới chưa có dòng nào thì trả về hồ sơ
     /// mặc định (5 mạng, 3 kim cương) chứ không ghi gì xuống bảng — chỉ khi
     /// người chơi thực sự chơi và game gọi <see cref="SaveProfile"/> mới ghi.

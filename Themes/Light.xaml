@@ -5,7 +5,10 @@
 
     <!-- Nền và mặt phẳng -->
     <SolidColorBrush x:Key="CanvasBrush"      Color="#F1F5FB"/>
-    <SolidColorBrush x:Key="SidebarBrush"     Color="#FFFFFF"/>
+    <!-- Cột trái của màn đăng nhập / màn chơi / màn đấu: kính mờ chứ không đục,
+         cho bầu trời (SkyBrush) lộ mờ phía sau. Đục hẳn thì nửa màn hình là
+         mảng trắng phẳng đứng cạnh mảng trời, nhìn ra hai nửa rời nhau. -->
+    <SolidColorBrush x:Key="SidebarBrush"     Color="#FFFFFF" Opacity="0.72"/>
     <SolidColorBrush x:Key="CardBrush"        Color="#FFFFFF"/>
     <SolidColorBrush x:Key="CardAltBrush"     Color="#EFF4FF"/>
     <SolidColorBrush x:Key="CardBorderBrush"  Color="#E2E8F0"/>
@@ -41,5 +44,15 @@
 
     <!-- Lớp phủ -->
     <SolidColorBrush x:Key="ScrimBrush" Color="#0F172A" Opacity="0.72"/>
+
+    <!-- ===== Nền màn menu: bầu trời ban ngày =====
+         Cùng khóa "SkyBrush" với Dark.xaml (bầu trời sao), nên bấm nút sáng/tối
+         là trời đổi theo ngay, không cần một dòng code nào: MenuWindow gọi bằng
+         DynamicResource.
+
+         UniformToFill: ảnh 1376x768 rộng hơn cửa sổ 1120x760 nên hai mép trái
+         phải bị xén bớt một ít, đổi lại ảnh không bị bóp méo. -->
+    <ImageBrush x:Key="SkyBrush" Stretch="UniformToFill"
+                ImageSource="/Assets/NenTroi/troi-ngay.png"/>
 
 </ResourceDictionary>

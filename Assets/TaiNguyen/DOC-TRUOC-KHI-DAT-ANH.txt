@@ -13,4 +13,20 @@ Cac tai nguyen app dang tim:
                   Hien trong bang huong dan "?" o man dang nhap.
                   Anh vuong (vd 512x512) se dep nhat.
 
+  menu-trai    -> anh o COT TRAI cua menu Co dien.
+  menu-phai    -> anh o COT PHAI cua menu Co dien.
+
+                  Menu chia ba cot: giua la ba lua chon (Bat dau choi / Choi moi
+                  / Bang xep hang), hai ben la hai anh nay.
+
+                  O dat anh: rong 230 px, cao khoang 420 px (cao het phan con
+                  lai cua man hinh) -> anh DOC, ti le xap xi 1:1.8.
+                  Nen ve 460 x 840 cho net tren man hinh HiDPI.
+
+                  Hai anh nen la mot cap di voi nhau (vd hai nhan vat quay mat
+                  vao giua), vi nguoi choi luon nhin thay ca hai cung luc.
+
+Ca hai anh deu duoc cat theo kieu "phu day o" (UniformToFill): anh se bi cat
+bot phan thua chu khong bi bop meo. De y tam anh nam giua.
+
 Thieu file nao thi cho do hien o gach dut chi cho dat, app van chay binh thuong.

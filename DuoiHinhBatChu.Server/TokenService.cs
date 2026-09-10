@@ -24,6 +24,4 @@ public class TokenService
 
     public Account? Resolve(string? token) =>
         token != null && _tokens.TryGetValue(token, out Account? a) ? a : null;
-
-    public void Revoke(string token) => _tokens.TryRemove(token, out _);
 }

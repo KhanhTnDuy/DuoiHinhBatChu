@@ -197,22 +197,6 @@ public class AccountService
     private static string NormalizePhone(string phone) =>
         new(phone.Where(char.IsDigit).ToArray());
 
-    /// <summary>Đổi tên hiển thị của tài khoản đang đăng nhập.</summary>
-    public void UpdateDisplayName(Account account, string displayName)
-    {
-        if (account.IsGuest) return;
-
-        using GameDbContext db = GameDatabase.Open();
-
-        Account? stored = db.Accounts.FirstOrDefault(a => a.Id == account.Id);
-        if (stored == null) return;
-
-        stored.DisplayName = displayName.Trim();
-        db.SaveChanges();
-
-        account.DisplayName = stored.DisplayName;
-    }
-
     // ----- Băm mật khẩu -----
 
     private static byte[] Hash(string password, byte[] salt) =>

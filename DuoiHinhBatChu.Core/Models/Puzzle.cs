@@ -24,6 +24,13 @@ public class Puzzle
     /// </summary>
     public string ImageName { get; set; } = "";
 
+    /// <summary>
+    /// Chủ đề của đáp án — "Đồ vật", "Thực vật", "Ca dao - tục ngữ"…
+    /// Đây là gợi ý nhỏ hiện sẵn miễn phí: nó thu hẹp hướng nghĩ mà không nói
+    /// ra đáp án, khác với <see cref="Hint"/> phải trả kim cương mới xem.
+    /// </summary>
+    public string Category { get; set; } = "";
+
     /// <summary>Gợi ý bằng chữ.</summary>
     public string Hint { get; set; } = "";
 

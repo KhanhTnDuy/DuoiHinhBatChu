@@ -6,7 +6,7 @@ namespace DuoiHinhBatChu.ViewModels;
 /// <summary>
 /// Màn chọn chế độ, mở ra sau khi đã đăng nhập.
 ///
-///   - Chơi một mình: chạy hẳn trên máy, ai cũng vào được kể cả khách.
+///   - Cổ điển: chạy hẳn trên máy, ai cũng vào được kể cả khách.
 ///   - Đấu nhiều người: cần máy chủ và cần tài khoản thật, vì máy chủ mới là
 ///     bên chấm ai nhanh hơn.
 ///
@@ -22,7 +22,10 @@ public class ModeViewModel : ViewModelBase
     private readonly AppSettings _settings;
     private readonly ServerClient _server = new();
 
-    /// <summary>Bắn lên khi người chơi chọn chế độ một mình.</summary>
+    /// <summary>Tài khoản này đã có tiến trình lưu, tức là không phải lần đầu.</summary>
+    private readonly bool _hasPlayedBefore;
+
+    /// <summary>Bắn lên khi người chơi chọn chế độ Cổ điển.</summary>
     public event Action? StartSolo;
 
     /// <summary>
@@ -36,6 +39,10 @@ public class ModeViewModel : ViewModelBase
         _settings = settings;
         _serverAddress = settings.ServerAddress.Length > 0 ? settings.ServerAddress : DefaultAddress;
         _serverUserName = account.UserName;
+
+        // Hỏi ngay lúc dựng màn, y như MenuViewModel: đây là màn đầu tiên sau
+        // khi đăng nhập nên lúc này chắc chắn chưa ai kịp chơi thêm ván nào
+        _hasPlayedBefore = new GameStateService(account.Id).HasPlayedBefore();
 
         PlaySoloCommand = new RelayCommand(_ => StartSolo?.Invoke());
         ShowOnlineCommand = new RelayCommand(_ => IsOnlinePanelOpen = true, _ => CanPlayOnline);
@@ -54,7 +61,13 @@ public class ModeViewModel : ViewModelBase
     public RelayCommand ServerRegisterCommand { get; }
     public RelayCommand ToggleThemeCommand { get; }
 
-    public string PlayerName => _account.DisplayName;
+    /// <summary>
+    /// Lời chào ở đầu màn chọn chế độ — cùng một câu với màn menu Cổ điển
+    /// (<see cref="MenuViewModel.Greeting"/>), để hai màn nối nhau đọc liền mạch.
+    /// </summary>
+    public string Greeting => _hasPlayedBefore
+        ? $"Chào mừng trở lại, {_account.DisplayName}!"
+        : $"Chào mừng, {_account.DisplayName}!";
 
     /// <summary>
     /// Chữ cái đầu của tên, hiện trong ô vuông thay cho ảnh đại diện: "Nguyễn
@@ -75,8 +88,6 @@ public class ModeViewModel : ViewModelBase
             };
         }
     }
-
-    public string AccountKindText => _account.IsGuest ? "Chơi khách - offline" : "Đã đăng nhập";
 
     /// <summary>Khách không đấu được: máy chủ cần một tài khoản thật để ghi điểm.</summary>
     public bool CanPlayOnline => !_account.IsGuest;

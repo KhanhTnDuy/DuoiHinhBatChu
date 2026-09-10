@@ -27,6 +27,9 @@ public class StoredPuzzle
     /// <summary>Đáp án đúng như tên file, có dấu và viết hoa.</summary>
     public string Answer { get; set; } = "";
 
+    /// <summary>Chủ đề của đáp án, vd "Đồ vật" — gợi ý nhỏ hiện sẵn cho người chơi.</summary>
+    public string Category { get; set; } = "";
+
     /// <summary>Gợi ý bằng lời.</summary>
     public string Hint { get; set; } = "";
 

@@ -5,12 +5,12 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:conv="clr-namespace:DuoiHinhBatChu.Converters"
-        Title="Đuổi hình bắt chữ"
+        Title="Đuổi hình bắt chữ - Cổ điển"
         WindowState="Maximized"
         MinWidth="1280" MinHeight="900"
         FontFamily="Segoe UI"
         TextOptions.TextFormattingMode="Ideal"
-        Background="{DynamicResource CanvasBrush}"
+        Background="{DynamicResource SkyBrush}"
         KeyDown="Window_KeyDown"
         Closing="Window_Closing">
 
@@ -137,8 +137,6 @@
                     <TextBlock Text="{Binding PlayerName}" FontSize="16" FontWeight="SemiBold"
                                Margin="0,6,0,0" TextTrimming="CharacterEllipsis"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="{Binding AccountKindText}" FontSize="12" Margin="0,2,0,0"
-                               Foreground="{DynamicResource TextMutedBrush}"/>
 
                     <TextBlock Text="ĐIỀU HƯỚNG" Style="{StaticResource SectionLabel}"
                                Margin="0,24,0,0"/>
@@ -335,9 +333,23 @@
                     </Grid.RowDefinitions>
 
                     <!-- Nói thẳng người chơi phải làm gì, thay vì để họ tự đoán -->
-                    <TextBlock Grid.Row="0" Text="Đây là gì?" FontSize="26" FontWeight="Bold"
-                               HorizontalAlignment="Center" Margin="0,0,0,10"
-                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock Text="Đây là gì?" FontSize="26" FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+                        <!-- Gợi ý nhỏ cho không: chủ đề của đáp án. Khác thẻ gợi ý
+                             bên trái (phải trả kim cương), cái này luôn hiện. -->
+                        <Border CornerRadius="999" Padding="14,5" Margin="0,8,0,0"
+                                HorizontalAlignment="Center"
+                                Background="{DynamicResource PrimarySoftBrush}"
+                                Visibility="{Binding CategoryText,
+                                             Converter={StaticResource StrVis}}">
+                            <TextBlock Text="{Binding CategoryText}" FontSize="13"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryBrush}"/>
+                        </Border>
+                    </StackPanel>
 
                 <!-- MinHeight: cửa sổ thu nhỏ hết cỡ thì hàng đáp án và bàn phím
                      (cao bao nhiêu tùy độ dài đáp án) ăn hết chỗ, khung ảnh bị ép

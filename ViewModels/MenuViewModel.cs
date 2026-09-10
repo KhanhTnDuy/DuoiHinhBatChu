@@ -4,9 +4,9 @@ using DuoiHinhBatChu.Services;
 namespace DuoiHinhBatChu.ViewModels;
 
 /// <summary>
-/// Menu của chế độ 1 người chơi, mở ra sau khi chọn chế độ.
+/// Menu của chế độ Cổ điển, mở ra sau khi chọn chế độ.
 ///
-/// Trước đây bấm "1 người chơi" là vào thẳng màn chơi, nên người chơi không có
+/// Trước đây bấm "Cổ điển" là vào thẳng màn chơi, nên người chơi không có
 /// chỗ nào để xem mình đang ở đâu, chơi lại từ đầu hay xem bảng xếp hạng.
 /// Menu này là chỗ đó; màn chơi chỉ mở khi bấm Chơi tiếp hoặc Chơi mới.
 /// </summary>
@@ -16,6 +16,15 @@ public class MenuViewModel : ViewModelBase
     private readonly AppSettings _settings;
     private readonly GameStateService _state;
     private readonly int _totalPuzzles;
+
+    /// <summary>
+    /// Hỏi một lần lúc dựng màn, TRƯỚC khi người chơi kịp bấm gì.
+    ///
+    /// Phải chốt sớm như vậy vì chơi xong một ván là bảng có dòng tiến trình:
+    /// hỏi lại lúc đó thì người mới chơi lần đầu quay về menu đã thành "người
+    /// quen", lời chào đổi ngay trước mắt họ.
+    /// </summary>
+    private readonly bool _hasPlayedBefore;
 
     private PlayerProfile _profile;
 
@@ -30,6 +39,7 @@ public class MenuViewModel : ViewModelBase
         _account = account;
         _settings = settings;
         _state = new GameStateService(account.Id);
+        _hasPlayedBefore = _state.HasPlayedBefore();
         _profile = _state.LoadProfile();
 
         // Chỉ cần con số tổng, đếm thẳng trong cơ sở dữ liệu chứ không nạp cả bộ câu
@@ -56,9 +66,16 @@ public class MenuViewModel : ViewModelBase
 
     // ----- Người chơi -----
 
-    public string PlayerName => _account.DisplayName;
-
-    public string AccountKindText => _account.IsGuest ? "Chơi khách - offline" : "Đã đăng nhập";
+    /// <summary>
+    /// Lời chào ở đầu màn menu, thay cho nhãn "NGƯỜI CHƠI" khô khan trước đây.
+    ///
+    /// Người quay lại được chào khác người mới: "Chào mừng trở lại" chỉ đúng khi
+    /// tài khoản đã có tiến trình lưu. Khách thì lần nào cũng là lần đầu — hồ sơ
+    /// khách bị dọn sạch mỗi lần khởi động nên không có "lần trước" để nhớ.
+    /// </summary>
+    public string Greeting => _hasPlayedBefore
+        ? $"Chào mừng trở lại, {_account.DisplayName}!"
+        : $"Chào mừng, {_account.DisplayName}!";
 
     /// <summary>Chữ cái đầu của tên, hiện trong ô vuông thay cho ảnh đại diện.</summary>
     public string Initials
@@ -90,7 +107,7 @@ public class MenuViewModel : ViewModelBase
 
     public string ContinueDetail => HasProgress
         ? "Vào lại đúng câu bạn đang dở, giữ nguyên điểm và kim cương."
-        : $"Bộ câu đố hiện có {_totalPuzzles} câu.";
+        : "Bắt đầu từ câu đầu tiên, với 5 mạng và 3 kim cương.";
 
     /// <summary>
     /// Đang chơi khách. Nói thẳng ngay trên menu thay vì để người ta chơi cả
@@ -98,15 +115,28 @@ public class MenuViewModel : ViewModelBase
     /// </summary>
     public bool IsGuest => _account.IsGuest;
 
-    /// <summary>Viên nhãn trên thẻ Chơi tiếp: "CÂU 3/6" hoặc "CHƯA CHƠI CÂU NÀO".</summary>
+    /// <summary>
+    /// Viên nhãn trên thẻ Chơi tiếp: "CÂU 3" hoặc "VÁN MỚI".
+    ///
+    /// Vẫn kẹp theo tổng số câu — chơi hết bộ rồi thì số đang lưu là "câu thứ 7"
+    /// của bộ 6 câu, hiện thẳng ra là sai — nhưng KHÔNG hiện tổng ra ngoài,
+    /// cùng lý do với <see cref="SolvedText"/>.
+    /// </summary>
     public string ContinuePill => HasProgress
-        ? $"CÂU {Math.Min(_profile.CurrentPuzzleIndex + 1, _totalPuzzles)}/{_totalPuzzles}"
+        ? $"CÂU {Math.Min(_profile.CurrentPuzzleIndex + 1, _totalPuzzles)}"
         : "VÁN MỚI";
 
     public string ScoreText => _profile.Score.ToString();
     public string RubiesText => _profile.Rubies.ToString();
     public string LivesText => $"{Math.Max(0, _profile.Lives)}/{_profile.MaxLives}";
-    public string SolvedText => $"{_profile.SolvedPuzzleIds.Count}/{_totalPuzzles}";
+    /// <summary>
+    /// Chỉ đếm số câu đã giải, KHÔNG kèm tổng số câu trong cơ sở dữ liệu.
+    ///
+    /// Tổng số câu là chuyện nội bộ của kho câu đố, mà lại đang thay đổi liên
+    /// tục (mới có 6/50 ảnh): hiện "2/6" hôm nay rồi "2/50" tuần sau thì người
+    /// chơi tưởng mình tụt lùi, dù họ vẫn giải đúng chừng ấy câu.
+    /// </summary>
+    public string SolvedText => _profile.SolvedPuzzleIds.Count.ToString();
 
     /// <summary>
     /// Đọc lại tiến trình từ cơ sở dữ liệu. Gọi mỗi khi từ màn chơi quay về,

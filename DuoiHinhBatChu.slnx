@@ -1,5 +1,10 @@
 <Solution>
+  <!--
+    App WPF de ĐẦU danh sách: Visual Studio lấy dự án đầu tiên làm Startup Project
+    khi chưa ai chọn tay. Để DuoiHinhBatChu.Core (class library) ở đầu thì bấm F5
+    báo lỗi "A project with an Output Type of Class Library cannot be started directly".
+  -->
+  <Project Path="DuoiHinhBatChu.csproj" />
   <Project Path="DuoiHinhBatChu.Core/DuoiHinhBatChu.Core.csproj" />
   <Project Path="DuoiHinhBatChu.Server/DuoiHinhBatChu.Server.csproj" />
-  <Project Path="DuoiHinhBatChu.csproj" />
 </Solution>
