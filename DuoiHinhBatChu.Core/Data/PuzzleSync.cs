@@ -73,19 +73,28 @@ public static class PuzzleSync
                 || row.SourceModifiedUtc != file.LastWriteTimeUtc
                 || row.ImageName != file.Name;
 
+            // Đáp án hiển thị: ưu tiên bản khai trong puzzles.json, chỉ lấy tên
+            // file khi không có. Tên file hay bị gõ không dấu cho nhanh ("BAO
+            // CAO"), mà đây chính là chuỗi báo ra lúc trả lời xong — lấy thẳng
+            // tên file thì người chơi giải đúng lại thấy "Chính xác: BAO CAO".
+            // Hai bên vẫn cùng một mã câu nên ghép được (xem MakeId).
+            string answer = string.IsNullOrWhiteSpace(extra?.Answer)
+                ? img.Answer
+                : extra!.Answer.Trim().ToUpperInvariant();
+
             string category = string.IsNullOrWhiteSpace(extra?.Category)
-                ? DefaultCategory(img.Answer)
+                ? DefaultCategory(answer)
                 : extra!.Category.Trim();
 
             string hint = string.IsNullOrWhiteSpace(extra?.Hint)
-                ? DefaultHint(img.Answer)
+                ? DefaultHint(answer)
                 : extra!.Hint;
 
             int difficulty = extra is { Difficulty: >= 1 and <= 5 }
                 ? extra.Difficulty
-                : DefaultDifficulty(img.Answer);
+                : DefaultDifficulty(answer);
 
-            bool metaChanged = row.Answer != img.Answer
+            bool metaChanged = row.Answer != answer
                 || row.Category != category
                 || row.Hint != hint
                 || row.Difficulty != difficulty
@@ -101,7 +110,7 @@ public static class PuzzleSync
                 row.ImportedAt = DateTime.Now;
             }
 
-            row.Answer = img.Answer;
+            row.Answer = answer;
             row.Category = category;
             row.Hint = hint;
             row.Difficulty = difficulty;
