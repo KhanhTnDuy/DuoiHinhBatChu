@@ -16,6 +16,27 @@ public class Player
     /// <summary>Đã trả lời đúng câu hiện tại, không cho ghi điểm hai lần.</summary>
     public bool AnsweredThisRound { get; set; }
 
+    /// <summary>Số lần đoán sai trong câu hiện tại.</summary>
+    public int WrongThisRound { get; set; }
+
+    /// <summary>
+    /// Đoán sai xong thì phải chờ tới mốc này mới được gửi tiếp.
+    ///
+    /// Không có mốc này thì đoán sai chẳng mất gì: một client tự viết có thể
+    /// bắn vài nghìn đáp án mỗi giây cho tới lúc trúng, mà vẫn còn gần như
+    /// nguyên điểm tốc độ. Chờ càng lâu khi càng sai nhiều, nên đoán bừa vài
+    /// lần thì không sao, còn dò máy móc thì hết cửa.
+    /// </summary>
+    public DateTime BlockedUntilUtc { get; set; }
+
+    /// <summary>Dọn trạng thái cho một câu mới.</summary>
+    public void NewRound()
+    {
+        AnsweredThisRound = false;
+        WrongThisRound = 0;
+        BlockedUntilUtc = DateTime.MinValue;
+    }
+
     public PlayerInfo ToInfo(string hostAccountId) =>
         new(AccountId, DisplayName, AccountId == hostAccountId, Score);
 }
@@ -168,6 +189,9 @@ public class RoomManager
             MatchScoring.MaxSeconds);
     }
 
+    /// <summary>Sai lần thứ n thì phải chờ chừng này giây: 1, 2, 3… tối đa 5.</summary>
+    private static double Cooldown(int wrongCount) => Math.Min(wrongCount, 5);
+
     /// <summary>
     /// Chấm một đáp án. Thời gian lấy từ đồng hồ máy chủ, không nhận số client gửi lên.
     /// </summary>
@@ -175,20 +199,38 @@ public class RoomManager
     {
         lock (room.Gate)
         {
-            double seconds = (DateTime.UtcNow - room.RoundStartedUtc).TotalSeconds;
+            DateTime now = DateTime.UtcNow;
+            double seconds = (now - room.RoundStartedUtc).TotalSeconds;
 
             if (room.CurrentPuzzle == null || player.AnsweredThisRound)
-                return new AnswerResult(player.AccountId, player.DisplayName, false, 0, seconds);
+                return new AnswerResult(player.AccountId, player.DisplayName, false, 0, seconds, 0);
+
+            // Còn trong thời gian phạt của lần sai trước: không chấm gì cả, chỉ
+            // nhắc còn phải chờ bao lâu. Chặn ở đây chứ không ở client, vì
+            // client là thứ người ta thay được.
+            if (now < player.BlockedUntilUtc)
+            {
+                double waitLeft = (player.BlockedUntilUtc - now).TotalSeconds;
+                return new AnswerResult(player.AccountId, player.DisplayName, false, 0,
+                                        seconds, waitLeft);
+            }
 
             bool correct = AnswerChecker.IsCorrect(guess, room.CurrentPuzzle);
             if (!correct)
-                return new AnswerResult(player.AccountId, player.DisplayName, false, 0, seconds);
+            {
+                player.WrongThisRound++;
+                double wait = Cooldown(player.WrongThisRound);
+                player.BlockedUntilUtc = now.AddSeconds(wait);
+
+                return new AnswerResult(player.AccountId, player.DisplayName, false, 0,
+                                        seconds, wait);
+            }
 
             int points = MatchScoring.Points(room.CurrentPuzzle.Difficulty, seconds);
             player.Score += points;
             player.AnsweredThisRound = true;
 
-            return new AnswerResult(player.AccountId, player.DisplayName, true, points, seconds);
+            return new AnswerResult(player.AccountId, player.DisplayName, true, points, seconds, 0);
         }
     }
 
