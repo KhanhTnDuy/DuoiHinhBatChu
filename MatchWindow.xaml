@@ -115,6 +115,14 @@
                         <TextBlock Text="✓" FontSize="15" FontWeight="Bold" Margin="8,0,0,0"
                                    Foreground="{DynamicResource SuccessBrush}"
                                    Visibility="{Binding HasAnswered, Converter={StaticResource BoolVis}}"/>
+                        <!-- Sẵn sàng ở sảnh chờ; chủ phòng không cần bấm nên không hiện -->
+                        <Border Style="{StaticResource Chip}" Margin="8,0,0,0" Padding="7,1"
+                                Background="{DynamicResource SuccessSoftBrush}" BorderThickness="0"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding IsReady, Converter={StaticResource BoolVis}}">
+                            <TextBlock Text="sẵn sàng" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SuccessBrush}"/>
+                        </Border>
                     </StackPanel>
 
                     <TextBlock Grid.Column="1" Text="{Binding Score}"
@@ -161,21 +169,26 @@
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
                 </StackPanel>
 
-                <!-- Tên phòng đang ở -->
+                <!-- Mã phòng: chữ to để đọc cho người khác gõ vào -->
                 <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,18,0,0"
                         Background="{DynamicResource CardAltBrush}"
                         Visibility="{Binding IsInRoom, Converter={StaticResource BoolVis}}">
                     <StackPanel>
-                        <TextBlock Text="PHÒNG" Style="{StaticResource SectionLabel}"/>
-                        <TextBlock Text="{Binding RoomName}" FontSize="24" FontWeight="Bold" TextTrimming="CharacterEllipsis"
+                        <TextBlock Text="MÃ PHÒNG" Style="{StaticResource SectionLabel}"/>
+                        <TextBlock Text="{Binding RoomCode}" FontSize="30" FontWeight="Bold"
                                    Margin="0,4,0,0"
                                    Foreground="{DynamicResource TertiaryBrush}"/>
                     </StackPanel>
                 </Border>
 
                 <StackPanel Grid.Row="2" Margin="0,20,0,0">
-                    <TextBlock Text="BẢNG ĐIỂM" Style="{StaticResource SectionLabel}"
-                               Margin="0,0,0,10"/>
+                    <Grid Margin="0,0,0,10">
+                        <TextBlock Text="BẢNG ĐIỂM" Style="{StaticResource SectionLabel}"/>
+                        <TextBlock Text="{Binding PlayerCountText}" FontSize="12"
+                                   HorizontalAlignment="Right"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   Visibility="{Binding IsInRoom, Converter={StaticResource BoolVis}}"/>
+                    </Grid>
                     <ItemsControl ItemsSource="{Binding Players}"
                                   ItemTemplate="{StaticResource ScoreTemplate}"/>
                 </StackPanel>
@@ -255,10 +268,13 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Tên phòng"/>
-                                    <TextBox Style="{StaticResource Field}" MaxLength="20"
-                                             Text="{Binding RoomNameInput, UpdateSourceTrigger=PropertyChanged}"/>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0"
+                                            Visibility="{Binding IsCreating, Converter={StaticResource BoolVis},
+                                                         ConverterParameter=Invert}">
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Mã phòng"/>
+                                    <TextBox Style="{StaticResource Field}" MaxLength="6" FontSize="20"
+                                             CharacterCasing="Upper"
+                                             Text="{Binding JoinCode, UpdateSourceTrigger=PropertyChanged}"/>
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="1" Margin="8,0,0,0">
@@ -339,16 +355,28 @@
                                      IsEnabled="{Binding IsHost}"
                                      Text="{Binding Rounds, UpdateSourceTrigger=PropertyChanged}"/>
 
-                            <Button Style="{StaticResource PrimaryButton}" Margin="0,16,0,0"
-                                    HorizontalAlignment="Left"
-                                    Command="{Binding StartMatchCommand}" Content="Bắt đầu ván"
-                                    Visibility="{Binding IsHost, Converter={StaticResource BoolVis}}"/>
+                            <!-- Chủ phòng: bắt đầu (sáng khi đủ 2 người và mọi khách sẵn sàng) -->
+                            <StackPanel Visibility="{Binding IsHost, Converter={StaticResource BoolVis}}">
+                                <Button Style="{StaticResource PrimaryButton}" Margin="0,16,0,0"
+                                        HorizontalAlignment="Left"
+                                        Command="{Binding StartMatchCommand}" Content="Bắt đầu ván"/>
+                                <TextBlock FontSize="13" Margin="0,8,0,0"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Text="{Binding StartBlockedText}"
+                                           Visibility="{Binding StartBlockedText, Converter={StaticResource StrVis}}"/>
+                            </StackPanel>
 
-                            <TextBlock TextWrapping="Wrap" FontSize="13" Margin="0,12,0,0"
-                                       Foreground="{DynamicResource TextMutedBrush}"
-                                       Text="Bạn đang ở sảnh chờ. Chủ phòng chọn kiểu chơi và bấm bắt đầu; thấy tên mình trong bảng điểm bên trái là đã vào phòng."
-                                       Visibility="{Binding IsHost, Converter={StaticResource BoolVis},
-                                                    ConverterParameter=Invert}"/>
+                            <!-- Khách: bấm sẵn sàng rồi chờ -->
+                            <StackPanel Visibility="{Binding IsHost, Converter={StaticResource BoolVis},
+                                                     ConverterParameter=Invert}">
+                                <Button Style="{StaticResource PrimaryButton}" Margin="0,16,0,0"
+                                        HorizontalAlignment="Left"
+                                        Command="{Binding ToggleReadyCommand}"
+                                        Content="{Binding ReadyButtonText}"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="13" Margin="0,12,0,0"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Text="Bạn đang ở sảnh chờ. Bấm Sẵn sàng; khi mọi người đều sẵn sàng, chủ phòng mới bắt đầu được."/>
+                            </StackPanel>
                         </StackPanel>
 
                         <Border CornerRadius="10" Padding="12,9" Margin="0,20,0,0"

@@ -33,11 +33,15 @@ public record HealthResponse(string App, string Version, int PuzzleCount, int Ro
 public enum MatchMode { Compete = 0, Draw = 1 }
 
 /// <param name="IsHost">Người tạo phòng, chỉ người này bấm bắt đầu được.</param>
-public record PlayerInfo(string AccountId, string DisplayName, bool IsHost, int Score);
+/// <param name="IsReady">Đã bấm "sẵn sàng" ở sảnh chờ; chủ phòng chỉ bắt đầu được khi mọi người đều sẵn sàng.</param>
+public record PlayerInfo(string AccountId, string DisplayName, bool IsHost, bool IsReady, int Score);
 
+/// <param name="Code">Mã phòng máy chủ sinh ra, chủ phòng đọc cho bạn bè gõ vào.</param>
 /// <param name="Mode">Kiểu chơi chủ phòng đã chọn; người vào sau nhìn thấy nhưng không đổi được.</param>
-public record RoomState(string Name, string HostAccountId, MatchMode Mode, bool IsPlaying,
-                        int RoundNumber, int TotalRounds, IReadOnlyList<PlayerInfo> Players);
+/// <param name="MaxPlayers">Sức chứa của phòng, tính cả chủ phòng.</param>
+public record RoomState(string Code, string HostAccountId, MatchMode Mode, bool IsPlaying,
+                        int RoundNumber, int TotalRounds, int MaxPlayers,
+                        IReadOnlyList<PlayerInfo> Players);
 
 /// <summary>
 /// Một câu phát cho người chơi. Cố ý KHÔNG có đáp án: client vẽ ô trống theo
