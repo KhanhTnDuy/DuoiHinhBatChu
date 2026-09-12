@@ -178,6 +178,10 @@
                         <TextBlock Text="{Binding RoomCode}" FontSize="30" FontWeight="Bold"
                                    Margin="0,4,0,0"
                                    Foreground="{DynamicResource TertiaryBrush}"/>
+                        <TextBlock Text="{Binding RoomName}" FontSize="14" FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Visibility="{Binding RoomName, Converter={StaticResource StrVis}}"/>
                     </StackPanel>
                 </Border>
 
@@ -267,6 +271,14 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
+
+                                <!-- Tạo: tên phòng (tùy chọn). Vào: mã phòng. Cùng một ô cột trái -->
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0"
+                                            Visibility="{Binding IsCreating, Converter={StaticResource BoolVis}}">
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Tên phòng (không bắt buộc)"/>
+                                    <TextBox Style="{StaticResource Field}" MaxLength="20"
+                                             Text="{Binding RoomNameInput, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
 
                                 <StackPanel Grid.Column="0" Margin="0,0,8,0"
                                             Visibility="{Binding IsCreating, Converter={StaticResource BoolVis},

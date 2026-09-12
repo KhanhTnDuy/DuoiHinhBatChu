@@ -41,8 +41,9 @@ sắp thứ tự câu.
 ### Chế độ đấu nhiều người
 
 - Từ màn chọn chế độ có hai lối vào: **Vào phòng** (phòng bạn bè đã mở) hoặc
-  **Tạo phòng ngay**. Chủ phòng chỉ đặt **mật khẩu**; máy chủ cấp **mã phòng 6
-  ký tự** (không có 0/O, 1/I cho khỏi đọc nhầm). Người vào gõ đúng mã + mật khẩu.
+  **Tạo phòng ngay**. Chủ phòng đặt **mật khẩu** và **tên phòng** (tên không
+  bắt buộc, chỉ để hiển thị cạnh mã); máy chủ cấp **mã phòng 6 ký tự** (không
+  có 0/O, 1/I cho khỏi đọc nhầm). Người vào gõ đúng mã + mật khẩu.
 - Mỗi phòng tối đa **5 người** kể cả chủ phòng (`Room.MaxPlayers`); đầy thì
   máy chủ từ chối, kiểm tra trong cùng khóa với lúc thêm để hai người cùng vào
   chỗ cuối không lọt cả hai.
