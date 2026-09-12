@@ -7,14 +7,48 @@ quen thuộc của game đố chữ trên điện thoại.
 Có hai chế độ: **một người** (chơi offline, lưu tiến trình) và **nhiều người**
 (đấu qua mạng với một máy chủ ASP.NET Core + SignalR).
 
-## Lối chơi
+## Lối chơi (chế độ một người)
 
-- Mỗi câu **60 giây**. Trả lời đúng trong giờ được điểm nền `10 × độ khó`; càng
-  nhanh càng được thưởng thêm, tối đa gấp đôi.
-- Hết giờ hoặc đoán sai quá nhiều: **mất 1 mạng** (bắt đầu với 5 ♥) và mất chuỗi
-  đúng liên tiếp.
-- Đúng **5 câu liền** được thưởng 1 💎.
-- Ba trợ giúp, mỗi lần dùng tốn 1 💎: **mở 1 chữ**, **xóa chữ thừa**, **gợi ý lời**.
+Một **ván** là một lượt đi qua bộ câu đố. Ván kết thúc khi **hết mạng** hoặc
+**hết bộ câu**; thoát giữa chừng không tính — vào lại là chơi tiếp đúng ván đó.
+
+- **5 ♥ mạng.** Đoán sai, hết giờ hoặc **bỏ qua** đều mất 1 mạng. Bỏ qua được
+  cho biết đáp án (mất mạng để khỏi ngồi chờ hết 60 giây một câu chắc chắn
+  không ra).
+- **Mỗi câu 60 giây.** Trả lời đúng trong giờ được **điểm nền** `10 × độ khó`;
+  càng nhanh càng được thưởng thêm, nhanh nhất là gấp đôi (`SoloScoring`).
+- **Điểm là điểm của một ván**, không cộng dồn. Ván kết thúc thì đem so với
+  **kỷ lục** (`BestScore`); cao hơn thì thay. Ván mới luôn bắt đầu từ 0 điểm.
+  Bảng xếp hạng xếp theo kỷ lục.
+- **Chuỗi đúng liên tiếp:** đúng **5 câu liền** được thưởng 1 💎; sai / hết giờ /
+  bỏ qua là chuỗi về 0.
+- **Kim cương:** tài khoản mới có vốn **2 💎**. Hai trợ giúp, mỗi lần dùng tốn
+  1 💎:
+  - **Mở 1 chữ** — người chơi **tự chọn ô** muốn mở.
+  - **Xóa chữ thừa** — bỏ bớt các phím không nằm trong đáp án.
+
+  Mỗi lần tiêu kim cương đều **hỏi lại** trước khi trừ. Đồng hồ vẫn chạy trong
+  lúc hỏi, để hộp thoại không thành mẹo câu giờ.
+- **Mỗi ván xáo lại thứ tự câu** (Fisher-Yates theo một hạt giống `RunSeed`),
+  nên chơi lại không gặp đúng dãy câu vừa rồi.
+- Ô đáp án và phím chữ **luôn không dấu**; chỉ lúc báo kết quả mới hiện đáp án
+  đầy đủ có dấu.
+
+Chủ đề của câu (Đồ vật, Địa danh, Ca dao - tục ngữ...) luôn hiện sẵn trên màn
+chơi. Độ khó 1–5 do người soạn chấm tay, đang dùng để tính điểm; chưa dùng để
+sắp thứ tự câu.
+
+### Chế độ đấu nhiều người
+
+- Chủ phòng tạo phòng, nhận **mã 6 ký tự** để mời người khác vào. Chủ phòng
+  chọn số câu (1–20, mặc định 5) rồi bấm bắt đầu; máy chủ bốc ngẫu nhiên câu.
+- Cả phòng cùng nhận một câu, **20 giây** mỗi câu. Ai đúng nhanh hơn được nhiều
+  điểm hơn: `100 × độ khó × hệ số tốc độ`, sát giờ còn 20%, hết giờ là 0
+  (`MatchScoring`). Điểm luôn do **máy chủ** chấm vì chỉ máy chủ giữ mốc thời
+  gian phát câu.
+- Đoán sai phải chờ **1, 2, 3… tối đa 5 giây** mới được gửi tiếp, để không dò
+  đáp án bằng cách bấm bừa.
+- Không có mạng, không có kim cương; hết số câu thì tổng kết điểm.
 
 ## Chạy thử
 
@@ -32,9 +66,7 @@ và toàn bộ ảnh trong `Assets/CauHoi/` được nạp vào bảng câu đ�
 Luồng màn hình: **Đăng nhập → Chọn chế độ → Menu → Màn chơi**. Muốn xem nhanh thì
 bấm *Chơi khách* (khách không lưu tiến trình và không lên bảng xếp hạng).
 
-### Chế độ đấu nhiều người
-
-Chạy thêm máy chủ ở một cửa sổ khác:
+Chế độ đấu cần chạy thêm máy chủ ở một cửa sổ khác:
 
 ```bash
 dotnet run --project DuoiHinhBatChu.Server
@@ -44,51 +76,144 @@ Máy chủ lắng nghe ở `http://localhost:5180`. Tài khoản trên máy ch�
 riêng**, không dùng chung với tài khoản ở máy client — vào chế độ đấu phải đăng
 nhập thêm một lần. Chi tiết: [`Docs/MULTIPLAYER.md`](Docs/MULTIPLAYER.md).
 
-## Cấu trúc
+## Kiến trúc
+
+Ba dự án trong một solution (`DuoiHinhBatChu.slnx`):
 
 | Dự án | Vai trò |
 | --- | --- |
-| `DuoiHinhBatChu.csproj` (thư mục gốc) | App WPF: các cửa sổ, ViewModel, giao diện sáng/tối |
+| `DuoiHinhBatChu.csproj` (thư mục gốc) | App WPF: các cửa sổ, ViewModel, giao diện sáng/tối, âm thanh |
 | `DuoiHinhBatChu.Core` | Phần lõi không phụ thuộc WPF: luật chơi, tính điểm, tài khoản, EF Core. Nhắm `net10.0` thuần để máy chủ dùng lại y nguyên |
-| `DuoiHinhBatChu.Server` | ASP.NET Core + SignalR: phòng đấu, bốc câu, phục vụ ảnh câu hỏi |
-
-Trong app WPF:
+| `DuoiHinhBatChu.Server` | ASP.NET Core + SignalR: xác thực, phòng đấu, bốc câu, chấm điểm, phục vụ ảnh câu hỏi |
 
 ```
-LoginWindow / ModeWindow / MenuWindow / MainWindow / MatchWindow   cửa sổ
-ViewModels/                GameViewModel, MatchViewModel, MenuViewModel...
-Services/                  MatchClient (SignalR), ServerClient, ThemeService
-Themes/                    Light.xaml, Dark.xaml
-Assets/CauHoi/             ảnh câu đố — tên file chính là đáp án
-Assets/TaiNguyen/          ảnh tài nguyên app (mã QR, logo...)
-Assets/tongquanthietke/    tài liệu thiết kế, bảng màu
-tools/                     gen.js — script sinh ảnh ghép từ nguyên liệu
+WPF client ──SignalR──► Server
+    │                     │
+    └── Core ◄────────────┘      (cùng một Puzzle, AnswerChecker, MatchContracts)
 ```
 
-Kiến trúc app theo **MVVM**: cửa sổ XAML chỉ lo hiển thị, mọi trạng thái ván chơi
-nằm trong `ViewModels/GameViewModel.cs`.
+### App WPF — MVVM
+
+Cửa sổ XAML chỉ lo hiển thị; mọi trạng thái nằm trong ViewModel, nối qua
+binding và `RelayCommand`.
+
+```
+LoginWindow → ModeWindow → MenuWindow → MainWindow (một người)
+                                      └→ MatchWindow (nhiều người)
+```
+
+MenuWindow chỉ `Hide()` khi mở màn chơi, đóng màn chơi là quay về menu.
+
+```
+ViewModels/
+  GameViewModel      toàn bộ ván chơi một người: mạng, điểm, chuỗi, kim cương,
+                     đồng hồ, trợ giúp, xáo câu, chốt sổ ván
+  MatchViewModel     phòng đấu: nhận sự kiện từ máy chủ, hiện câu và bảng điểm
+  LoginViewModel / ModeViewModel / MenuViewModel
+Models/              AnswerSlot (ô đáp án), LetterTile (phím chữ)
+Services/
+  MatchClient        kết nối SignalR tới GameHub
+  ServerClient       gọi REST: đăng ký, đăng nhập, tải ảnh câu đố
+  ThemeService       đổi Light/Dark (Themes/Light.xaml, Dark.xaml)
+  AudioService       hiệu ứng âm thanh, nhạc nền
+  AppSettings        cài đặt máy này
+Converters/          BoolToVisibilityConverter
+```
+
+### Core — luật chơi và dữ liệu
+
+```
+Models/
+  Puzzle             một câu đố: Id, Answer, Category, Difficulty, Hint, AcceptedAnswers
+  PuzzleRound        dựng ô đáp án + bộ phím cho một câu (chữ không dấu)
+  PlayerProfile      tiến trình người chơi (điểm ván, kỷ lục, mạng, kim cương, RunSeed...)
+  Account            tài khoản
+  MatchContracts     các record gửi qua SignalR, client và server dùng chung
+Services/
+  SoloScoring        điểm chế độ một người (60 giây, điểm nền + thưởng tốc độ)
+  MatchScoring       điểm chế độ đấu (20 giây, hệ số tốc độ)
+  AnswerChecker      chuẩn hóa (bỏ dấu, bỏ khoảng trắng) và so đáp án
+  GameStateService   đọc/ghi PlayerProfile vào DB, chốt sổ ván, bảng xếp hạng
+  AccountService     đăng ký, đăng nhập, băm mật khẩu
+  PuzzleRepository   đọc câu đố từ DB
+  PuzzleImageLocator / AppImageLocator   tìm file ảnh theo tên đã chuẩn hóa
+Data/
+  GameDbContext      EF Core, SQLite
+  PuzzleSync         đối chiếu Assets/CauHoi + puzzles.json với bảng Puzzles
+  Migrations/
+```
+
+### Server
+
+```
+Program.cs        REST (đăng ký / đăng nhập / ảnh / health) + map GameHub
+GameHub.cs        SignalR hub: vào phòng, bắt đầu, gửi đáp án; vòng lặp ván chạy nền
+RoomManager.cs    phòng, người chơi, bốc câu, chấm điểm, phạt đoán sai
+TokenService.cs   token đăng nhập
+```
+
+## Cơ chế bên trong
+
+### Tiến trình một người được lưu thế nào
+
+`PlayerProfile` ↔ bảng `PlayerStates`, ghi sau mỗi câu (`SaveProfile`).
+
+- Vị trí đang chơi lưu bằng **mã câu** (`CurrentPuzzleId`), không phải số thứ
+  tự — thêm/bớt ảnh cũng không lệch.
+- Thứ tự câu của ván lưu bằng **hạt giống** `RunSeed`, không lưu cả danh sách:
+  vào lại thì xáo lại với cùng hạt giống là ra đúng dãy cũ, rồi nhảy tới
+  `CurrentPuzzleId`.
+- Lúc ván chốt sổ (`SaveEndOfRun`), bảng nhận **trạng thái của ván sau** — 0
+  điểm, đầy mạng, `RunSeed = 0`, `CurrentPuzzleId = ""` — chứ không phải ảnh
+  chụp ván vừa kết thúc; màn hình vẫn giữ điểm cũ để hiện lớp phủ tổng kết.
+- "Đặt lại hồ sơ" xóa tiến trình nhưng cố ý **giữ `BestScore`**.
+
+### Câu đố đi từ file ảnh vào game
+
+1. `Assets/CauHoi/*.png` — **tên file chính là đáp án**.
+2. Khởi động: `PuzzleSync.Sync()` quét thư mục, ghép với `Data/puzzles.json`
+   theo đáp án đã chuẩn hóa, ghi/cập nhật bảng `Puzzles` (kèm byte ảnh) và
+   `PuzzleAnswers` (các đáp án chấp nhận thêm).
+3. `PuzzleRepository.LoadAll()` trả `List<Puzzle>`; `GameViewModel` xáo theo
+   `RunSeed` rồi `PuzzleRound` dựng ô + phím cho từng câu.
+
+Mã câu = đáp án đã chuẩn hóa (`"CÁ HEO"` → `"CAHEO"`). Đáp án hiển thị ưu tiên
+`answer` trong json, chỉ lấy tên file khi json không khai.
+
+### Vòng lặp một ván đấu (server)
+
+`StartMatch` bốc ngẫu nhiên N câu → với mỗi câu: phát `RoundInfo`, chờ tới khi
+mọi người đã trả lời hoặc hết 20 giây, phát `RoundEnded` (kèm đáp án), nghỉ 3
+giây → hết N câu phát `MatchEnded`. Vòng lặp chạy nền ngoài lời gọi hub nên
+dùng `IHubContext<GameHub>`; danh sách người chơi khóa bằng `Room.Gate` vì
+người vào/ra phòng sửa nó cùng lúc.
 
 ## Thêm câu đố mới
 
 Bỏ file ảnh vào `Assets/CauHoi/`, **đặt tên file chính là đáp án** (có dấu, có
-khoảng trắng giữa các tiếng — `PuzzleImageLocator` tự chuẩn hóa khi so khớp).
-Lần khởi động sau, `PuzzleSync.Sync()` tự đối chiếu thư mục với cơ sở dữ liệu.
+khoảng trắng giữa các tiếng). Lần khởi động sau, `PuzzleSync.Sync()` tự đối
+chiếu thư mục với cơ sở dữ liệu.
 
-Gợi ý và độ khó là phần bổ sung tùy chọn, khai trong `Data/puzzles.json`, ghép
+Chủ đề, độ khó và đáp án chấp nhận thêm khai trong `Data/puzzles.json`, ghép
 theo đáp án. Hướng dẫn đầy đủ: [`Data/README.md`](Data/README.md).
 
-Hiện có 39 ảnh câu đố; mục tiêu là 50.
+Hiện có 39 ảnh câu đố, cả 39 đã chấm chủ đề + độ khó; mục tiêu là 50.
 
 ## Dữ liệu
 
 Tài khoản, tiến trình và câu đố nằm trong SQLite `Data/game.db`, đọc ghi qua
 EF Core — các bảng `Accounts`, `PlayerStates`, `PuzzleResults`, `Puzzles`,
-`PuzzleAnswers`. Client và máy chủ mỗi bên giữ một `game.db` riêng. Mã câu đố
-chính là đáp án đã chuẩn hóa (`"CAHEO"`). Chi tiết và cách sinh migration mới:
-[`Docs/DATABASE.md`](Docs/DATABASE.md).
+`PuzzleAnswers`. Client và máy chủ mỗi bên giữ một `game.db` riêng. Chi tiết và
+cách sinh migration mới: [`Docs/DATABASE.md`](Docs/DATABASE.md).
 
 File dữ liệu sinh lúc chạy đã được `.gitignore` bỏ qua, nên kho mã không mang
 theo tài khoản hay tiến trình của ai.
+
+## Việc còn dở
+
+- Chưa có cơ chế sắp câu theo độ khó (đang xáo ngẫu nhiên toàn bộ).
+- 39/50 ảnh câu đố.
+- Chưa có test tự động.
 
 ## Tài liệu khác
 
