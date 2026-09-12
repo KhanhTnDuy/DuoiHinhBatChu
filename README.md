@@ -40,12 +40,23 @@ sắp thứ tự câu.
 
 ### Chế độ đấu nhiều người
 
-- Chủ phòng tạo phòng, nhận **mã 6 ký tự** để mời người khác vào. Chủ phòng
-  chọn số câu (1–20, mặc định 5) rồi bấm bắt đầu; máy chủ bốc ngẫu nhiên câu.
-- Cả phòng cùng nhận một câu, **20 giây** mỗi câu. Ai đúng nhanh hơn được nhiều
-  điểm hơn: `100 × độ khó × hệ số tốc độ`, sát giờ còn 20%, hết giờ là 0
-  (`MatchScoring`). Điểm luôn do **máy chủ** chấm vì chỉ máy chủ giữ mốc thời
-  gian phát câu.
+- Từ màn chọn chế độ có hai lối vào: **Vào phòng** (phòng bạn bè đã mở) hoặc
+  **Tạo phòng ngay**. Phòng nhận diện bằng **tên + mật khẩu** do chủ phòng tự
+  đặt; người vào gõ đúng cả hai.
+- Không phải chọn máy chủ hay đăng nhập máy chủ: app **tự nối** lúc bấm tạo /
+  vào phòng (địa chỉ nằm trong `Data/app-settings.json`, mặc định
+  `localhost:5180`).
+- Trong phòng, **chỉ chủ phòng** chọn **kiểu chơi** và số câu (1–20, mặc định 5)
+  rồi bấm bắt đầu; người vào sau ở sảnh chờ, thấy lựa chọn của chủ phòng nhưng
+  không đổi được. Hai kiểu chơi:
+  - **Thi đấu** — cả phòng cùng nhận một ảnh, ai ghép chữ nhanh hơn thắng
+    (đã chạy, luật bên dưới).
+  - **Tôi vẽ bạn đoán** — một người vẽ, cả phòng đoán. *Đang để dành*, chọn
+    được nhưng chưa bắt đầu được.
+- Thi đấu: cả phòng cùng nhận một câu, **20 giây** mỗi câu. Ai đúng nhanh hơn
+  được nhiều điểm hơn: `100 × độ khó × hệ số tốc độ`, sát giờ còn 20%, hết giờ
+  là 0 (`MatchScoring`). Điểm luôn do **máy chủ** chấm vì chỉ máy chủ giữ mốc
+  thời gian phát câu.
 - Đoán sai phải chờ **1, 2, 3… tối đa 5 giây** mới được gửi tiếp, để không dò
   đáp án bằng cách bấm bừa.
 - Không có mạng, không có kim cương; hết số câu thì tổng kết điểm.
@@ -72,9 +83,15 @@ Chế độ đấu cần chạy thêm máy chủ ở một cửa sổ khác:
 dotnet run --project DuoiHinhBatChu.Server
 ```
 
-Máy chủ lắng nghe ở `http://localhost:5180`. Tài khoản trên máy chủ là **sổ
-riêng**, không dùng chung với tài khoản ở máy client — vào chế độ đấu phải đăng
-nhập thêm một lần. Chi tiết: [`Docs/MULTIPLAYER.md`](Docs/MULTIPLAYER.md).
+Máy chủ lắng nghe ở `http://localhost:5180`. Muốn đấu qua LAN thì sửa
+`ServerAddress` trong `Data/app-settings.json` của máy client thành địa chỉ máy
+chạy server (ví dụ `192.168.1.10:5180`).
+
+Tài khoản trên máy chủ là **sổ riêng** (máy chủ là bên ghi điểm ván đấu) nhưng
+người chơi không phải đăng ký lại: client tự đăng nhập bằng tên đăng nhập của
+tài khoản trên máy, "mật khẩu" là mã tài khoản (`Account.Id`, chuỗi ngẫu nhiên
+sinh lúc tạo tài khoản); lần đầu gặp máy chủ thì tự đăng ký
+(`ServerClient.SignInAsync`). Chi tiết: [`Docs/MULTIPLAYER.md`](Docs/MULTIPLAYER.md).
 
 ## Kiến trúc
 
@@ -102,7 +119,11 @@ LoginWindow → ModeWindow → MenuWindow → MainWindow (một người)
                                       └→ MatchWindow (nhiều người)
 ```
 
-MenuWindow chỉ `Hide()` khi mở màn chơi, đóng màn chơi là quay về menu.
+MenuWindow chỉ `Hide()` khi mở màn chơi, đóng màn chơi là quay về menu. Mọi
+màn trừ màn đang chơi có **nút quay lại** (style `BackButton`): Chọn chế độ →
+Đăng nhập, Menu → Chọn chế độ, Sảnh chờ → Chọn chế độ. Chuyển cửa sổ luôn theo
+quy tắc **mở cửa sổ mới trước rồi mới `Close()`** cửa sổ cũ, không thì WPF thấy
+hết cửa sổ là tắt app.
 
 ```
 ViewModels/
@@ -112,8 +133,8 @@ ViewModels/
   LoginViewModel / ModeViewModel / MenuViewModel
 Models/              AnswerSlot (ô đáp án), LetterTile (phím chữ)
 Services/
-  MatchClient        kết nối SignalR tới GameHub
-  ServerClient       gọi REST: đăng ký, đăng nhập, tải ảnh câu đố
+  MatchClient        kết nối SignalR tới GameHub (mở lười lúc tạo / vào phòng)
+  ServerClient       gọi REST: tự đăng nhập máy chủ, tải ảnh câu đố
   ThemeService       đổi Light/Dark (Themes/Light.xaml, Dark.xaml)
   AudioService       hiệu ứng âm thanh, nhạc nền
   AppSettings        cài đặt máy này
@@ -147,8 +168,10 @@ Data/
 
 ```
 Program.cs        REST (đăng ký / đăng nhập / ảnh / health) + map GameHub
-GameHub.cs        SignalR hub: vào phòng, bắt đầu, gửi đáp án; vòng lặp ván chạy nền
-RoomManager.cs    phòng, người chơi, bốc câu, chấm điểm, phạt đoán sai
+GameHub.cs        SignalR hub: tạo / vào phòng, chọn kiểu chơi, bắt đầu, gửi đáp án;
+                  vòng lặp ván chạy nền
+RoomManager.cs    phòng (tên + mật khẩu + kiểu chơi), người chơi, bốc câu, chấm điểm,
+                  phạt đoán sai
 TokenService.cs   token đăng nhập
 ```
 
@@ -213,6 +236,8 @@ theo tài khoản hay tiến trình của ai.
 
 - Chưa có cơ chế sắp câu theo độ khó (đang xáo ngẫu nhiên toàn bộ).
 - 39/50 ảnh câu đố.
+- Kiểu chơi **Tôi vẽ bạn đoán** mới có chỗ chọn, chưa có luật và màn chơi —
+  làm sau khi Thi đấu hoàn thiện.
 - Chưa có test tự động.
 
 ## Tài liệu khác
