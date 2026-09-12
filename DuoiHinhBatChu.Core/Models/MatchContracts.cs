@@ -25,11 +25,19 @@ public record HealthResponse(string App, string Version, int PuzzleCount, int Ro
 
 // ===== Phòng chơi (SignalR) =====
 
+/// <summary>
+/// Kiểu chơi của một phòng, chỉ chủ phòng chọn được, chọn trước khi bắt đầu.
+///   - Compete: cả phòng cùng nhận một ảnh câu đố, ai ghép chữ nhanh hơn thắng.
+///   - Draw: "Tôi vẽ bạn đoán" — một người vẽ, những người còn lại đoán chữ.
+/// </summary>
+public enum MatchMode { Compete = 0, Draw = 1 }
+
 /// <param name="IsHost">Người tạo phòng, chỉ người này bấm bắt đầu được.</param>
 public record PlayerInfo(string AccountId, string DisplayName, bool IsHost, int Score);
 
-public record RoomState(string Code, string HostAccountId, bool IsPlaying, int RoundNumber,
-                        int TotalRounds, IReadOnlyList<PlayerInfo> Players);
+/// <param name="Mode">Kiểu chơi chủ phòng đã chọn; người vào sau nhìn thấy nhưng không đổi được.</param>
+public record RoomState(string Name, string HostAccountId, MatchMode Mode, bool IsPlaying,
+                        int RoundNumber, int TotalRounds, IReadOnlyList<PlayerInfo> Players);
 
 /// <summary>
 /// Một câu phát cho người chơi. Cố ý KHÔNG có đáp án: client vẽ ô trống theo

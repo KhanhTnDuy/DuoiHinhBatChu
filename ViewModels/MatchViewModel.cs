@@ -7,6 +7,9 @@ using DuoiHinhBatChu.Services;
 
 namespace DuoiHinhBatChu.ViewModels;
 
+/// <summary>Việc người chơi định làm khi bước vào phòng chờ.</summary>
+public enum LobbyMode { Join, Create }
+
 /// <summary>Một dòng trong bảng điểm.</summary>
 public class ScoreRow : ViewModelBase
 {
@@ -44,10 +47,18 @@ public class MatchViewModel : ViewModelBase
     /// <summary>Đoán sai thì tô đỏ chừng này rồi trả ô về trống cho ghép lại.</summary>
     private static readonly TimeSpan WrongFlash = TimeSpan.FromMilliseconds(700);
 
-    private readonly MatchClient _client;
-    private readonly ServerClient _server;
+    private readonly Account _account;
     private readonly AppSettings _settings;
-    private readonly string _myAccountId;
+    private readonly ServerClient _server = new();
+
+    /// <summary>
+    /// Đường dây tới máy chủ. Null cho tới khi người chơi tạo / vào phòng lần
+    /// đầu — cửa sổ này mở ra mà chưa nối gì cả, xem <see cref="EnsureConnectedAsync"/>.
+    /// </summary>
+    private MatchClient? _client;
+
+    /// <summary>Mã tài khoản TRÊN MÁY CHỦ, chỉ biết sau khi đăng nhập máy chủ xong.</summary>
+    private string _myAccountId = "";
 
     /// <summary>Nhịp đếm ngược, chỉ để hiện lên màn hình — mốc thật nằm ở máy chủ.</summary>
     private readonly DispatcherTimer _tick = new() { Interval = TimeSpan.FromMilliseconds(100) };
@@ -63,21 +74,15 @@ public class MatchViewModel : ViewModelBase
     private double _secondsAllowed = 1;
     private int _nextTileId;
 
-    public MatchViewModel(MatchClient client, ServerClient server, AppSettings settings,
-                          string myAccountId, string myDisplayName)
-    {
-        _client = client;
-        _server = server;
-        _settings = settings;
-        _myAccountId = myAccountId;
-        PlayerName = myDisplayName;
+    /// <summary>Bắn lên khi người chơi bấm quay lại ở phòng chờ.</summary>
+    public event Action? GoBack;
 
-        _client.RoomChanged += ApplyRoom;
-        _client.RoundStarted += StartRound;
-        _client.AnswerJudged += ApplyJudgement;
-        _client.RoundEnded += EndRound;
-        _client.MatchEnded += EndMatch;
-        _client.Disconnected += reason => Status = reason;
+    public MatchViewModel(Account account, AppSettings settings, LobbyMode mode)
+    {
+        _account = account;
+        _settings = settings;
+        _lobbyMode = mode;
+        PlayerName = account.DisplayName;
 
         _tick.Tick += (_, _) => OnPropertyChanged(nameof(SecondsLeftText));
         _flash.Tick += (_, _) => { _flash.Stop(); ClearSlots(); };
@@ -89,6 +94,9 @@ public class MatchViewModel : ViewModelBase
         PlaceLetterCommand = new RelayCommand(p => PlaceLetter(p as LetterTile));
         TakeBackCommand = new RelayCommand(p => TakeBack(p as AnswerSlot));
         ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
+        SwitchLobbyModeCommand = new RelayCommand(_ => IsCreating = !IsCreating);
+        BackCommand = new RelayCommand(_ => GoBack?.Invoke(), _ => IsInLobby);
+        ChooseModeCommand = new RelayCommand(async p => await ChooseModeAsync((MatchMode)p!), _ => IsHost && !IsBusy);
     }
 
     // ----- Lệnh cho giao diện -----
@@ -98,6 +106,9 @@ public class MatchViewModel : ViewModelBase
     public RelayCommand PlaceLetterCommand { get; }
     public RelayCommand TakeBackCommand { get; }
     public RelayCommand ToggleThemeCommand { get; }
+    public RelayCommand SwitchLobbyModeCommand { get; }
+    public RelayCommand BackCommand { get; }
+    public RelayCommand ChooseModeCommand { get; }
 
     // ----- Dữ liệu hiển thị -----
     public ObservableCollection<AnswerSlot> Slots { get; } = new();
@@ -108,7 +119,7 @@ public class MatchViewModel : ViewModelBase
 
     public bool IsDarkTheme => _settings.IsDarkTheme;
 
-    private string _status = "Tạo phòng mới, hoặc nhập mã phòng bạn bè đọc cho.";
+    private string _status = "";
     public string Status
     {
         get => _status;
@@ -124,30 +135,74 @@ public class MatchViewModel : ViewModelBase
             if (SetProperty(ref _isBusy, value)) RaiseCommandStates();
         }
     }
-
     // ----- Phòng chờ -----
 
-    private string _joinCode = "";
-    public string JoinCode
+    private LobbyMode _lobbyMode;
+    /// <summary>
+    /// Đang ở dạng "tạo phòng" hay "vào phòng". Cùng một cặp ô tên + mật khẩu,
+    /// chỉ khác nút bấm gọi lệnh nào — tách ra hai dạng để người chơi không
+    /// phải nghĩ "tôi nên bấm nút nào", vì họ đã chọn từ màn chế độ rồi.
+    /// </summary>
+    public bool IsCreating
     {
-        get => _joinCode;
-        set => SetProperty(ref _joinCode, value);
-    }
-
-    private string _roomCode = "";
-    /// <summary>Mã phòng đang ở; rỗng nghĩa là chưa vào phòng nào.</summary>
-    public string RoomCode
-    {
-        get => _roomCode;
+        get => _lobbyMode == LobbyMode.Create;
         private set
         {
-            if (!SetProperty(ref _roomCode, value)) return;
+            LobbyMode next = value ? LobbyMode.Create : LobbyMode.Join;
+            if (next == _lobbyMode) return;
+
+            _lobbyMode = next;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(LobbyTitle));
+            OnPropertyChanged(nameof(LobbyHint));
+            OnPropertyChanged(nameof(SwitchLobbyModeText));
+        }
+    }
+
+    public string LobbyTitle => IsCreating ? "TẠO PHÒNG MỚI" : "VÀO PHÒNG CÓ SẴN";
+
+    public string LobbyHint => IsCreating
+        ? "Đặt tên phòng và mật khẩu, rồi đọc cho bạn bè gõ y hệt để vào."
+        : "Gõ đúng tên phòng và mật khẩu mà chủ phòng đã đặt.";
+
+    public string SwitchLobbyModeText => IsCreating
+        ? "Đã có phòng bạn bè mở? Vào phòng"
+        : "Chưa ai mở phòng? Tạo phòng mới";
+
+
+    private string _roomNameInput = "";
+    /// <summary>Tên phòng người chơi gõ vào: đặt cho phòng mới, hoặc tên phòng muốn vào.</summary>
+    public string RoomNameInput
+    {
+        get => _roomNameInput;
+        set => SetProperty(ref _roomNameInput, value);
+    }
+
+    /// <summary>
+    /// Mật khẩu phòng. PasswordBox không ràng buộc hai chiều được, nên
+    /// code-behind của cửa sổ đẩy giá trị vào đây mỗi lần người chơi gõ.
+    /// </summary>
+    private string _roomPassword = "";
+    public string RoomPassword
+    {
+        get => _roomPassword;
+        set => SetProperty(ref _roomPassword, value);
+    }
+
+    private string _roomName = "";
+    /// <summary>Tên phòng đang ở; rỗng nghĩa là chưa vào phòng nào.</summary>
+    public string RoomName
+    {
+        get => _roomName;
+        private set
+        {
+            if (!SetProperty(ref _roomName, value)) return;
             OnPropertyChanged(nameof(IsInRoom));
             RaiseCommandStates();
         }
     }
 
-    public bool IsInRoom => RoomCode.Length > 0;
+    public bool IsInRoom => RoomName.Length > 0;
 
     private bool _isHost;
     public bool IsHost
@@ -282,29 +337,127 @@ public class MatchViewModel : ViewModelBase
         get => _winnerText;
         private set => SetProperty(ref _winnerText, value);
     }
+    // ----- Kiểu chơi của phòng -----
+
+    private MatchMode _mode = MatchMode.Compete;
+    /// <summary>
+    /// Kiểu chơi máy chủ đang giữ cho phòng này. Client KHÔNG tự đổi giá trị này
+    /// khi bấm — gửi lên máy chủ rồi chờ RoomChanged về, để mọi người trong
+    /// phòng (kể cả chủ phòng) nhìn cùng một nguồn sự thật.
+    /// </summary>
+    public MatchMode Mode
+    {
+        get => _mode;
+        private set
+        {
+            if (!SetProperty(ref _mode, value)) return;
+            OnPropertyChanged(nameof(IsCompete));
+            OnPropertyChanged(nameof(IsDraw));
+            OnPropertyChanged(nameof(ModeText));
+        }
+    }
+
+    public bool IsCompete => Mode == MatchMode.Compete;
+    public bool IsDraw => Mode == MatchMode.Draw;
+
+    public string ModeText => Mode switch
+    {
+        MatchMode.Draw => "Tôi vẽ bạn đoán",
+        _ => "Thi đấu",
+    };
+
+    private async Task ChooseModeAsync(MatchMode mode) => await CallAsync(async () =>
+    {
+        if (_client == null || !IsHost || mode == Mode) return;
+        await _client.SetModeAsync(mode);
+    });
 
     // ===== Hành động của người chơi =====
 
     private async Task CreateRoomAsync() => await CallAsync(async () =>
     {
-        ApplyRoom(await _client.CreateRoomAsync());
-        Status = $"Đã mở phòng {RoomCode}. Đọc mã này cho bạn bè vào.";
+        if (!CheckRoomInput()) return;
+
+        MatchClient client = await EnsureConnectedAsync();
+        ApplyRoom(await client.CreateRoomAsync(RoomNameInput, RoomPassword));
+        Status = $"Đã mở phòng \"{RoomName}\". Bạn bè gõ đúng tên và mật khẩu này để vào.";
     });
 
     private async Task JoinRoomAsync() => await CallAsync(async () =>
     {
-        if (JoinCode.Trim().Length == 0)
+        if (!CheckRoomInput()) return;
+
+        MatchClient client = await EnsureConnectedAsync();
+        ApplyRoom(await client.JoinRoomAsync(RoomNameInput, RoomPassword));
+        Status = $"Đã vào phòng \"{RoomName}\". Chờ chủ phòng bấm bắt đầu.";
+    });
+
+    private bool CheckRoomInput()
+    {
+        if (RoomNameInput.Trim().Length > 0) return true;
+
+        Status = "Đặt tên phòng đã.";
+        return false;
+    }
+
+    /// <summary>
+    /// Nối máy chủ NGAY LÚC CẦN, tức là lúc người chơi bấm tạo / vào phòng —
+    /// không có bước "chọn máy chủ" hay "đăng nhập máy chủ" riêng nữa.
+    ///
+    /// Địa chỉ lấy từ <see cref="AppSettings.ServerAddress"/>; tài khoản máy chủ
+    /// do <see cref="ServerClient.SignInAsync"/> tự lo bằng tài khoản ở máy này.
+    /// Nối được một lần thì giữ đường dây đó cho cả phiên; rớt thì lần bấm sau
+    /// nối lại.
+    /// </summary>
+    private async Task<MatchClient> EnsureConnectedAsync()
+    {
+        if (_client is { IsConnected: true }) return _client;
+
+        // Đường dây cũ đã rớt (hoặc chưa có): dọn rồi mở lại từ đầu
+        if (_client != null)
         {
-            Status = "Nhập mã phòng đã.";
-            return;
+            await _client.DisposeAsync();
+            _client = null;
         }
 
-        ApplyRoom(await _client.JoinRoomAsync(JoinCode));
-        Status = $"Đã vào phòng {RoomCode}. Chờ chủ phòng bấm bắt đầu.";
-    });
+        Status = "Đang nối máy chủ...";
+
+        string address = _settings.ServerAddress.Trim().Length > 0
+            ? _settings.ServerAddress
+            : "localhost:5180";
+
+        ServerAuth auth = await _server.SignInAsync(address, _account);
+        if (!auth.Ok || auth.Auth == null)
+            throw new InvalidOperationException(auth.Message);
+
+        var client = new MatchClient(_server.BaseAddress, auth.Auth.Token, App.OnUiThread);
+
+        try
+        {
+            await client.ConnectAsync();
+        }
+        catch (Exception ex)
+        {
+            await client.DisposeAsync();
+            throw new InvalidOperationException($"Không mở được kênh đấu: {ex.Message}");
+        }
+
+        client.RoomChanged += ApplyRoom;
+        client.RoundStarted += StartRound;
+        client.AnswerJudged += ApplyJudgement;
+        client.RoundEnded += EndRound;
+        client.MatchEnded += EndMatch;
+        client.Disconnected += reason => Status = reason;
+
+        _myAccountId = auth.Auth.AccountId;
+        _client = client;
+        return client;
+    }
 
     private async Task StartMatchAsync() => await CallAsync(async () =>
     {
+        if (_client == null) return;
+
         await _client.StartMatchAsync(Rounds);
         Status = "Bắt đầu!";
     });
@@ -337,8 +490,9 @@ public class MatchViewModel : ViewModelBase
 
     private void ApplyRoom(RoomState room)
     {
-        RoomCode = room.Code;
+        RoomName = room.Name;
         IsHost = room.HostAccountId == _myAccountId;
+        Mode = room.Mode;
 
         Players.Clear();
         foreach (PlayerInfo p in room.Players)
@@ -523,7 +677,7 @@ public class MatchViewModel : ViewModelBase
                 ? $"Bạn thắng với {best.Score} điểm!"
                 : $"{best.DisplayName} thắng với {best.Score} điểm.";
 
-        Status = $"Ván xong. Vẫn ở phòng {RoomCode}, chủ phòng bấm bắt đầu là chơi ván mới.";
+        Status = $"Ván xong. Vẫn ở phòng {RoomName}, chủ phòng bấm bắt đầu là chơi ván mới.";
     }
 
     private void ApplyScores(IReadOnlyList<PlayerInfo> scores)
@@ -608,7 +762,7 @@ public class MatchViewModel : ViewModelBase
 
         try
         {
-            await _client.SubmitAnswerAsync(guess);
+            if (_client != null) await _client.SubmitAnswerAsync(guess);
         }
         catch (Exception ex)
         {
@@ -648,6 +802,8 @@ public class MatchViewModel : ViewModelBase
         CreateRoomCommand.RaiseCanExecuteChanged();
         JoinRoomCommand.RaiseCanExecuteChanged();
         StartMatchCommand.RaiseCanExecuteChanged();
+        BackCommand.RaiseCanExecuteChanged();
+        ChooseModeCommand.RaiseCanExecuteChanged();
     }
 
     /// <summary>Rời phòng cho gọn khi đóng cửa sổ; máy chủ cũng tự dọn khi rớt kết nối.</summary>
@@ -659,13 +815,13 @@ public class MatchViewModel : ViewModelBase
 
         try
         {
-            if (_client.IsConnected) await _client.LeaveRoomAsync();
+            if (_client is { IsConnected: true }) await _client.LeaveRoomAsync();
         }
         catch
         {
             // Đang đóng cửa sổ rồi, lỗi ở đây không cứu được gì
         }
 
-        await _client.DisposeAsync();
+        if (_client != null) await _client.DisposeAsync();
     }
 }

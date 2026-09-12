@@ -46,15 +46,17 @@
                            Foreground="{DynamicResource TextPrimaryBrush}"/>
             </StackPanel>
 
-            <Button Style="{StaticResource ThemeToggleButton}"
-                    HorizontalAlignment="Right" VerticalAlignment="Top"
-                    Command="{Binding ToggleThemeCommand}"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                <Button Style="{StaticResource BackButton}" Margin="0,0,8,0"
+                        ToolTip="Đăng xuất, về màn đăng nhập"
+                        Command="{Binding BackCommand}"/>
+                <Button Style="{StaticResource ThemeToggleButton}"
+                        Command="{Binding ToggleThemeCommand}"/>
+            </StackPanel>
         </Grid>
 
         <!-- === Tên màn hình, đặt giữa cho cân với hai thẻ bên dưới === -->
-        <StackPanel Grid.Row="1" HorizontalAlignment="Center" Margin="0,26,0,0"
-                    Visibility="{Binding IsOnlinePanelOpen, Converter={StaticResource BoolVis},
-                                 ConverterParameter=Invert}">
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" Margin="0,26,0,0">
             <Border Style="{StaticResource Pill}" HorizontalAlignment="Center"
                     Background="{DynamicResource PrimarySoftBrush}">
                 <TextBlock Text="ĐUỔI HÌNH BẮT CHỮ" Style="{StaticResource PillText}"
@@ -73,9 +75,7 @@
              trạng thái, tên chế độ, mô tả, hàng chip, rồi nút "Chơi ngay" ghim
              dưới đáy. Nút ghim đáy nên hai thẻ cao bằng nhau và không còn
              khoảng trống lửng lơ như bản cũ. -->
-        <Grid Grid.Row="2" Margin="0,26,0,0"
-              Visibility="{Binding IsOnlinePanelOpen, Converter={StaticResource BoolVis},
-                           ConverterParameter=Invert}">
+        <Grid Grid.Row="2" Margin="0,26,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
@@ -249,8 +249,19 @@
                                    Foreground="{DynamicResource ErrorBrush}"/>
                     </Border>
 
-                    <Button Grid.Row="5" Style="{StaticResource TertiaryButton}"
-                            Command="{Binding ShowOnlineCommand}" Content="Tạo phòng ngay  →"/>
+                    <!-- Hai lối vào: có phòng bạn bè mở sẵn thì vào, chưa thì tự mở -->
+                    <Grid Grid.Row="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Style="{StaticResource SoftButton}" Margin="0,0,5,0"
+                                HorizontalContentAlignment="Center"
+                                Command="{Binding JoinRoomCommand}" Content="Vào phòng"/>
+                        <Button Grid.Column="1" Style="{StaticResource TertiaryButton}" Margin="5,0,0,0"
+                                HorizontalContentAlignment="Center"
+                                Command="{Binding CreateRoomCommand}" Content="Tạo phòng ngay  →"/>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>
@@ -259,98 +270,7 @@
         <TextBlock Grid.Row="3" Margin="0,20,0,0" FontSize="13"
                    HorizontalAlignment="Center"
                    Foreground="{DynamicResource TextMutedBrush}"
-                   Text="Mẹo: chơi Cổ điển để luyện, rồi rủ bạn vào đấu cho biết ai nhanh hơn."
-                   Visibility="{Binding IsOnlinePanelOpen, Converter={StaticResource BoolVis},
-                                ConverterParameter=Invert}"/>
+                   Text="Mẹo: chơi Cổ điển để luyện, rồi rủ bạn vào đấu cho biết ai nhanh hơn."/>
 
-        <!-- === Bảng nối máy chủ ===
-             Cuộn được vì phần đăng nhập máy chủ dài hơn một màn hình khi cửa sổ nhỏ -->
-        <ScrollViewer Grid.Row="2" Grid.RowSpan="2" Margin="0,26,0,0"
-                      VerticalScrollBarVisibility="Auto"
-                      Visibility="{Binding IsOnlinePanelOpen, Converter={StaticResource BoolVis}}">
-        <Border Style="{StaticResource Card}" VerticalAlignment="Top">
-            <StackPanel Margin="8">
-                <TextBlock Text="NỐI TỚI MÁY CHỦ" Style="{StaticResource SectionLabel}"/>
-                <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20" Margin="0,8,0,16"
-                           Foreground="{DynamicResource TextSecondaryBrush}"
-                           Text="Máy chủ là dự án DuoiHinhBatChu.Server. Chạy nó trên một máy trong nhà bằng lệnh: dotnet run --launch-profile lan"/>
-
-                <TextBlock Style="{StaticResource FieldLabel}"
-                           Text="Địa chỉ máy chủ (ví dụ 192.168.1.10:5180)"/>
-                <TextBox Style="{StaticResource Field}"
-                         Text="{Binding ServerAddress, UpdateSourceTrigger=PropertyChanged}"/>
-
-                <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
-                    <Button Style="{StaticResource PrimaryButton}"
-                            Command="{Binding CheckServerCommand}" Content="Thử kết nối"/>
-                    <Button Style="{StaticResource GhostButton}" Margin="10,0,0,0"
-                            Command="{Binding HideOnlineCommand}" Content="Quay lại"/>
-                </StackPanel>
-
-                <!-- Tài khoản trên máy chủ là sổ riêng, không phải tài khoản ở máy này -->
-                <TextBlock Text="TÀI KHOẢN TRÊN MÁY CHỦ" Style="{StaticResource SectionLabel}"
-                           Margin="0,22,0,0"/>
-                <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20" Margin="0,8,0,12"
-                           Foreground="{DynamicResource TextSecondaryBrush}"
-                           Text="Máy chủ giữ sổ tài khoản riêng của nó, vì nó mới là bên ghi điểm ván đấu. Lần đầu vào một máy chủ thì bấm Tạo tài khoản."/>
-
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                        <TextBlock Style="{StaticResource FieldLabel}" Text="Tên đăng nhập"/>
-                        <TextBox Style="{StaticResource Field}"
-                                 Text="{Binding ServerUserName, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                        <TextBlock Style="{StaticResource FieldLabel}" Text="Mật khẩu"/>
-                        <PasswordBox x:Name="ServerPasswordBox"
-                                     Style="{StaticResource PasswordField}"
-                                     PasswordChanged="ServerPasswordBox_PasswordChanged"/>
-                    </StackPanel>
-                </Grid>
-
-                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                    <Button Style="{StaticResource PrimaryButton}"
-                            Command="{Binding ServerLoginCommand}" Content="Vào đấu"/>
-                    <Button Style="{StaticResource GhostButton}" Margin="10,0,0,0"
-                            Command="{Binding ServerRegisterCommand}" Content="Tạo tài khoản"/>
-                </StackPanel>
-
-                <Border CornerRadius="10" Padding="12,9" Margin="0,16,0,0"
-                        Visibility="{Binding ServerMessage, Converter={StaticResource StrVis}}">
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Background" Value="{DynamicResource ErrorSoftBrush}"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsServerOk}" Value="True">
-                                    <Setter Property="Background"
-                                            Value="{DynamicResource PrimarySoftBrush}"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                    <TextBlock Text="{Binding ServerMessage}" TextWrapping="Wrap" FontSize="13">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsServerOk}" Value="True">
-                                        <Setter Property="Foreground"
-                                                Value="{DynamicResource PrimaryBrush}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </Border>
-
-            </StackPanel>
-        </Border>
-        </ScrollViewer>
     </Grid>
 </Window>
