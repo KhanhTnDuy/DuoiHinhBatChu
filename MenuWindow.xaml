@@ -28,7 +28,6 @@
                 <RowDefinition Height="Auto"/>   <!-- tên màn hình -->
                 <RowDefinition Height="Auto"/>   <!-- bốn con số hồ sơ -->
                 <RowDefinition Height="*"/>      <!-- ba lựa chọn -->
-                <RowDefinition Height="Auto"/>   <!-- quay lại -->
             </Grid.RowDefinitions>
 
             <!-- === Đầu trang: người đang chơi === -->
@@ -51,9 +50,13 @@
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
                 </StackPanel>
 
-                <Button Style="{StaticResource ThemeToggleButton}"
-                        HorizontalAlignment="Right" VerticalAlignment="Top"
-                        Command="{Binding ToggleThemeCommand}"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                    <Button Style="{StaticResource BackButton}" Margin="0,0,8,0"
+                            ToolTip="Về màn chọn chế độ"
+                            Command="{Binding BackCommand}"/>
+                    <Button Style="{StaticResource ThemeToggleButton}"
+                            Command="{Binding ToggleThemeCommand}"/>
+                </StackPanel>
             </Grid>
 
             <!-- === Tên màn hình === -->
@@ -257,11 +260,6 @@
 
                 </StackPanel>
             </Grid>
-
-            <!-- === Quay lại === -->
-            <Button Grid.Row="4" Style="{StaticResource GhostButton}" Margin="0,16,0,0"
-                    HorizontalAlignment="Center"
-                    Command="{Binding BackCommand}" Content="← Đổi chế độ chơi"/>
         </Grid>
 
         <!-- ==================== Lớp phủ: hỏi lại trước khi xóa tiến trình ==================== -->

@@ -41,14 +41,27 @@ public class Player
         new(AccountId, DisplayName, AccountId == hostAccountId, Score);
 }
 
-/// <summary>Một phòng đấu, nhận diện bằng mã 6 ký tự.</summary>
+/// <summary>
+/// Một phòng đấu, nhận diện bằng TÊN do chủ phòng tự đặt.
+///
+/// Trước đây máy chủ phát mã 6 ký tự ngẫu nhiên; đổi sang tên tự đặt vì bạn bè
+/// rủ nhau bằng miệng thì "vào phòng LopA1" dễ nhớ hơn "vào phòng K7XQ2M".
+/// Tên tự đặt thì ai cũng đoán được, nên kèm thêm mật khẩu để người lạ trên
+/// cùng mạng không nhảy vào giữa ván.
+/// </summary>
 public class Room
 {
-    /// <summary>Bỏ các ký tự dễ đọc nhầm: 0/O, 1/I.</summary>
-    private const string CodeChars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    public const int NameMax = 20;
 
-    public required string Code { get; init; }
+    public required string Name { get; init; }
+
+    /// <summary>Rỗng nghĩa là phòng mở, ai biết tên cũng vào được.</summary>
+    public required string Password { get; init; }
+
     public required string HostAccountId { get; set; }
+
+    /// <summary>Kiểu chơi, chủ phòng đổi được khi chưa vào ván.</summary>
+    public MatchMode Mode { get; set; } = MatchMode.Compete;
 
     /// <summary>
     /// Người trong phòng. ĐỂ RIÊNG TƯ có lý do: ván đấu chạy nền (GameHub.RunMatch)
@@ -76,8 +89,6 @@ public class Room
     /// <summary>Khóa cho mỗi phòng, vì nhiều người có thể gửi đáp án cùng lúc.</summary>
     public object Gate { get; } = new();
 
-    public static string NewCode(Random rng) =>
-        new(Enumerable.Range(0, 6).Select(_ => CodeChars[rng.Next(CodeChars.Length)]).ToArray());
 
     // ----- Lối vào danh sách người chơi, tất cả đều khóa -----
 
@@ -134,7 +145,7 @@ public class Room
     public RoomState ToState()
     {
         lock (Gate)
-            return new RoomState(Code, HostAccountId, IsPlaying, RoundNumber, TotalRounds,
+            return new RoomState(Name, HostAccountId, Mode, IsPlaying, RoundNumber, TotalRounds,
                                  _players.Select(p => p.ToInfo(HostAccountId)).ToList());
     }
 
@@ -171,20 +182,22 @@ public class RoomManager
     public int PuzzleCount => _puzzles.Count;
     public int RoomCount => _rooms.Count;
 
-    public Room CreateRoom(Player host)
+    /// <summary>
+    /// Mở phòng theo tên chủ phòng đặt. Trả về null khi tên đã có người dùng —
+    /// dùng TryAdd chứ không kiểm tra rồi mới thêm, vì hai người có thể cùng
+    /// mở một tên trong cùng một khoảnh khắc.
+    /// </summary>
+    public Room? CreateRoom(Player host, string name, string password)
     {
-        string code;
-        do { code = Room.NewCode(_rng); } while (_rooms.ContainsKey(code));
-
-        var room = new Room { Code = code, HostAccountId = host.AccountId };
+        var room = new Room { Name = name, Password = password, HostAccountId = host.AccountId };
         room.Add(host);
-        _rooms[code] = room;
 
-        return room;
+        return _rooms.TryAdd(name, room) ? room : null;
     }
 
-    public Room? Find(string code) =>
-        _rooms.TryGetValue(code, out Room? r) ? r : null;
+    /// <summary>Tên phòng không phân biệt hoa thường.</summary>
+    public Room? Find(string name) =>
+        _rooms.TryGetValue(name, out Room? r) ? r : null;
 
     /// <summary>Tìm phòng theo mã kết nối, dùng khi ai đó rớt mạng.</summary>
     public Room? FindByConnection(string connectionId) =>
@@ -196,7 +209,7 @@ public class RoomManager
     /// </summary>
     public void Remove(Room room, Player player)
     {
-        if (room.Remove(player)) _rooms.TryRemove(room.Code, out _);
+        if (room.Remove(player)) _rooms.TryRemove(room.Name, out _);
     }
 
     /// <summary>Bốc ngẫu nhiên danh sách câu cho cả ván.</summary>

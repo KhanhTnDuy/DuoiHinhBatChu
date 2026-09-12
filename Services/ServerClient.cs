@@ -100,9 +100,32 @@ public class ServerClient
         PostAuthAsync(address, "register",
                       new RegisterRequest(userName, displayName, password, password, phone));
 
-    // Máy chủ có sẵn đường /api/auth/reset-password, nhưng màn đăng nhập máy chủ
-    // chưa có mục "Quên mật khẩu?" nên client chưa gọi tới. Thêm màn đó thì viết
-    // lại một hàm ResetPasswordAsync theo đúng khuôn hai hàm trên.
+    /// <summary>
+    /// Vào máy chủ bằng chính tài khoản ở máy này, không hỏi gì thêm.
+    ///
+    /// Máy chủ vẫn giữ sổ tài khoản riêng (nó là bên ghi điểm ván đấu), nhưng
+    /// người chơi không phải đăng ký lần nữa: client tự đăng nhập bằng tên đăng
+    /// nhập của tài khoản trên máy, còn "mật khẩu" là mã tài khoản — chuỗi
+    /// ngẫu nhiên 32 ký tự sinh lúc tạo tài khoản, chỉ máy này biết. Lần đầu
+    /// gặp máy chủ thì đăng nhập không có, chuyển sang đăng ký với cùng bộ đó.
+    ///
+    /// Cùng một tên đăng nhập ở hai máy khác nhau sẽ ra hai mã khác nhau, nên
+    /// máy thứ hai đăng ký sẽ bị máy chủ từ chối "tên đã có người dùng" — đó là
+    /// lỗi hiện lên cho người chơi, không phải hỏng hóc.
+    /// </summary>
+    public async Task<ServerAuth> SignInAsync(string address, Account account)
+    {
+        string secret = account.Id;
+
+        ServerAuth auth = await LoginAsync(address, account.UserName, secret);
+        if (auth.Ok) return auth;
+
+        // Không nối được thì đăng ký cũng vô ích, báo luôn lỗi kết nối
+        if (auth.Message.StartsWith("Không nối được") || auth.Message.StartsWith("Máy chủ không trả lời"))
+            return auth;
+
+        return await RegisterAsync(address, account.UserName, account.DisplayName, secret, account.Phone);
+    }
 
     // ----- Nội bộ -----
 

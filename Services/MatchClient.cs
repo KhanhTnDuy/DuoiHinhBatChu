@@ -68,11 +68,14 @@ public class MatchClient : IAsyncDisposable
 
     public Task ConnectAsync() => _hub.StartAsync();
 
-    public Task<RoomState> CreateRoomAsync() =>
-        _hub.InvokeAsync<RoomState>("CreateRoom", _token);
+    public Task<RoomState> CreateRoomAsync(string name, string password) =>
+        _hub.InvokeAsync<RoomState>("CreateRoom", _token, name, password);
 
-    public Task<RoomState> JoinRoomAsync(string code) =>
-        _hub.InvokeAsync<RoomState>("JoinRoom", _token, code.Trim().ToUpperInvariant());
+    public Task<RoomState> JoinRoomAsync(string name, string password) =>
+        _hub.InvokeAsync<RoomState>("JoinRoom", _token, name, password);
+
+    public Task SetModeAsync(MatchMode mode) =>
+        _hub.InvokeAsync("SetMode", _token, mode);
 
     public Task StartMatchAsync(int rounds) =>
         _hub.InvokeAsync("StartMatch", _token, rounds);

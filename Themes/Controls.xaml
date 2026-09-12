@@ -390,6 +390,78 @@
         </Setter>
     </Style>
 
+    <!-- Nút quay lại: cùng cỡ và cùng kiểu với nút đổi nền để đặt cạnh nhau ở
+         góc màn hình. Có ở mọi màn TRỪ màn đang chơi, vì đang giữa ván mà bấm
+         nhầm là mất câu. Focusable=False cùng lý do với nút đổi nền. -->
+    <StreamGeometry x:Key="BackIcon">M 15,5 L 8,12 L 15,19 M 8,12 L 20,12</StreamGeometry>
+
+    <Style x:Key="BackButton" TargetType="Button">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Width" Value="40"/>
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="ToolTip" Value="Quay lại"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" CornerRadius="10"
+                            Background="{DynamicResource CardBrush}"
+                            BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
+                        <Path Data="{StaticResource BackIcon}"
+                              Stroke="{DynamicResource TextPrimaryBrush}"
+                              StrokeThickness="2"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              StrokeLineJoin="Round"
+                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background"
+                                    Value="{DynamicResource PrimarySoftBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Thẻ chọn kiểu chơi trong phòng chờ. Đặt Tag="True" khi đang được chọn:
+         viền và nền chuyển sang màu chính. Tắt (chỉ xem) thì mờ đi một chút chứ
+         không xám hẳn, vì người không phải chủ phòng vẫn cần đọc được. -->
+    <Style x:Key="ModeCard" TargetType="Button">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" CornerRadius="14" Padding="16,14"
+                            Background="{DynamicResource CardAltBrush}"
+                            BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="2">
+                        <ContentPresenter/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="BorderBrush"
+                                    Value="{DynamicResource PrimaryBrush}"/>
+                        </Trigger>
+                        <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}"
+                                     Value="True">
+                            <Setter TargetName="Bg" Property="Background"
+                                    Value="{DynamicResource PrimarySoftBrush}"/>
+                            <Setter TargetName="Bg" Property="BorderBrush"
+                                    Value="{DynamicResource PrimaryBrush}"/>
+                        </DataTrigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Cursor" Value="Arrow"/>
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.75"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Nút dạng đường dẫn: không nền không viền, chỉ là chữ bấm được -->
     <Style x:Key="LinkButton" TargetType="Button">
         <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>

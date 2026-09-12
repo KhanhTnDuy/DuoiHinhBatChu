@@ -13,8 +13,12 @@ public class AppSettings
     public bool IsDarkTheme { get; set; }
     public string LastUserName { get; set; } = "";
 
-    /// <summary>Địa chỉ máy chủ đấu nhiều người dùng lần gần nhất.</summary>
-    public string ServerAddress { get; set; } = "";
+    /// <summary>
+    /// Địa chỉ máy chủ đấu nhiều người. KHÔNG hiện trên giao diện — mặc định
+    /// là máy này; muốn đấu qua LAN thì sửa tay trong Data/app-settings.json
+    /// thành địa chỉ máy đang chạy DuoiHinhBatChu.Server, ví dụ "192.168.1.10:5180".
+    /// </summary>
+    public string ServerAddress { get; set; } = "localhost:5180";
 
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
