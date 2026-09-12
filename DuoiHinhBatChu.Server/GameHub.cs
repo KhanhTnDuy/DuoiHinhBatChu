@@ -43,19 +43,23 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Mở phòng mới. Máy chủ sinh mã phòng, chủ phòng chỉ đặt mật khẩu; mã trả
-    /// về trong RoomState để chủ phòng đọc cho bạn bè.
+    /// Mở phòng mới. Máy chủ sinh mã phòng; chủ phòng đặt mật khẩu và tên (tên
+    /// không bắt buộc, chỉ để hiển thị). Mã trả về trong RoomState để đọc cho bạn bè.
     /// </summary>
-    public async Task<RoomState> CreateRoom(string token, string password)
+    public async Task<RoomState> CreateRoom(string token, string name, string password)
     {
         Account account = Authenticate(token);
+
+        name = (name ?? "").Trim();
+        if (name.Length > Room.NameMax)
+            throw new HubException($"Tên phòng tối đa {Room.NameMax} ký tự.");
 
         Room room = _rooms.CreateRoom(new Player
         {
             ConnectionId = Context.ConnectionId,
             AccountId = account.Id,
             DisplayName = account.DisplayName,
-        }, password ?? "");
+        }, name, password ?? "");
 
         await Groups.AddToGroupAsync(Context.ConnectionId, room.Code);
         _log.LogInformation("Mở phòng {Room} bởi {Name}", room.Code, account.DisplayName);

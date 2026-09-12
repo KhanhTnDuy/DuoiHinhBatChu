@@ -37,9 +37,10 @@ public enum MatchMode { Compete = 0, Draw = 1 }
 public record PlayerInfo(string AccountId, string DisplayName, bool IsHost, bool IsReady, int Score);
 
 /// <param name="Code">Mã phòng máy chủ sinh ra, chủ phòng đọc cho bạn bè gõ vào.</param>
+/// <param name="Name">Tên phòng chủ phòng đặt, chỉ để hiển thị; rỗng nếu không đặt.</param>
 /// <param name="Mode">Kiểu chơi chủ phòng đã chọn; người vào sau nhìn thấy nhưng không đổi được.</param>
 /// <param name="MaxPlayers">Sức chứa của phòng, tính cả chủ phòng.</param>
-public record RoomState(string Code, string HostAccountId, MatchMode Mode, bool IsPlaying,
+public record RoomState(string Code, string Name, string HostAccountId, MatchMode Mode, bool IsPlaying,
                         int RoundNumber, int TotalRounds, int MaxPlayers,
                         IReadOnlyList<PlayerInfo> Players);
 

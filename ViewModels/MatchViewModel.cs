@@ -172,13 +172,21 @@ public class MatchViewModel : ViewModelBase
     public string LobbyTitle => IsCreating ? "TẠO PHÒNG MỚI" : "VÀO PHÒNG CÓ SẴN";
 
     public string LobbyHint => IsCreating
-        ? "Đặt mật khẩu cho phòng. Máy chủ sẽ cấp mã phòng, bạn đọc mã và mật khẩu cho bạn bè."
+        ? "Đặt mật khẩu (và tên nếu muốn). Máy chủ sẽ cấp mã phòng, bạn đọc mã và mật khẩu cho bạn bè."
         : "Gõ mã phòng chủ phòng đọc cho, và mật khẩu chủ phòng đã đặt.";
 
     public string SwitchLobbyModeText => IsCreating
         ? "Đã có phòng bạn bè mở? Vào phòng"
         : "Chưa ai mở phòng? Tạo phòng mới";
 
+
+    private string _roomNameInput = "";
+    /// <summary>Tên phòng chủ phòng đặt lúc tạo; để trống cũng được.</summary>
+    public string RoomNameInput
+    {
+        get => _roomNameInput;
+        set => SetProperty(ref _roomNameInput, value);
+    }
 
     private string _joinCode = "";
     /// <summary>Mã phòng người chơi gõ để vào; chỉ dùng ở dạng "vào phòng".</summary>
@@ -213,6 +221,14 @@ public class MatchViewModel : ViewModelBase
     }
 
     public bool IsInRoom => RoomCode.Length > 0;
+
+    private string _roomName = "";
+    /// <summary>Tên phòng đang ở; rỗng nếu chủ phòng không đặt.</summary>
+    public string RoomName
+    {
+        get => _roomName;
+        private set => SetProperty(ref _roomName, value);
+    }
 
     private int _maxPlayers = 5;
     /// <summary>Sức chứa máy chủ báo, để hiện "3/5".</summary>
@@ -428,7 +444,7 @@ public class MatchViewModel : ViewModelBase
     private async Task CreateRoomAsync() => await CallAsync(async () =>
     {
         MatchClient client = await EnsureConnectedAsync();
-        ApplyRoom(await client.CreateRoomAsync(RoomPassword));
+        ApplyRoom(await client.CreateRoomAsync(RoomNameInput, RoomPassword));
         Status = $"Đã mở phòng. Đọc mã {RoomCode} và mật khẩu cho bạn bè; đủ người và ai cũng sẵn sàng thì bấm bắt đầu.";
     });
 
@@ -542,6 +558,7 @@ public class MatchViewModel : ViewModelBase
     private void ApplyRoom(RoomState room)
     {
         RoomCode = room.Code;
+        RoomName = room.Name;
         IsHost = room.HostAccountId == _myAccountId;
         Mode = room.Mode;
         MaxPlayers = room.MaxPlayers;

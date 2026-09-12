@@ -58,7 +58,12 @@ public class Room
     /// <summary>Bỏ các ký tự dễ đọc nhầm: 0/O, 1/I.</summary>
     private const string CodeChars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
+    public const int NameMax = 20;
+
     public required string Code { get; init; }
+
+    /// <summary>Tên do chủ phòng đặt, chỉ để hiển thị (vào phòng vẫn bằng mã). Có thể rỗng.</summary>
+    public required string Name { get; init; }
 
     /// <summary>Rỗng nghĩa là phòng mở, ai biết mã cũng vào được.</summary>
     public required string Password { get; init; }
@@ -175,7 +180,7 @@ public class Room
     public RoomState ToState()
     {
         lock (Gate)
-            return new RoomState(Code, HostAccountId, Mode, IsPlaying, RoundNumber, TotalRounds, MaxPlayers,
+            return new RoomState(Code, Name, HostAccountId, Mode, IsPlaying, RoundNumber, TotalRounds, MaxPlayers,
                                  _players.Select(p => p.ToInfo(HostAccountId)).ToList());
     }
 
@@ -213,12 +218,18 @@ public class RoomManager
     public int RoomCount => _rooms.Count;
 
     /// <summary>Mở phòng với mã mới sinh; mật khẩu do chủ phòng đặt.</summary>
-    public Room CreateRoom(Player host, string password)
+    public Room CreateRoom(Player host, string name, string password)
     {
         Room room;
         do
         {
-            room = new Room { Code = Room.NewCode(_rng), Password = password, HostAccountId = host.AccountId };
+            room = new Room
+            {
+                Code = Room.NewCode(_rng),
+                Name = name,
+                Password = password,
+                HostAccountId = host.AccountId,
+            };
         } while (!_rooms.TryAdd(room.Code, room));   // TryAdd: hai phòng cùng sinh một mã thì thử lại
 
         room.Add(host);
