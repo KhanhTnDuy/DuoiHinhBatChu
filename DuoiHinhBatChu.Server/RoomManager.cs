@@ -13,6 +13,9 @@ public class Player
     public required string DisplayName { get; init; }
     public int Score { get; set; }
 
+    /// <summary>Đã bấm sẵn sàng ở sảnh chờ. Về false khi ván bắt đầu, để ván sau phải bấm lại.</summary>
+    public bool IsReady { get; set; }
+
     /// <summary>Đã trả lời đúng câu hiện tại, không cho ghi điểm hai lần.</summary>
     public bool AnsweredThisRound { get; set; }
 
@@ -38,24 +41,26 @@ public class Player
     }
 
     public PlayerInfo ToInfo(string hostAccountId) =>
-        new(AccountId, DisplayName, AccountId == hostAccountId, Score);
+        new(AccountId, DisplayName, AccountId == hostAccountId, IsReady, Score);
 }
 
 /// <summary>
-/// Một phòng đấu, nhận diện bằng TÊN do chủ phòng tự đặt.
+/// Một phòng đấu: mã do máy chủ sinh + mật khẩu do chủ phòng đặt.
 ///
-/// Trước đây máy chủ phát mã 6 ký tự ngẫu nhiên; đổi sang tên tự đặt vì bạn bè
-/// rủ nhau bằng miệng thì "vào phòng LopA1" dễ nhớ hơn "vào phòng K7XQ2M".
-/// Tên tự đặt thì ai cũng đoán được, nên kèm thêm mật khẩu để người lạ trên
-/// cùng mạng không nhảy vào giữa ván.
+/// Mã sinh ngẫu nhiên nên không bao giờ trùng và không đoán được; mật khẩu là
+/// lớp thứ hai để người lạ trên cùng mạng có nghe được mã cũng không vào được.
 /// </summary>
 public class Room
 {
-    public const int NameMax = 20;
+    /// <summary>Sức chứa, tính cả chủ phòng.</summary>
+    public const int MaxPlayers = 5;
 
-    public required string Name { get; init; }
+    /// <summary>Bỏ các ký tự dễ đọc nhầm: 0/O, 1/I.</summary>
+    private const string CodeChars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-    /// <summary>Rỗng nghĩa là phòng mở, ai biết tên cũng vào được.</summary>
+    public required string Code { get; init; }
+
+    /// <summary>Rỗng nghĩa là phòng mở, ai biết mã cũng vào được.</summary>
     public required string Password { get; init; }
 
     public required string HostAccountId { get; set; }
@@ -89,12 +94,37 @@ public class Room
     /// <summary>Khóa cho mỗi phòng, vì nhiều người có thể gửi đáp án cùng lúc.</summary>
     public object Gate { get; } = new();
 
+    public static string NewCode(Random rng) =>
+        new(Enumerable.Range(0, 6).Select(_ => CodeChars[rng.Next(CodeChars.Length)]).ToArray());
 
     // ----- Lối vào danh sách người chơi, tất cả đều khóa -----
 
     public int PlayerCount { get { lock (Gate) return _players.Count; } }
 
-    public void Add(Player player) { lock (Gate) _players.Add(player); }
+    public bool IsFull { get { lock (Gate) return _players.Count >= MaxPlayers; } }
+
+    /// <summary>Mọi người TRỪ chủ phòng đã sẵn sàng chưa — chủ phòng bấm bắt đầu tức là đã sẵn sàng.</summary>
+    public bool AllGuestsReady
+    {
+        get { lock (Gate) return _players.All(p => p.IsReady || p.AccountId == HostAccountId); }
+    }
+
+    /// <summary>Xóa cờ sẵn sàng của mọi người, gọi lúc ván bắt đầu.</summary>
+    public void ClearReady()
+    {
+        lock (Gate) foreach (Player p in _players) p.IsReady = false;
+    }
+
+    /// <summary>Thêm người; trả về false khi phòng đã đầy (kiểm tra và thêm trong cùng một khóa).</summary>
+    public bool Add(Player player)
+    {
+        lock (Gate)
+        {
+            if (_players.Count >= MaxPlayers) return false;
+            _players.Add(player);
+            return true;
+        }
+    }
 
     /// <summary>Bỏ một người ra; trả về true khi phòng không còn ai.</summary>
     public bool Remove(Player player)
@@ -145,7 +175,7 @@ public class Room
     public RoomState ToState()
     {
         lock (Gate)
-            return new RoomState(Name, HostAccountId, Mode, IsPlaying, RoundNumber, TotalRounds,
+            return new RoomState(Code, HostAccountId, Mode, IsPlaying, RoundNumber, TotalRounds, MaxPlayers,
                                  _players.Select(p => p.ToInfo(HostAccountId)).ToList());
     }
 
@@ -182,22 +212,21 @@ public class RoomManager
     public int PuzzleCount => _puzzles.Count;
     public int RoomCount => _rooms.Count;
 
-    /// <summary>
-    /// Mở phòng theo tên chủ phòng đặt. Trả về null khi tên đã có người dùng —
-    /// dùng TryAdd chứ không kiểm tra rồi mới thêm, vì hai người có thể cùng
-    /// mở một tên trong cùng một khoảnh khắc.
-    /// </summary>
-    public Room? CreateRoom(Player host, string name, string password)
+    /// <summary>Mở phòng với mã mới sinh; mật khẩu do chủ phòng đặt.</summary>
+    public Room CreateRoom(Player host, string password)
     {
-        var room = new Room { Name = name, Password = password, HostAccountId = host.AccountId };
-        room.Add(host);
+        Room room;
+        do
+        {
+            room = new Room { Code = Room.NewCode(_rng), Password = password, HostAccountId = host.AccountId };
+        } while (!_rooms.TryAdd(room.Code, room));   // TryAdd: hai phòng cùng sinh một mã thì thử lại
 
-        return _rooms.TryAdd(name, room) ? room : null;
+        room.Add(host);
+        return room;
     }
 
-    /// <summary>Tên phòng không phân biệt hoa thường.</summary>
-    public Room? Find(string name) =>
-        _rooms.TryGetValue(name, out Room? r) ? r : null;
+    public Room? Find(string code) =>
+        _rooms.TryGetValue(code, out Room? r) ? r : null;
 
     /// <summary>Tìm phòng theo mã kết nối, dùng khi ai đó rớt mạng.</summary>
     public Room? FindByConnection(string connectionId) =>
@@ -209,7 +238,7 @@ public class RoomManager
     /// </summary>
     public void Remove(Room room, Player player)
     {
-        if (room.Remove(player)) _rooms.TryRemove(room.Name, out _);
+        if (room.Remove(player)) _rooms.TryRemove(room.Code, out _);
     }
 
     /// <summary>Bốc ngẫu nhiên danh sách câu cho cả ván.</summary>
@@ -223,6 +252,7 @@ public class RoomManager
         room.IsPlaying = true;
 
         room.ResetScores();
+        room.ClearReady();   // ván sau phải bấm sẵn sàng lại
     }
 
     /// <summary>Dựng câu tiếp theo, hoặc null khi đã hết ván.</summary>

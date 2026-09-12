@@ -18,6 +18,14 @@ public class ScoreRow : ViewModelBase
     public required bool IsHost { get; init; }
     public required bool IsMe { get; init; }
 
+    private bool _isReady;
+    /// <summary>Đã bấm sẵn sàng ở sảnh chờ.</summary>
+    public bool IsReady
+    {
+        get => _isReady;
+        set => SetProperty(ref _isReady, value);
+    }
+
     private int _score;
     public int Score
     {
@@ -96,6 +104,7 @@ public class MatchViewModel : ViewModelBase
         ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
         SwitchLobbyModeCommand = new RelayCommand(_ => IsCreating = !IsCreating);
         BackCommand = new RelayCommand(_ => GoBack?.Invoke(), _ => IsInLobby);
+        ToggleReadyCommand = new RelayCommand(async _ => await ToggleReadyAsync(), _ => IsInRoom && !IsPlaying && !IsBusy);
         ChooseModeCommand = new RelayCommand(async p => await ChooseModeAsync((MatchMode)p!), _ => IsHost && !IsBusy);
     }
 
@@ -108,6 +117,7 @@ public class MatchViewModel : ViewModelBase
     public RelayCommand ToggleThemeCommand { get; }
     public RelayCommand SwitchLobbyModeCommand { get; }
     public RelayCommand BackCommand { get; }
+    public RelayCommand ToggleReadyCommand { get; }
     public RelayCommand ChooseModeCommand { get; }
 
     // ----- Dữ liệu hiển thị -----
@@ -162,20 +172,20 @@ public class MatchViewModel : ViewModelBase
     public string LobbyTitle => IsCreating ? "TẠO PHÒNG MỚI" : "VÀO PHÒNG CÓ SẴN";
 
     public string LobbyHint => IsCreating
-        ? "Đặt tên phòng và mật khẩu, rồi đọc cho bạn bè gõ y hệt để vào."
-        : "Gõ đúng tên phòng và mật khẩu mà chủ phòng đã đặt.";
+        ? "Đặt mật khẩu cho phòng. Máy chủ sẽ cấp mã phòng, bạn đọc mã và mật khẩu cho bạn bè."
+        : "Gõ mã phòng chủ phòng đọc cho, và mật khẩu chủ phòng đã đặt.";
 
     public string SwitchLobbyModeText => IsCreating
         ? "Đã có phòng bạn bè mở? Vào phòng"
         : "Chưa ai mở phòng? Tạo phòng mới";
 
 
-    private string _roomNameInput = "";
-    /// <summary>Tên phòng người chơi gõ vào: đặt cho phòng mới, hoặc tên phòng muốn vào.</summary>
-    public string RoomNameInput
+    private string _joinCode = "";
+    /// <summary>Mã phòng người chơi gõ để vào; chỉ dùng ở dạng "vào phòng".</summary>
+    public string JoinCode
     {
-        get => _roomNameInput;
-        set => SetProperty(ref _roomNameInput, value);
+        get => _joinCode;
+        set => SetProperty(ref _joinCode, value);
     }
 
     /// <summary>
@@ -189,20 +199,61 @@ public class MatchViewModel : ViewModelBase
         set => SetProperty(ref _roomPassword, value);
     }
 
-    private string _roomName = "";
-    /// <summary>Tên phòng đang ở; rỗng nghĩa là chưa vào phòng nào.</summary>
-    public string RoomName
+    private string _roomCode = "";
+    /// <summary>Mã phòng đang ở (máy chủ cấp); rỗng nghĩa là chưa vào phòng nào.</summary>
+    public string RoomCode
     {
-        get => _roomName;
+        get => _roomCode;
         private set
         {
-            if (!SetProperty(ref _roomName, value)) return;
+            if (!SetProperty(ref _roomCode, value)) return;
             OnPropertyChanged(nameof(IsInRoom));
             RaiseCommandStates();
         }
     }
 
-    public bool IsInRoom => RoomName.Length > 0;
+    public bool IsInRoom => RoomCode.Length > 0;
+
+    private int _maxPlayers = 5;
+    /// <summary>Sức chứa máy chủ báo, để hiện "3/5".</summary>
+    public int MaxPlayers
+    {
+        get => _maxPlayers;
+        private set
+        {
+            if (SetProperty(ref _maxPlayers, value)) OnPropertyChanged(nameof(PlayerCountText));
+        }
+    }
+
+    public string PlayerCountText => $"{Players.Count}/{MaxPlayers} người";
+
+    private bool _isReady;
+    /// <summary>Mình đã bấm sẵn sàng chưa; giá trị lấy từ RoomState máy chủ gửi về.</summary>
+    public bool IsReady
+    {
+        get => _isReady;
+        private set
+        {
+            if (SetProperty(ref _isReady, value)) OnPropertyChanged(nameof(ReadyButtonText));
+        }
+    }
+
+    public string ReadyButtonText => IsReady ? "✓ Đã sẵn sàng — bấm để hủy" : "Sẵn sàng";
+
+    /// <summary>Mọi người trừ chủ phòng đã sẵn sàng — điều kiện thứ hai để bắt đầu.</summary>
+    public bool AllGuestsReady => Players.All(p => p.IsReady || p.IsHost);
+
+    /// <summary>Vì sao chưa bắt đầu được, hiện ngay dưới nút cho chủ phòng đỡ đoán.</summary>
+    public string StartBlockedText
+    {
+        get
+        {
+            if (!IsHost || IsPlaying) return "";
+            if (Players.Count < 2) return "Cần ít nhất 2 người.";
+            if (!AllGuestsReady) return "Còn người chưa bấm sẵn sàng.";
+            return "";
+        }
+    }
 
     private bool _isHost;
     public bool IsHost
@@ -222,8 +273,8 @@ public class MatchViewModel : ViewModelBase
         set => SetProperty(ref _rounds, Math.Clamp(value, 1, 20));
     }
 
-    /// <summary>Máy chủ đòi ít nhất hai người, nên nút bắt đầu chỉ sáng khi đủ.</summary>
-    public bool CanStart => IsHost && !IsPlaying && !IsBusy && Players.Count >= 2;
+    /// <summary>Máy chủ đòi ít nhất hai người và mọi khách đã sẵn sàng, nên nút chỉ sáng khi đủ cả hai.</summary>
+    public bool CanStart => IsHost && !IsPlaying && !IsBusy && Players.Count >= 2 && AllGuestsReady;
 
     private bool _isPlaying;
     public bool IsPlaying
@@ -376,29 +427,29 @@ public class MatchViewModel : ViewModelBase
 
     private async Task CreateRoomAsync() => await CallAsync(async () =>
     {
-        if (!CheckRoomInput()) return;
-
         MatchClient client = await EnsureConnectedAsync();
-        ApplyRoom(await client.CreateRoomAsync(RoomNameInput, RoomPassword));
-        Status = $"Đã mở phòng \"{RoomName}\". Bạn bè gõ đúng tên và mật khẩu này để vào.";
+        ApplyRoom(await client.CreateRoomAsync(RoomPassword));
+        Status = $"Đã mở phòng. Đọc mã {RoomCode} và mật khẩu cho bạn bè; đủ người và ai cũng sẵn sàng thì bấm bắt đầu.";
     });
 
     private async Task JoinRoomAsync() => await CallAsync(async () =>
     {
-        if (!CheckRoomInput()) return;
+        if (JoinCode.Trim().Length == 0)
+        {
+            Status = "Nhập mã phòng đã.";
+            return;
+        }
 
         MatchClient client = await EnsureConnectedAsync();
-        ApplyRoom(await client.JoinRoomAsync(RoomNameInput, RoomPassword));
-        Status = $"Đã vào phòng \"{RoomName}\". Chờ chủ phòng bấm bắt đầu.";
+        ApplyRoom(await client.JoinRoomAsync(JoinCode, RoomPassword));
+        Status = $"Đã vào phòng {RoomCode}. Bấm Sẵn sàng rồi chờ chủ phòng bắt đầu.";
     });
 
-    private bool CheckRoomInput()
+    private async Task ToggleReadyAsync() => await CallAsync(async () =>
     {
-        if (RoomNameInput.Trim().Length > 0) return true;
-
-        Status = "Đặt tên phòng đã.";
-        return false;
-    }
+        if (_client == null || !IsInRoom || IsPlaying) return;
+        await _client.SetReadyAsync(!IsReady);   // IsReady đổi khi RoomChanged về
+    });
 
     /// <summary>
     /// Nối máy chủ NGAY LÚC CẦN, tức là lúc người chơi bấm tạo / vào phòng —
@@ -490,9 +541,11 @@ public class MatchViewModel : ViewModelBase
 
     private void ApplyRoom(RoomState room)
     {
-        RoomName = room.Name;
+        RoomCode = room.Code;
         IsHost = room.HostAccountId == _myAccountId;
         Mode = room.Mode;
+        MaxPlayers = room.MaxPlayers;
+        IsReady = room.Players.FirstOrDefault(p => p.AccountId == _myAccountId)?.IsReady ?? false;
 
         Players.Clear();
         foreach (PlayerInfo p in room.Players)
@@ -502,9 +555,12 @@ public class MatchViewModel : ViewModelBase
                 DisplayName = p.DisplayName,
                 IsHost = p.IsHost,
                 IsMe = p.AccountId == _myAccountId,
+                IsReady = p.IsReady,
                 Score = p.Score,
             });
 
+        OnPropertyChanged(nameof(PlayerCountText));
+        OnPropertyChanged(nameof(AllGuestsReady));
         RaiseCommandStates();
     }
 
@@ -677,7 +733,7 @@ public class MatchViewModel : ViewModelBase
                 ? $"Bạn thắng với {best.Score} điểm!"
                 : $"{best.DisplayName} thắng với {best.Score} điểm.";
 
-        Status = $"Ván xong. Vẫn ở phòng {RoomName}, chủ phòng bấm bắt đầu là chơi ván mới.";
+        Status = $"Ván xong. Vẫn ở phòng {RoomCode}, chủ phòng bấm bắt đầu là chơi ván mới.";
     }
 
     private void ApplyScores(IReadOnlyList<PlayerInfo> scores)
@@ -799,6 +855,8 @@ public class MatchViewModel : ViewModelBase
     private void RaiseCommandStates()
     {
         OnPropertyChanged(nameof(CanStart));
+        OnPropertyChanged(nameof(StartBlockedText));
+        ToggleReadyCommand.RaiseCanExecuteChanged();
         CreateRoomCommand.RaiseCanExecuteChanged();
         JoinRoomCommand.RaiseCanExecuteChanged();
         StartMatchCommand.RaiseCanExecuteChanged();

@@ -41,14 +41,21 @@ sắp thứ tự câu.
 ### Chế độ đấu nhiều người
 
 - Từ màn chọn chế độ có hai lối vào: **Vào phòng** (phòng bạn bè đã mở) hoặc
-  **Tạo phòng ngay**. Phòng nhận diện bằng **tên + mật khẩu** do chủ phòng tự
-  đặt; người vào gõ đúng cả hai.
+  **Tạo phòng ngay**. Chủ phòng chỉ đặt **mật khẩu**; máy chủ cấp **mã phòng 6
+  ký tự** (không có 0/O, 1/I cho khỏi đọc nhầm). Người vào gõ đúng mã + mật khẩu.
+- Mỗi phòng tối đa **5 người** kể cả chủ phòng (`Room.MaxPlayers`); đầy thì
+  máy chủ từ chối, kiểm tra trong cùng khóa với lúc thêm để hai người cùng vào
+  chỗ cuối không lọt cả hai.
+- **Sẵn sàng:** người vào phòng bấm *Sẵn sàng* (bấm lại để hủy). Chủ phòng chỉ
+  bắt đầu được khi phòng có **từ 2 người** và **mọi khách đã sẵn sàng** (chủ
+  phòng không cần bấm — bấm bắt đầu tức là sẵn sàng). Nút bắt đầu mờ đi kèm lý
+  do; máy chủ kiểm tra lại lần nữa (`AllGuestsReady`). Ván bắt đầu thì cờ sẵn
+  sàng xóa hết, ván sau phải bấm lại.
 - Không phải chọn máy chủ hay đăng nhập máy chủ: app **tự nối** lúc bấm tạo /
   vào phòng (địa chỉ nằm trong `Data/app-settings.json`, mặc định
   `localhost:5180`).
-- Trong phòng, **chỉ chủ phòng** chọn **kiểu chơi** và số câu (1–20, mặc định 5)
-  rồi bấm bắt đầu; người vào sau ở sảnh chờ, thấy lựa chọn của chủ phòng nhưng
-  không đổi được. Hai kiểu chơi:
+- Trong phòng, **chỉ chủ phòng** chọn **kiểu chơi** và số câu (1–20, mặc định 5);
+  người vào sau ở sảnh chờ, thấy lựa chọn của chủ phòng nhưng không đổi được. Hai kiểu chơi:
   - **Thi đấu** — cả phòng cùng nhận một ảnh, ai ghép chữ nhanh hơn thắng
     (đã chạy, luật bên dưới).
   - **Tôi vẽ bạn đoán** — một người vẽ, cả phòng đoán. *Đang để dành*, chọn
@@ -168,10 +175,10 @@ Data/
 
 ```
 Program.cs        REST (đăng ký / đăng nhập / ảnh / health) + map GameHub
-GameHub.cs        SignalR hub: tạo / vào phòng, chọn kiểu chơi, bắt đầu, gửi đáp án;
-                  vòng lặp ván chạy nền
-RoomManager.cs    phòng (tên + mật khẩu + kiểu chơi), người chơi, bốc câu, chấm điểm,
-                  phạt đoán sai
+GameHub.cs        SignalR hub: tạo / vào phòng, sẵn sàng, chọn kiểu chơi, bắt đầu,
+                  gửi đáp án; vòng lặp ván chạy nền
+RoomManager.cs    phòng (mã máy chủ sinh + mật khẩu + kiểu chơi + sức chứa 5),
+                  người chơi, bốc câu, chấm điểm, phạt đoán sai
 TokenService.cs   token đăng nhập
 ```
 

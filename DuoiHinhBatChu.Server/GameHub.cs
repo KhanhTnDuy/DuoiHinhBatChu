@@ -42,34 +42,35 @@ public class GameHub : Hub
         _log = log;
     }
 
-    /// <summary>Mở phòng mới với tên và mật khẩu chủ phòng tự đặt.</summary>
-    public async Task<RoomState> CreateRoom(string token, string name, string password)
+    /// <summary>
+    /// Mở phòng mới. Máy chủ sinh mã phòng, chủ phòng chỉ đặt mật khẩu; mã trả
+    /// về trong RoomState để chủ phòng đọc cho bạn bè.
+    /// </summary>
+    public async Task<RoomState> CreateRoom(string token, string password)
     {
         Account account = Authenticate(token);
-        name = CleanRoomName(name);
 
         Room room = _rooms.CreateRoom(new Player
         {
             ConnectionId = Context.ConnectionId,
             AccountId = account.Id,
             DisplayName = account.DisplayName,
-        }, name, password ?? "")
-            ?? throw new HubException($"Đã có phòng tên \"{name}\" rồi, chọn tên khác.");
+        }, password ?? "");
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, room.Name);
-        _log.LogInformation("Mở phòng {Room} bởi {Name}", room.Name, account.DisplayName);
+        await Groups.AddToGroupAsync(Context.ConnectionId, room.Code);
+        _log.LogInformation("Mở phòng {Room} bởi {Name}", room.Code, account.DisplayName);
 
         return room.ToState();
     }
 
-    /// <summary>Vào một phòng đang mở bằng tên và mật khẩu.</summary>
-    public async Task<RoomState> JoinRoom(string token, string name, string password)
+    /// <summary>Vào một phòng đang mở bằng mã và mật khẩu.</summary>
+    public async Task<RoomState> JoinRoom(string token, string code, string password)
     {
         Account account = Authenticate(token);
-        name = CleanRoomName(name);
+        code = (code ?? "").Trim().ToUpperInvariant();
 
-        Room room = _rooms.Find(name)
-            ?? throw new HubException($"Không có phòng nào tên \"{name}\".");
+        Room room = _rooms.Find(code)
+            ?? throw new HubException($"Không có phòng nào mã \"{code}\".");
 
         // So bằng thời gian cố định để không dò được mật khẩu qua độ trễ
         if (!CryptographicOperations.FixedTimeEquals(
@@ -82,17 +83,43 @@ public class GameHub : Hub
         if (room.HasAccount(account.Id))
             throw new HubException("Tài khoản này đã ở trong phòng rồi.");
 
-        room.Add(new Player
+        // Kiểm tra ngay trước khi thêm: hai người cùng vào chỗ cuối thì người
+        // sau vẫn có thể lọt — Room.Add sẽ chặn lần nữa bên trong khóa
+        if (room.IsFull)
+            throw new HubException($"Phòng đã đủ {Room.MaxPlayers} người.");
+
+        if (!room.Add(new Player
         {
             ConnectionId = Context.ConnectionId,
             AccountId = account.Id,
             DisplayName = account.DisplayName,
-        });
+        }))
+            throw new HubException($"Phòng đã đủ {Room.MaxPlayers} người.");
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, room.Name);
-        await Clients.Group(room.Name).SendAsync("RoomChanged", room.ToState());
+        await Groups.AddToGroupAsync(Context.ConnectionId, room.Code);
+        await Clients.Group(room.Code).SendAsync("RoomChanged", room.ToState());
 
         return room.ToState();
+    }
+
+    /// <summary>
+    /// Bật / tắt sẵn sàng ở sảnh chờ. Ai cũng bấm được (kể cả chủ phòng, dù
+    /// không bắt buộc); cả phòng nhận RoomChanged để thấy dấu tích cạnh tên.
+    /// </summary>
+    public async Task SetReady(string token, bool ready)
+    {
+        Account account = Authenticate(token);
+
+        Room room = _rooms.FindByConnection(Context.ConnectionId)
+            ?? throw new HubException("Bạn chưa ở trong phòng nào.");
+
+        if (room.IsPlaying) return;
+
+        Player? player = room.ByAccount(account.Id);
+        if (player == null) return;
+
+        player.IsReady = ready;
+        await Clients.Group(room.Code).SendAsync("RoomChanged", room.ToState());
     }
 
     public async Task LeaveRoom(string token)
@@ -118,7 +145,7 @@ public class GameHub : Hub
             throw new HubException("Kiểu chơi không hợp lệ.");
 
         room.Mode = mode;
-        await Clients.Group(room.Name).SendAsync("RoomChanged", room.ToState());
+        await Clients.Group(room.Code).SendAsync("RoomChanged", room.ToState());
     }
 
     /// <summary>Chủ phòng bắt đầu ván. Cần ít nhất hai người.</summary>
@@ -129,6 +156,9 @@ public class GameHub : Hub
         if (room.PlayerCount < 2)
             throw new HubException("Cần ít nhất 2 người mới đấu được.");
 
+        if (!room.AllGuestsReady)
+            throw new HubException("Còn người chưa bấm sẵn sàng.");
+
         if (room.IsPlaying)
             throw new HubException("Ván này đang chạy rồi.");
 
@@ -136,7 +166,7 @@ public class GameHub : Hub
             throw new HubException("Kiểu \"Tôi vẽ bạn đoán\" đang xây dựng, tạm chọn Thi đấu.");
 
         _rooms.StartMatch(room, Math.Clamp(rounds, 1, 20));
-        await Clients.Group(room.Name).SendAsync("RoomChanged", room.ToState());
+        await Clients.Group(room.Code).SendAsync("RoomChanged", room.ToState());
 
         // Chạy nền để lời gọi StartMatch trả về ngay, không giữ kết nối của chủ phòng
         _ = RunMatch(room);
@@ -157,7 +187,7 @@ public class GameHub : Hub
         if (player == null || !room.IsPlaying) return;
 
         AnswerResult result = _rooms.Judge(room, player, answer);
-        await Clients.Group(room.Name).SendAsync("AnswerJudged", result);
+        await Clients.Group(room.Code).SendAsync("AnswerJudged", result);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
@@ -180,7 +210,7 @@ public class GameHub : Hub
                 RoundInfo? round = _rooms.NextRound(room);
                 if (round == null) break;
 
-                await _hub.Clients.Group(room.Name).SendAsync("RoundStarted", round);
+                await _hub.Clients.Group(room.Code).SendAsync("RoundStarted", round);
 
                 // Kết thúc câu khi mọi người đã trả lời đúng, hoặc khi hết giờ
                 DateTime deadline = room.RoundStartedUtc.AddSeconds(round.SecondsAllowed);
@@ -192,7 +222,7 @@ public class GameHub : Hub
                 }
 
                 string answer = room.CurrentPuzzle?.Answer ?? "";
-                await _hub.Clients.Group(room.Name)
+                await _hub.Clients.Group(room.Code)
                                 .SendAsync("RoundEnded",
                                            new RoundEnded(round.RoundNumber, answer, room.Scores()));
 
@@ -201,12 +231,12 @@ public class GameHub : Hub
             }
 
             room.IsPlaying = false;
-            await _hub.Clients.Group(room.Name).SendAsync("MatchEnded", new MatchEnded(room.Scores()));
+            await _hub.Clients.Group(room.Code).SendAsync("MatchEnded", new MatchEnded(room.Scores()));
         }
         catch (Exception ex)
         {
             room.IsPlaying = false;
-            _log.LogError(ex, "Ván ở phòng {Room} dừng giữa chừng", room.Name);
+            _log.LogError(ex, "Ván ở phòng {Room} dừng giữa chừng", room.Code);
         }
     }
 
@@ -216,10 +246,10 @@ public class GameHub : Hub
         if (player == null) return;
 
         _rooms.Remove(room, player);
-        await Groups.RemoveFromGroupAsync(connectionId, room.Name);
+        await Groups.RemoveFromGroupAsync(connectionId, room.Code);
 
         if (room.PlayerCount > 0)
-            await Clients.Group(room.Name).SendAsync("RoomChanged", room.ToState());
+            await Clients.Group(room.Code).SendAsync("RoomChanged", room.ToState());
     }
 
     /// <summary>Phòng mà người này đang LÀM CHỦ; không ở phòng nào hoặc không phải chủ thì từ chối.</summary>
@@ -232,20 +262,6 @@ public class GameHub : Hub
             throw new HubException("Chỉ chủ phòng mới làm được việc này.");
 
         return room;
-    }
-
-    /// <summary>Tên phòng: bỏ khoảng trắng thừa, bắt buộc có, không quá dài.</summary>
-    private static string CleanRoomName(string? name)
-    {
-        name = (name ?? "").Trim();
-
-        if (name.Length == 0)
-            throw new HubException("Đặt tên phòng đã.");
-
-        if (name.Length > Room.NameMax)
-            throw new HubException($"Tên phòng tối đa {Room.NameMax} ký tự.");
-
-        return name;
     }
 
     private Account Authenticate(string token) =>
