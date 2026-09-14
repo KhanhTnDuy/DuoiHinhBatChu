@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -101,6 +101,7 @@ public class MatchViewModel : ViewModelBase
         StartMatchCommand = new RelayCommand(async _ => await StartMatchAsync(), _ => CanStart);
         PlaceLetterCommand = new RelayCommand(p => PlaceLetter(p as LetterTile));
         TakeBackCommand = new RelayCommand(p => TakeBack(p as AnswerSlot));
+        SubmitCommand = new RelayCommand(_ => Submit(), _ => CanSubmit);
         ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
         SwitchLobbyModeCommand = new RelayCommand(_ => IsCreating = !IsCreating);
         BackCommand = new RelayCommand(_ => GoBack?.Invoke(), _ => IsInLobby);
@@ -114,6 +115,7 @@ public class MatchViewModel : ViewModelBase
     public RelayCommand StartMatchCommand { get; }
     public RelayCommand PlaceLetterCommand { get; }
     public RelayCommand TakeBackCommand { get; }
+    public RelayCommand SubmitCommand { get; }
     public RelayCommand ToggleThemeCommand { get; }
     public RelayCommand SwitchLobbyModeCommand { get; }
     public RelayCommand BackCommand { get; }
@@ -164,16 +166,11 @@ public class MatchViewModel : ViewModelBase
             _lobbyMode = next;
             OnPropertyChanged();
             OnPropertyChanged(nameof(LobbyTitle));
-            OnPropertyChanged(nameof(LobbyHint));
             OnPropertyChanged(nameof(SwitchLobbyModeText));
         }
     }
 
     public string LobbyTitle => IsCreating ? "TẠO PHÒNG MỚI" : "VÀO PHÒNG CÓ SẴN";
-
-    public string LobbyHint => IsCreating
-        ? "Đặt mật khẩu (và tên nếu muốn). Máy chủ sẽ cấp mã phòng, bạn đọc mã và mật khẩu cho bạn bè."
-        : "Gõ mã phòng chủ phòng đọc cho, và mật khẩu chủ phòng đã đặt.";
 
     public string SwitchLobbyModeText => IsCreating
         ? "Đã có phòng bạn bè mở? Vào phòng"
@@ -343,6 +340,14 @@ public class MatchViewModel : ViewModelBase
         private set => SetProperty(ref _difficultyText, value);
     }
 
+    private string _promptText = CategoryPrompt.Fallback;
+    /// <summary>Câu dẫn theo chủ đề ("Đây là một con vật"…), cùng bảng với màn Cổ điển.</summary>
+    public string PromptText
+    {
+        get => _promptText;
+        private set => SetProperty(ref _promptText, value);
+    }
+
     /// <summary>Đồng hồ đếm ngược phía client, xê xích chút so với máy chủ nhưng đủ để nhìn.</summary>
     public string SecondsLeftText
     {
@@ -491,7 +496,13 @@ public class MatchViewModel : ViewModelBase
 
         string address = _settings.ServerAddress.Trim().Length > 0
             ? _settings.ServerAddress
-            : "localhost:5180";
+            : $"localhost:{LocalServer.DefaultPort}";
+
+        // Máy chủ ở chính máy này mà chưa bật thì bật giúp, khỏi bắt người chơi
+        // mở cửa sổ dòng lệnh
+        string launchError = await LocalServer.EnsureRunningAsync(address, s => Status = s);
+        if (launchError.Length > 0)
+            throw new InvalidOperationException(launchError);
 
         ServerAuth auth = await _server.SignInAsync(address, _account);
         if (!auth.Ok || auth.Auth == null)
@@ -545,12 +556,24 @@ public class MatchViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Status = ex.Message;
+            Status = CleanHubError(ex.Message);
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// SignalR bọc lỗi máy chủ thành "An unexpected error occurred invoking
+    /// 'StartMatch' on the server. HubException: Cần ít nhất 2 người…" — người
+    /// chơi chỉ cần đọc phần sau dấu hai chấm.
+    /// </summary>
+    private static string CleanHubError(string message)
+    {
+        const string marker = "HubException: ";
+        int i = message.IndexOf(marker, StringComparison.Ordinal);
+        return i >= 0 ? message[(i + marker.Length)..] : message;
     }
 
     // ===== Máy chủ báo về =====
@@ -596,6 +619,7 @@ public class MatchViewModel : ViewModelBase
 
         ProgressText = $"Câu {round.RoundNumber}/{round.TotalRounds}";
         DifficultyText = $"{round.Difficulty}/5";
+        PromptText = CategoryPrompt.For(round.Category);
 
         BuildSlots(round.WordLengths);
         BuildTiles(round.Tiles);
@@ -744,13 +768,23 @@ public class MatchViewModel : ViewModelBase
         IsMatchOver = true;
 
         ScoreRow? best = Players.FirstOrDefault();
+        int top = best?.Score ?? 0;
+        var leaders = Players.Where(p => p.Score == top).ToList();
+
+        // Hai người bằng điểm (hay cả phòng 0 điểm) mà bảo "bạn thắng" thì kỳ
         WinnerText = best == null
             ? "Ván đã kết thúc."
-            : best.IsMe
-                ? $"Bạn thắng với {best.Score} điểm!"
-                : $"{best.DisplayName} thắng với {best.Score} điểm.";
+            : leaders.Count > 1
+                ? (leaders.Any(p => p.IsMe) ? $"Hòa {top} điểm!" : $"Hòa {top} điểm.")
+                : best.IsMe
+                    ? $"Bạn thắng với {best.Score} điểm!"
+                    : $"{best.DisplayName} thắng với {best.Score} điểm.";
 
-        Status = $"Ván xong. Vẫn ở phòng {RoomCode}, chủ phòng bấm bắt đầu là chơi ván mới.";
+        // Cờ sẵn sàng đã bị xóa lúc ván bắt đầu, nên khách phải bấm lại; nói
+        // rõ kẻo chủ phòng thấy nút "Ván mới" mờ mà không hiểu vì sao
+        Status = IsHost
+            ? $"Ván xong. Vẫn ở phòng {RoomCode}; mọi người bấm Sẵn sàng lại là bạn bắt đầu được ván mới."
+            : $"Ván xong. Vẫn ở phòng {RoomCode}; bấm Sẵn sàng lại để chủ phòng mở ván mới.";
     }
 
     private void ApplyScores(IReadOnlyList<PlayerInfo> scores)
@@ -812,9 +846,43 @@ public class MatchViewModel : ViewModelBase
         slot.IsWrong = false;
         tile.IsUsed = true;
 
-        // Điền kín là gửi luôn: ván đấu tính từng phần mười giây, bắt bấm thêm
-        // một nút "gửi" nữa thì chỉ tổ chậm
-        if (Slots.All(s => s.IsSpace || s.HasValue)) _ = SubmitAsync();
+        // KHÔNG tự gửi khi điền kín nữa. Trước đây có, vì đấu tính từng phần
+        // mười giây; nhưng gõ bàn phím nhanh thì chữ cuối gõ nhầm là mất luôn
+        // lượt (sai là chịu phạt chờ). Người chơi bấm Enter khi thấy ưng.
+        RaiseCommandStates();
+    }
+
+    /// <summary>Điền kín hết ô rồi thì mới gửi được.</summary>
+    public bool CanSubmit =>
+        IsPlaying && !IsAnswered && !IsCoolingDown
+        && Slots.Count > 0 && Slots.All(s => s.IsSpace || s.HasValue);
+
+    /// <summary>
+    /// Gõ một chữ trên bàn phím vật lý. Tìm phím trên màn hình còn trống có
+    /// đúng chữ đó rồi đặt vào ô kế tiếp — y như bấm phím đó bằng chuột. Chữ
+    /// không có trên bàn phím (hoặc đã dùng hết) thì bỏ qua.
+    ///
+    /// Đấu là cuộc đua tốc độ; gõ 7 chữ trên bàn phím thật nhanh hơn hẳn nhắm
+    /// rồi bấm 7 ô trên màn hình.
+    /// </summary>
+    public void TypeLetter(char c)
+    {
+        c = char.ToUpperInvariant(c);
+        LetterTile? tile = Tiles.FirstOrDefault(t => !t.IsUsed && t.Character == c);
+        if (tile != null) PlaceLetter(tile);
+    }
+
+    /// <summary>Backspace: lấy chữ ở ô có chữ cuối cùng ra.</summary>
+    public void EraseLast()
+    {
+        AnswerSlot? last = Slots.LastOrDefault(s => !s.IsSpace && s.HasValue);
+        if (last != null) TakeBack(last);
+    }
+
+    /// <summary>Enter (hoặc nút Gửi): nộp đáp án nếu đã điền kín.</summary>
+    public void Submit()
+    {
+        if (CanSubmit) _ = SubmitAsync();
     }
 
     private void TakeBack(AnswerSlot? slot)
@@ -827,6 +895,7 @@ public class MatchViewModel : ViewModelBase
         slot.CurrentChar = null;
         slot.SourceTileId = null;
         slot.IsWrong = false;
+        RaiseCommandStates();
     }
 
     private async Task SubmitAsync()
@@ -879,6 +948,8 @@ public class MatchViewModel : ViewModelBase
         StartMatchCommand.RaiseCanExecuteChanged();
         BackCommand.RaiseCanExecuteChanged();
         ChooseModeCommand.RaiseCanExecuteChanged();
+        SubmitCommand.RaiseCanExecuteChanged();
+        OnPropertyChanged(nameof(CanSubmit));
     }
 
     /// <summary>Rời phòng cho gọn khi đóng cửa sổ; máy chủ cũng tự dọn khi rớt kết nối.</summary>

@@ -12,6 +12,7 @@
         TextOptions.TextFormattingMode="Ideal"
         Background="{DynamicResource SkyBrush}"
         KeyDown="Window_KeyDown"
+        InputMethod.IsInputMethodEnabled="False"
         Closing="Window_Closing">
 
     <Window.Resources>
@@ -54,7 +55,7 @@
             <Button Command="{Binding DataContext.TakeBackCommand,
                               RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                     CommandParameter="{Binding}"
-                    Cursor="Hand"
+                    Cursor="Hand" Focusable="False"
                     Margin="5,6">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
@@ -119,7 +120,7 @@
             <Button Command="{Binding DataContext.PlaceLetterCommand,
                               RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                     CommandParameter="{Binding}"
-                    Cursor="Hand"
+                    Cursor="Hand" Focusable="False"
                     Margin="5">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
@@ -189,6 +190,14 @@
                         <TextBlock Text="Chế độ cổ điển" FontSize="15" FontWeight="SemiBold"
                                    Foreground="{DynamicResource OnPrimaryBrush}"/>
                     </Border>
+
+                    <!-- Lối chơi của ván đang dở, để giữa chừng vẫn biết mình đang
+                         ăn hệ số nào -->
+                    <TextBlock Text="LỐI CHƠI" Style="{StaticResource SectionLabel}"
+                               Margin="0,24,0,0"/>
+                    <TextBlock Text="{Binding RunOrderText}" FontSize="14" FontWeight="SemiBold"
+                               Margin="0,6,0,0" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
                 </StackPanel>
 
                 <!-- Thống kê đáy cột, giống khối STREAK / COINS trong thiết kế -->
@@ -334,32 +343,9 @@
                     <ColumnDefinition Width="280"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Thẻ trái: mô tả hình + số liệu câu đố -->
-                <Border Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Center">
-                    <StackPanel>
-                        <TextBlock Text="THÔNG TIN CÂU ĐỐ" Style="{StaticResource SectionLabel}"/>
-                        <Border CornerRadius="12" Padding="12" Margin="0,12,0,0"
-                                Background="{DynamicResource CardAltBrush}">
-                            <StackPanel>
-                                <Grid Margin="0,0,0,8">
-                                    <TextBlock Text="Số chữ cái" FontSize="13"
-                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
-                                    <TextBlock Text="{Binding LetterCountText}" FontSize="13"
-                                               FontWeight="Bold" HorizontalAlignment="Right"
-                                               Foreground="{DynamicResource PrimaryBrush}"/>
-                                </Grid>
-                                <Grid>
-                                    <TextBlock Text="Đã giải" FontSize="13"
-                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
-                                    <TextBlock Text="{Binding SolvedText}" FontSize="13"
-                                               FontWeight="Bold" HorizontalAlignment="Right"
-                                               Foreground="{DynamicResource PrimaryBrush}"/>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                    </StackPanel>
-                </Border>
+                <!-- Cột trái để trống: từng có thẻ "THÔNG TIN CÂU ĐỐ" (số chữ cái,
+                     đã giải) — bỏ vì số ô đáp án đã nói số chữ, còn "đã giải" đã có
+                     ở cột trái màn hình. Giữ cột để ảnh vẫn ở giữa. -->
 
                 <!-- Câu hỏi + khung ảnh câu đố -->
                 <Grid Grid.Column="1" Margin="18,0">
@@ -368,24 +354,14 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Nói thẳng người chơi phải làm gì, thay vì để họ tự đoán -->
-                    <StackPanel Grid.Row="0" Margin="0,0,0,10">
-                        <TextBlock Text="Đây là gì?" FontSize="26" FontWeight="Bold"
-                                   HorizontalAlignment="Center"
-                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
-
-                        <!-- Gợi ý nhỏ cho không: chủ đề của đáp án. Khác thẻ gợi ý
-                             bên trái (phải trả kim cương), cái này luôn hiện. -->
-                        <Border CornerRadius="999" Padding="14,5" Margin="0,8,0,0"
-                                HorizontalAlignment="Center"
-                                Background="{DynamicResource PrimarySoftBrush}"
-                                Visibility="{Binding CategoryText,
-                                             Converter={StaticResource StrVis}}">
-                            <TextBlock Text="{Binding CategoryText}" FontSize="13"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource PrimaryBrush}"/>
-                        </Border>
-                    </StackPanel>
+                    <!-- Câu dẫn nói thẳng đáp án thuộc loại gì ("Đây là một con
+                         vật") — đây là gợi ý cho không duy nhất, nên để nó làm
+                         chính tiêu đề. Từng là "Đây là gì?" kèm một chip chủ đề
+                         nhỏ bên dưới, quá mờ để người chơi thật sự đọc. -->
+                    <TextBlock Grid.Row="0" Margin="0,0,0,10"
+                               Text="{Binding PromptText}" FontSize="26" FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
 
                 <!-- MinHeight: cửa sổ thu nhỏ hết cỡ thì hàng đáp án và bàn phím
                      (cao bao nhiêu tùy độ dài đáp án) ăn hết chỗ, khung ảnh bị ép
@@ -533,10 +509,9 @@
                         <ColumnDefinition Width="200"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Column="0" VerticalAlignment="Center" TextWrapping="Wrap"
-                               FontSize="12" LineHeight="18"
-                               Foreground="{DynamicResource TextMutedBrush}"
-                               Text="Bấm chữ để điền · bấm lại ô đáp án để lấy chữ ra · điền kín rồi bấm Trả lời · ESC để tạm dừng"/>
+                    <!-- Cột trái để trống có chủ ý: từng có một dòng hướng dẫn
+                         "Bấm chữ để điền · …", bỏ đi vì bàn phím tự nói lên
+                         cách dùng, còn ESC thì có nút Tạm dừng ngay trên đầu -->
 
                     <ItemsControl Grid.Column="1" ItemsSource="{Binding Tiles}"
                                   ItemTemplate="{StaticResource TileTemplate}"
@@ -597,6 +572,62 @@
 
                     <Button Style="{StaticResource GhostButton}" Margin="0,10,0,0"
                             Click="Close_Click" Content="Về màn hình chính"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ==================== Lớp phủ: chọn lối chơi cho ván mới ====================
+             Hiện đúng một lần khi ván mới bắt đầu. Che kín màn chơi vì lúc này
+             chưa có câu nào được nạp (câu đầu phụ thuộc vào lối được chọn), và
+             đồng hồ chưa chạy. Không có nút thoát trong hộp: ván chưa bắt đầu
+             thì đóng cửa sổ (nút X) là đủ, vào lại sẽ được hỏi lại. -->
+        <Grid Grid.ColumnSpan="2" Background="{DynamicResource ScrimBrush}"
+              Visibility="{Binding IsChoosingOrder, Converter={StaticResource BoolVis}}">
+            <Border Style="{StaticResource Card}" CornerRadius="24" Padding="40,34"
+                    Width="560" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Text="Mời bạn chọn lối chơi" FontSize="28" FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+                    <TextBlock TextWrapping="Wrap" FontSize="14" LineHeight="22"
+                               TextAlignment="Center" Margin="0,8,0,0"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Text="Chọn một lần cho cả ván. Ván kết thúc thì ván sau chọn lại."/>
+
+                    <UniformGrid Columns="2" Margin="0,24,0,0">
+                        <Button Style="{StaticResource CardButton}" Margin="0,0,8,0"
+                                Focusable="False"
+                                Command="{Binding ChooseOrderCommand}" CommandParameter="EasyFirst">
+                            <StackPanel>
+                                <TextBlock Text="Từ dễ đến khó" FontSize="18" FontWeight="Bold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                           Margin="0,6,0,0"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           Text="Câu dễ ra trước, khó dần về sau. Hợp để làm quen và đi được xa."/>
+                                <TextBlock Text="×1 điểm" FontSize="13" FontWeight="SemiBold"
+                                           Margin="0,10,0,0"
+                                           Foreground="{DynamicResource TextMutedBrush}"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Style="{StaticResource CardButton}" Margin="8,0,0,0"
+                                Focusable="False"
+                                Command="{Binding ChooseOrderCommand}" CommandParameter="Random">
+                            <StackPanel>
+                                <TextBlock Text="Ngẫu nhiên" FontSize="18" FontWeight="Bold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                           Margin="0,6,0,0"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           Text="Xáo hết, câu khó có thể đến ngay từ đầu. Rủi ro hơn nên điểm cao hơn."/>
+                                <TextBlock Text="{Binding RandomBonusText}" FontSize="13"
+                                           FontWeight="SemiBold" Margin="0,10,0,0"
+                                           Foreground="{DynamicResource TertiaryBrush}"/>
+                            </StackPanel>
+                        </Button>
+                    </UniformGrid>
                 </StackPanel>
             </Border>
         </Grid>

@@ -67,12 +67,13 @@ app.MapPost("/api/auth/login",
 // ===== Ảnh câu đố =====
 // Client tải ảnh từ đây nên máy người chơi không cần có sẵn cùng bộ ảnh.
 
-app.MapGet("/api/puzzles/{imageName}/image", (string imageName, RoomManager rooms) =>
+app.MapGet("/api/puzzles/{imageKey}/image", (string imageKey, RoomManager rooms) =>
 {
-    // Ảnh nằm trong cơ sở dữ liệu chứ không phải trên đĩa, nên không còn cửa
-    // cho trò đi ngược thư mục kiểu "../../secret.txt": tên nào không có trong
-    // bảng thì chỉ ra 404.
-    var image = rooms.Image(imageName);
+    // Tham số là MÃ tải ảnh ngẫu nhiên do RoomManager cấp trong RoundInfo, không
+    // phải tên file — tên file chính là đáp án. Mã lạ (hay trò đi ngược thư
+    // mục "../../secret.txt") đều chỉ ra 404; ảnh nằm trong cơ sở dữ liệu chứ
+    // không phải trên đĩa.
+    var image = rooms.Image(imageKey);
 
     return image == null
         ? Results.NotFound(new ErrorResponse("Không có ảnh này."))

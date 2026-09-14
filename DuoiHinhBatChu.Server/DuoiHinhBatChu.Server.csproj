@@ -19,6 +19,14 @@
     <Content Include="..\Assets\CauHoi\**\*.*" LinkBase="Assets\CauHoi">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!--
+      Chủ đề + độ khó chấm tay của từng câu. Thiếu file này thì PuzzleSync ở
+      máy chủ rơi về mặc định (chủ đề "Cụm từ", độ khó đoán theo độ dài) và
+      màn đấu hiện độ khó / câu dẫn khác hẳn màn Cổ điển của cùng một câu.
+    -->
+    <Content Include="..\Data\puzzles.json" Link="Data\puzzles.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

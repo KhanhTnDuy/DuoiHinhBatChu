@@ -212,7 +212,21 @@ public class RoomManager
         // Danh sách câu giữ luôn trong bộ nhớ vì mỗi ván đấu bốc câu liên tục;
         // riêng byte ảnh thì KHÔNG giữ, chỉ lấy từ cơ sở dữ liệu khi có người tải
         _puzzles = puzzles.LoadAll();
+
+        // Mỗi ảnh một mã ngẫu nhiên, sinh lại mỗi lần máy chủ khởi động: client
+        // tải ảnh bằng mã này chứ không bằng tên file. Tên file chính là đáp án
+        // ("SÓNG CHÓ.png"), gửi thẳng xuống là đưa đáp án cho ai chịu khó đọc
+        // gói tin — trái với nguyên tắc "đáp án không rời máy chủ" của ván đấu.
+        foreach (Puzzle p in _puzzles)
+            _imageKeys[Convert.ToHexString(RandomNumberGenerator.GetBytes(12))] = p.ImageName;
     }
+
+    /// <summary>Mã tải ảnh (ngẫu nhiên) → tên file ảnh thật trong bảng.</summary>
+    private readonly Dictionary<string, string> _imageKeys = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Mã tải ảnh của một câu, gửi cho client thay cho tên file.</summary>
+    private string ImageKey(Puzzle puzzle) =>
+        _imageKeys.First(kv => kv.Value == puzzle.ImageName).Key;
 
     public int PuzzleCount => _puzzles.Count;
     public int RoomCount => _rooms.Count;
@@ -294,11 +308,12 @@ public class RoomManager
         return new RoundInfo(
             room.RoundNumber,
             room.TotalRounds,
-            puzzle.ImageName,
+            ImageKey(puzzle),
             round.WordLengths,
             new string(round.Tiles.Select(t => t.Character).ToArray()),
             puzzle.Difficulty,
-            MatchScoring.MaxSeconds);
+            MatchScoring.MaxSeconds,
+            puzzle.Category);
     }
 
     /// <summary>Sai lần thứ n thì phải chờ chừng này giây: 1, 2, 3… tối đa 5.</summary>
@@ -347,9 +362,12 @@ public class RoomManager
     }
 
     /// <summary>
-    /// Lấy byte ảnh của một câu theo tên file, để phục vụ GET ảnh.
-    /// Đọc thẳng từ cơ sở dữ liệu mỗi lần hỏi, không có thì trả về null.
+    /// Lấy byte ảnh của một câu theo MÃ tải ảnh (xem <see cref="ImageKey"/>), để
+    /// phục vụ GET ảnh. Mã lạ thì trả về null. Byte ảnh đọc thẳng từ cơ sở dữ
+    /// liệu mỗi lần hỏi, không giữ trong bộ nhớ.
     /// </summary>
-    public (byte[] Bytes, string ContentType)? Image(string imageName) =>
-        _repository.LoadImageByName(imageName);
+    public (byte[] Bytes, string ContentType)? Image(string imageKey) =>
+        _imageKeys.TryGetValue(imageKey, out string? imageName)
+            ? _repository.LoadImageByName(imageName)
+            : null;
 }

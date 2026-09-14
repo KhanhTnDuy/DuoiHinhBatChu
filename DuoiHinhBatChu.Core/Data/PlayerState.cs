@@ -41,6 +41,13 @@ public class PlayerState
     public int RunSeed { get; set; }
 
     /// <summary>
+    /// Lối chơi của ván này (<see cref="Models.RunOrder"/>): 0 = ngẫu nhiên,
+    /// 1 = từ dễ đến khó. Đi cùng <see cref="RunSeed"/>: chỉ có nghĩa khi
+    /// ván đang dở, ván chốt sổ thì về 0 cùng lúc với hạt giống.
+    /// </summary>
+    public int RunOrder { get; set; }
+
+    /// <summary>
     /// Mã câu đang chơi dở. Rỗng nghĩa là chưa vào ván nào.
     ///
     /// Trước đây chỗ này giữ SỐ THỨ TỰ của câu, và đó là chỗ hỏng: thứ tự câu

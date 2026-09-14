@@ -37,6 +37,9 @@ public class PlayerProfile
     /// </summary>
     public int RunSeed { get; set; } = 0;
 
+    /// <summary>Lối chơi của ván đang dở; chỉ có nghĩa khi <see cref="RunSeed"/> khác 0.</summary>
+    public RunOrder RunOrder { get; set; } = RunOrder.Random;
+
     /// <summary>
     /// Mã câu đang chơi dở, rỗng nghĩa là chưa chơi câu nào.
     /// Lưu bằng mã chứ không phải số thứ tự — xem <see cref="Data.PlayerState.CurrentPuzzleId"/>.

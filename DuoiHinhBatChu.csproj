@@ -23,6 +23,13 @@
   <ItemGroup>
     <!-- Phần lõi không phụ thuộc WPF, dùng chung với máy chủ sau này -->
     <ProjectReference Include="DuoiHinhBatChu.Core\DuoiHinhBatChu.Core.csproj" />
+    <!--
+      Máy chủ đấu: KHÔNG tham chiếu mã, chỉ để build app là build luôn máy chủ,
+      nhờ đó Services/LocalServer luôn tìm thấy DuoiHinhBatChu.Server.exe để
+      tự bật khi người chơi vào chế độ đấu.
+    -->
+    <ProjectReference Include="DuoiHinhBatChu.Server\DuoiHinhBatChu.Server.csproj"
+                      ReferenceOutputAssembly="false" Private="false" />
   </ItemGroup>
 
   <ItemGroup>

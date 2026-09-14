@@ -25,6 +25,13 @@ public partial class App : Application
         new LoginWindow().Show();
     }
 
+    /// <summary>Máy chủ đấu nào do app này bật thì tắt theo app.</summary>
+    protected override void OnExit(ExitEventArgs e)
+    {
+        Services.LocalServer.Stop();
+        base.OnExit(e);
+    }
+
     /// <summary>
     /// Chạy một việc trên luồng giao diện.
     ///

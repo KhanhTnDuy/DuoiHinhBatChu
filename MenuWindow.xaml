@@ -6,9 +6,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:conv="clr-namespace:DuoiHinhBatChu.Converters"
         Title="Đuổi hình bắt chữ - Cổ điển"
-        Width="1120" Height="760"
+        WindowState="Maximized" MinWidth="1280" MinHeight="900"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"
         FontFamily="Segoe UI"
         TextOptions.TextFormattingMode="Ideal"
         Background="{DynamicResource SkyBrush}"
@@ -168,9 +167,6 @@
                                                Foreground="{DynamicResource PrimaryBrush}"/>
                                 </Border>
                             </StackPanel>
-                            <TextBlock Text="{Binding ContinueDetail}" TextWrapping="Wrap"
-                                       FontSize="14" LineHeight="22" Margin="0,6,0,0"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
                         </StackPanel>
 
                         <Button Grid.Column="2" Style="{StaticResource PrimaryButton}"
@@ -204,10 +200,6 @@
                                            Foreground="{DynamicResource TextPrimaryBrush}"/>
                             </StackPanel>
 
-                            <TextBlock TextWrapping="Wrap" FontSize="14"
-                                       LineHeight="22" Margin="0,12,0,0"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       Text="Bỏ ván đang dở, làm lại từ câu đầu với 5 mạng. Kỷ lục vẫn giữ."/>
 
                             <Button Style="{StaticResource SoftButton}"
                                     Margin="0,14,0,0" HorizontalAlignment="Left"
@@ -246,10 +238,6 @@
                                            Foreground="{DynamicResource TextPrimaryBrush}"/>
                             </StackPanel>
 
-                            <TextBlock TextWrapping="Wrap" FontSize="14"
-                                       LineHeight="22" Margin="0,12,0,0"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       Text="Điểm ván cao nhất của những người chơi trên máy này."/>
 
                             <Button Style="{StaticResource SoftButton}"
                                     Margin="0,14,0,0" HorizontalAlignment="Left"
