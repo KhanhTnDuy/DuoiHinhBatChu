@@ -49,11 +49,20 @@ public record RoomState(string Code, string Name, string HostAccountId, MatchMod
 /// <paramref name="WordLengths"/> và bàn phím theo <paramref name="Tiles"/>,
 /// còn đúng/sai do máy chủ chấm.
 /// </summary>
-/// <param name="ImageName">Tên file ảnh, tải qua GET /api/puzzles/{imageName}/image.</param>
+/// <param name="ImageName">
+/// MÃ tải ảnh (chuỗi hex ngẫu nhiên máy chủ cấp mỗi lần khởi động), dùng cho
+/// GET /api/puzzles/{imageName}/image. Cố ý KHÔNG phải tên file: tên file
+/// chính là đáp án, gửi xuống là lộ.
+/// </param>
 /// <param name="SecondsAllowed">Hết mốc này thì không ai ghi điểm câu đó nữa.</param>
+/// <param name="Category">
+/// Chủ đề của đáp án ("Động vật", "Địa danh"…) — gợi ý cho không, giống màn
+/// Cổ điển. Chỉ gửi tên chủ đề; câu dẫn "Đây là một con vật" do client dựng
+/// bằng <c>CategoryPrompt</c>.
+/// </param>
 public record RoundInfo(int RoundNumber, int TotalRounds, string ImageName,
                         int[] WordLengths, string Tiles, int Difficulty,
-                        double SecondsAllowed);
+                        double SecondsAllowed, string Category = "");
 
 /// <param name="Seconds">Thời gian trả lời, do máy chủ đo.</param>
 /// <param name="CooldownSeconds">

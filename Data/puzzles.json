@@ -37,5 +37,19 @@
   { "answer": "TÒA CAO ỐC", "category": "Kiến trúc", "difficulty": 4 },
   { "answer": "TRANH THỦ", "category": "Cụm từ", "difficulty": 4, "hint": "Cố làm cho kịp khi còn chút thời gian rảnh." },
   { "answer": "TỦ LẠNH", "category": "Đồ vật", "difficulty": 2, "hint": "Cái tủ giữ cho thức ăn khỏi ôi thiu." },
-  { "answer": "XE GA", "category": "Phương tiện", "difficulty": 3, "hint": "Xe máy không phải đạp số, cứ vặn tay là chạy." }
+  { "answer": "XE GA", "category": "Phương tiện", "difficulty": 3, "hint": "Xe máy không phải đạp số, cứ vặn tay là chạy." },
+
+  { "answer": "ẤN ĐỘ", "category": "Địa danh", "difficulty": 4, "hint": "Con ấn ghép với nhiệt kế đo nhiệt độ: một nước đông dân ở Nam Á." },
+  { "answer": "BÌNH DƯƠNG", "category": "Địa danh", "difficulty": 4, "hint": "Bình nước ghép với hoa hướng dương: tỉnh công nghiệp sát Sài Gòn." },
+  { "answer": "BỒ ĐÀO NHA", "category": "Địa danh", "difficulty": 4, "hint": "Bồ câu, quả đào, nha đam: một nước ở châu Âu có Ronaldo." },
+  { "answer": "CẦU CHÌ", "category": "Đồ vật", "difficulty": 3, "hint": "Cây cầu ghép với bút chì: thứ tự đứt để cứu cả mạch điện." },
+  { "answer": "CHIẾN HÀO", "category": "Cụm từ", "difficulty": 4, "hint": "Hai củ su hào đang đánh nhau: đường rãnh đào để lính núp." },
+  { "answer": "ĐỊA CHỈ", "category": "Cụm từ", "difficulty": 3, "hint": "Địa cầu và ngón tay chỉ: thứ phải ghi khi gửi thư." },
+  { "answer": "ĐỒNG THÁP", "category": "Địa danh", "difficulty": 3, "hint": "Cánh đồng và cái tháp: tỉnh miền Tây có sen nổi tiếng." },
+  { "answer": "GIẢI MÃ", "category": "Cụm từ", "difficulty": 5, "hint": "Con cua (chữ Hán là giải) và con ngựa (mã): việc phá mật mã." },
+  { "answer": "HÀ MÃ", "category": "Động vật", "difficulty": 3, "hint": "Con ngựa đang cười hà hà: con vật to béo sống dưới sông châu Phi." },
+  { "answer": "LÀO CAI", "category": "Địa danh", "difficulty": 4, "hint": "Điếu thuốc lào và lời khuyên cai thuốc: tỉnh có Sa Pa." },
+  { "answer": "MÃ SỐ", "category": "Cụm từ", "difficulty": 3, "hint": "Con ngựa giữa những con số: dãy số để nhận dạng." },
+  { "answer": "THÔNG THOẠI", "category": "Cụm từ", "difficulty": 4, "hint": "Cây thông và điện thoại: cuộc gọi đã nối máy được với nhau." },
+  { "answer": "YÊU CẦU", "category": "Cụm từ", "difficulty": 3, "hint": "Trái tim và quả cầu lông: điều mà người ta đòi hỏi." }
 ]

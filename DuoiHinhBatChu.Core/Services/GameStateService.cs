@@ -75,6 +75,7 @@ public class GameStateService
             Lives = state.Lives,
             MaxLives = state.MaxLives,
             RunSeed = state.RunSeed,
+            RunOrder = (RunOrder)state.RunOrder,
             CurrentPuzzleId = state.CurrentPuzzleId,
             IsSoundEnabled = state.IsSoundEnabled,
             IsBgmEnabled = state.IsBgmEnabled,
@@ -118,6 +119,7 @@ public class GameStateService
         state.Lives = profile.Lives;
         state.MaxLives = profile.MaxLives;
         state.RunSeed = profile.RunSeed;
+        state.RunOrder = (int)profile.RunOrder;
         state.CurrentPuzzleId = profile.CurrentPuzzleId;
         state.IsSoundEnabled = profile.IsSoundEnabled;
         state.IsBgmEnabled = profile.IsBgmEnabled;
@@ -194,6 +196,7 @@ public class GameStateService
             IsTimerEnabled = profile.IsTimerEnabled,
 
             RunSeed = 0,                        // ván sau xáo lại thứ tự câu
+            RunOrder = RunOrder.Random,         // và hỏi lại lối chơi
             // Đi cùng RunSeed: ván sau xáo lại thì câu đang dở của ván cũ không
             // còn nghĩa gì, giữ lại là ván mới nhảy vào giữa danh sách vừa xáo
             CurrentPuzzleId = "",
@@ -233,6 +236,7 @@ public class GameStateService
         state.Lives = fresh.Lives;
         state.MaxLives = fresh.MaxLives;
         state.RunSeed = 0;
+        state.RunOrder = 0;
         state.CurrentPuzzleId = "";
         state.UpdatedAt = DateTime.Now;
         // state.BestScore: cố ý không đụng tới

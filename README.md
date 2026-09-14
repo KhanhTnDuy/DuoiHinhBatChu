@@ -28,22 +28,45 @@ Một **ván** là một lượt đi qua bộ câu đố. Ván kết thúc khi *
   - **Xóa chữ thừa** — bỏ bớt các phím không nằm trong đáp án.
 
   Mỗi lần tiêu kim cương đều **hỏi lại** trước khi trừ. Đồng hồ vẫn chạy trong
-  lúc hỏi, để hộp thoại không thành mẹo câu giờ.
-- **Mỗi ván xáo lại thứ tự câu** (Fisher-Yates theo một hạt giống `RunSeed`),
-  nên chơi lại không gặp đúng dãy câu vừa rồi.
+  lúc hỏi, để hộp thoại không thành mẹo câu giờ. Đang hỏi mà hết giờ (hoặc
+  bấm bỏ qua) thì hộp tự đóng và không trừ gì — kim cương chỉ mất cho câu
+  đang chơi. Hết kim cương thì hai nút trợ giúp mờ đi.
+- **Lối chơi của ván.** Ván mới bắt đầu là màn chơi hiện hộp *"Mời bạn chọn
+  lối chơi"*, chọn một lần cho cả ván (`RunOrder`, lưu cùng `RunSeed`):
+  - **Từ dễ đến khó** — sắp theo độ khó tăng dần, trong cùng một bậc vẫn xáo
+    theo hạt giống, riêng câu dài (từ 12 chữ cái) xếp cuối bậc để không mở màn
+    bằng một câu 27 chữ. Điểm ×1.
+  - **Ngẫu nhiên** — xáo hết, câu khó có thể đến ngay từ đầu. Rủi ro hơn nên
+    mỗi câu đúng được nhân **×1,5** (`SoloScoring.RandomOrderMultiplier`).
+
+  "Chơi tiếp" không hỏi lại. Đang hỏi mà đóng cửa sổ thì ván chưa tính, lần
+  sau vào hỏi lại. Ván nào cũng bốc hạt giống mới, nên chơi lại không gặp đúng
+  dãy câu vừa rồi.
 - Ô đáp án và phím chữ **luôn không dấu**; chỉ lúc báo kết quả mới hiện đáp án
   đầy đủ có dấu.
+- **Gõ bằng bàn phím vật lý** như màn Đấu: chữ cái điền vào ô, Backspace lấy
+  chữ cuối ra (chữ mở bằng trợ giúp thì giữ), Enter trả lời khi đã kín. Không
+  nhận phím khi đang tạm dừng, đang hỏi kim cương hay đang chọn ô để mở.
+  Bộ gõ tiếng Việt của Windows (Telex/VNI) đang bật cũng không sao: cửa sổ
+  chơi tắt IME (`InputMethod.IsInputMethodEnabled=False`) và đọc
+  `ImeProcessedKey` khi phím bị bộ gõ chặn. Lớp phủ đóng lại thì focus được
+  kéo về cửa sổ (nút vừa bấm trong lớp phủ bị ẩn nhưng vẫn giữ focus).
 
-Chủ đề của câu (Đồ vật, Địa danh, Ca dao - tục ngữ...) luôn hiện sẵn trên màn
-chơi. Độ khó 1–5 do người soạn chấm tay, đang dùng để tính điểm; chưa dùng để
-sắp thứ tự câu.
+Tiêu đề màn chơi nói thẳng đáp án thuộc loại gì: *"Đây là một con vật"*, *"Đây
+là một câu ca dao - tục ngữ"*, *"Đây là một địa danh"*… (bảng
+`GameViewModel.CategoryPrompts`; chủ đề chưa có trong bảng thì hiện *"Đây là
+gì?"*). Đây là gợi ý cho không duy nhất. Độ khó 1–5 do người soạn chấm tay,
+dùng để tính điểm và để sắp thứ tự khi chọn "Từ dễ đến khó".
 
 ### Chế độ đấu nhiều người
 
 - Từ màn chọn chế độ có hai lối vào: **Vào phòng** (phòng bạn bè đã mở) hoặc
   **Tạo phòng ngay**. Chủ phòng đặt **mật khẩu** và **tên phòng** (tên không
   bắt buộc, chỉ để hiển thị cạnh mã); máy chủ cấp **mã phòng 6 ký tự** (không
-  có 0/O, 1/I cho khỏi đọc nhầm). Người vào gõ đúng mã + mật khẩu.
+  có 0/O, 1/I cho khỏi đọc nhầm). Người vào gõ đúng mã + mật khẩu. Sảnh chờ
+  **không có đoạn hướng dẫn**: ô nhập tự nói mình là gì bằng chữ mờ
+  (`conv:Placeholder.Text`, `Converters/Placeholder.cs` — mất khi bấm vào ô,
+  hiện lại khi rời ô còn trống; PasswordBox theo dõi qua `Placeholder.HasContent`).
 - Mỗi phòng tối đa **5 người** kể cả chủ phòng (`Room.MaxPlayers`); đầy thì
   máy chủ từ chối, kiểm tra trong cùng khóa với lúc thêm để hai người cùng vào
   chỗ cuối không lọt cả hai.
@@ -61,13 +84,38 @@ sắp thứ tự câu.
     (đã chạy, luật bên dưới).
   - **Tôi vẽ bạn đoán** — một người vẽ, cả phòng đoán. *Đang để dành*, chọn
     được nhưng chưa bắt đầu được.
+- Màn đấu cũng hiện câu dẫn theo chủ đề (*"Đây là một con vật"*) như màn Cổ
+  điển: máy chủ gửi `RoundInfo.Category`, client dựng câu bằng
+  `CategoryPrompt` (Core). Máy chủ phải có `Data/puzzles.json` (dự án Server
+  copy sang lúc build) thì chủ đề / độ khó mới khớp với client.
+- Trong ván đấu **gõ bằng bàn phím vật lý**: chữ cái điền vào ô kế tiếp
+  (tự tìm phím trên màn hình có chữ đó, hết phím thì bỏ qua), **Backspace**
+  lấy chữ cuối ra, **Enter** (hoặc nút *Gửi*) nộp — chỉ nộp được khi đã điền
+  kín. Phím trên màn hình vẫn bấm được cho màn cảm ứng. **Không tự nộp** khi
+  điền kín nữa: gõ nhanh dễ nhầm chữ cuối, mà sai là bị phạt chờ. Đang gõ
+  trong ô nhập (mã phòng, số câu) thì bàn phím không bị bắt.
 - Thi đấu: cả phòng cùng nhận một câu, **20 giây** mỗi câu. Ai đúng nhanh hơn
   được nhiều điểm hơn: `100 × độ khó × hệ số tốc độ`, sát giờ còn 20%, hết giờ
   là 0 (`MatchScoring`). Điểm luôn do **máy chủ** chấm vì chỉ máy chủ giữ mốc
   thời gian phát câu.
 - Đoán sai phải chờ **1, 2, 3… tối đa 5 giây** mới được gửi tiếp, để không dò
   đáp án bằng cách bấm bừa.
-- Không có mạng, không có kim cương; hết số câu thì tổng kết điểm.
+- Đáp án không rời máy chủ trước khi câu kết thúc — kể cả qua đường ảnh:
+  client tải ảnh bằng **mã ngẫu nhiên** máy chủ cấp trong `RoundInfo.ImageName`
+  (`RoomManager._imageKeys`, sinh lại mỗi lần khởi động), không phải tên file,
+  vì tên file chính là đáp án.
+- Không có mạng, không có kim cương; hết số câu thì tổng kết điểm. Bằng điểm
+  thì báo **hòa**. Sau ván, khách bấm **Sẵn sàng** lại ngay trên hộp kết quả,
+  đủ người sẵn sàng thì chủ phòng bấm **Ván mới**. *Rời phòng* (và ESC) đưa về
+  màn chọn chế độ chứ không đóng cửa sổ — cửa sổ đấu là cửa sổ duy nhất, đóng
+  thẳng là app tắt.
+
+## Giao diện
+
+Mọi cửa sổ cùng một cỡ: `WindowState="Maximized"`, `MinWidth=1280 MinHeight=900`,
+thanh tiêu đề mặc định của Windows (từng có màn nhỏ 880×720 và màn đấu không
+viền — đổi 2026-09-15 cho khỏi nhảy cỡ khi chuyển màn). Không có câu hướng dẫn
+hay mô tả luật trên màn hình; ô nhập dùng chữ mờ. Nhãn mục (`SectionLabel`) 13px.
 
 ## Chạy thử
 
@@ -85,15 +133,24 @@ và toàn bộ ảnh trong `Assets/CauHoi/` được nạp vào bảng câu đ�
 Luồng màn hình: **Đăng nhập → Chọn chế độ → Menu → Màn chơi**. Muốn xem nhanh thì
 bấm *Chơi khách* (khách không lưu tiến trình và không lên bảng xếp hạng).
 
-Chế độ đấu cần chạy thêm máy chủ ở một cửa sổ khác:
+Chế độ đấu **không phải mở máy chủ tay**: bấm *Tạo phòng* / *Vào phòng* là
+app tự tìm `DuoiHinhBatChu.Server.exe` (build cùng app nhờ tham chiếu trong
+`DuoiHinhBatChu.csproj`) và bật lên ở `http://localhost:5180` nếu chưa có ai
+nghe ở đó (`Services/LocalServer`). Lần đầu mất chừng 15–20 giây vì máy chủ
+phải nạp 52 ảnh vào cơ sở dữ liệu riêng của nó
+(`DuoiHinhBatChu.Server/bin/.../Data/game.db`). App thoát thì máy chủ do nó
+bật cũng tắt.
+
+Vẫn mở tay được nếu muốn xem log:
 
 ```bash
 dotnet run --project DuoiHinhBatChu.Server
 ```
 
-Máy chủ lắng nghe ở `http://localhost:5180`. Muốn đấu qua LAN thì sửa
-`ServerAddress` trong `Data/app-settings.json` của máy client thành địa chỉ máy
-chạy server (ví dụ `192.168.1.10:5180`).
+Muốn đấu qua LAN thì máy chủ phải chạy ở máy kia (`dotnet run --project
+DuoiHinhBatChu.Server --launch-profile lan`), còn máy client sửa `ServerAddress`
+trong `Data/app-settings.json` thành địa chỉ máy đó (ví dụ `192.168.1.10:5180`)
+— địa chỉ không phải máy này thì app không tự bật gì cả.
 
 Tài khoản trên máy chủ là **sổ riêng** (máy chủ là bên ghi điểm ván đấu) nhưng
 người chơi không phải đăng ký lại: client tự đăng nhập bằng tên đăng nhập của
@@ -191,8 +248,11 @@ TokenService.cs   token đăng nhập
 
 - Vị trí đang chơi lưu bằng **mã câu** (`CurrentPuzzleId`), không phải số thứ
   tự — thêm/bớt ảnh cũng không lệch.
-- Thứ tự câu của ván lưu bằng **hạt giống** `RunSeed`, không lưu cả danh sách:
-  vào lại thì xáo lại với cùng hạt giống là ra đúng dãy cũ, rồi nhảy tới
+- Thứ tự câu của ván lưu bằng **hạt giống** `RunSeed` + **lối chơi** `RunOrder`,
+  không lưu cả danh sách: vào lại thì `GameViewModel.Arrange` xuất phát từ thứ
+  tự gốc trong bảng, xáo với cùng hạt giống (rồi sắp theo độ khó nếu là "Từ
+  dễ đến khó") là ra đúng dãy cũ. Phải xáo từ thứ tự gốc — xáo đè lên danh
+  sách đã xáo cho ra dãy khác. Sau đó nhảy tới
   `CurrentPuzzleId`.
 - Lúc ván chốt sổ (`SaveEndOfRun`), bảng nhận **trạng thái của ván sau** — 0
   điểm, đầy mạng, `RunSeed = 0`, `CurrentPuzzleId = ""` — chứ không phải ảnh
@@ -242,8 +302,8 @@ theo tài khoản hay tiến trình của ai.
 
 ## Việc còn dở
 
-- Chưa có cơ chế sắp câu theo độ khó (đang xáo ngẫu nhiên toàn bộ).
-- 39/50 ảnh câu đố.
+- 52 câu đố, đã chấm chủ đề + độ khó đủ 52 (phân bố 2/7/25/16/2).
+- Hệ số ×1,5 của lối Ngẫu nhiên là giá trị đầu, chưa có số liệu để chỉnh.
 - Kiểu chơi **Tôi vẽ bạn đoán** mới có chỗ chọn, chưa có luật và màn chơi —
   làm sau khi Thi đấu hoàn thiện.
 - Chưa có test tự động.

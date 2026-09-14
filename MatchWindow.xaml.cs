@@ -35,6 +35,19 @@ public partial class MatchWindow : Window
         _vm = new MatchViewModel(account, settings, mode);
         _vm.GoBack += GoBack;
         DataContext = _vm;
+
+        // Vào ván thì kéo focus về cửa sổ: nếu con trỏ còn nằm trong ô "số câu"
+        // hay ô mật khẩu của sảnh chờ (vừa bị ẩn đi), chữ gõ sẽ rơi vào ô đó
+        // chứ không vào hàng đáp án
+        _vm.PropertyChanged += (_, e) =>
+        {
+            // Cũng kéo về khi hộp kết quả / sảnh chờ đóng: nút vừa bấm trong
+            // đó bị ẩn nhưng vẫn giữ focus, chữ gõ sẽ rơi vào nó
+            if (e.PropertyName is nameof(MatchViewModel.IsPlaying)
+                                or nameof(MatchViewModel.IsMatchOver)
+                                or nameof(MatchViewModel.IsInLobby))
+                Dispatcher.BeginInvoke(() => Keyboard.Focus(this));
+        };
     }
 
     /// <summary>
@@ -52,12 +65,45 @@ public partial class MatchWindow : Window
         Close();
     }
 
+    /// <summary>
+    /// Bàn phím vật lý trong ván: chữ cái điền vào ô, Backspace lấy ra, Enter
+    /// gửi. Đấu là đua tốc độ nên gõ nhanh hơn hẳn bấm phím trên màn hình.
+    ///
+    /// Đang gõ trong một ô nhập (mã phòng, mật khẩu, số câu) thì không bắt —
+    /// chữ đó là của ô nhập, không phải của ván.
+    /// </summary>
     private void Window_KeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Escape) Close();
+        if (e.Key == Key.Escape) { GoBack(); return; }   // ESC = rời phòng, về màn chế độ
+
+        if (!_vm.IsPlaying) return;
+        if (Keyboard.FocusedElement is TextBox or PasswordBox) return;
+
+        Key key = e.Key == Key.ImeProcessed ? e.ImeProcessedKey : e.Key;   // bộ gõ tiếng Việt đang bật
+
+        if (key is >= Key.A and <= Key.Z)
+        {
+            _vm.TypeLetter((char)('A' + (key - Key.A)));
+            e.Handled = true;
+        }
+        else if (key == Key.Back)
+        {
+            _vm.EraseLast();
+            e.Handled = true;
+        }
+        else if (key == Key.Enter)
+        {
+            _vm.Submit();
+            e.Handled = true;
+        }
     }
 
-    private void Close_Click(object sender, RoutedEventArgs e) => Close();
+    /// <summary>
+    /// "Rời phòng": về màn chọn chế độ, KHÔNG đóng thẳng. Cửa sổ này là cửa sổ
+    /// duy nhất đang mở, đóng thẳng là app tắt luôn — QA 2026-09-15 bấm Rời
+    /// phòng ở hộp kết quả và mất cả app.
+    /// </summary>
+    private void Close_Click(object sender, RoutedEventArgs e) => GoBack();
 
     /// <summary>
     /// PasswordBox không cho ràng buộc dữ liệu vào Password, nên đẩy tay sang

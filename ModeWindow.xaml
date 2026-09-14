@@ -6,9 +6,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:conv="clr-namespace:DuoiHinhBatChu.Converters"
         Title="Đuổi hình bắt chữ - Chọn chế độ chơi"
-        Width="880" Height="720"
+        WindowState="Maximized" MinWidth="1280" MinHeight="900"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"
         FontFamily="Segoe UI"
         TextOptions.TextFormattingMode="Ideal"
         Background="{DynamicResource SkyBrush}">
@@ -18,11 +17,13 @@
         <conv:StringToVisibilityConverter x:Key="StrVis"/>
     </Window.Resources>
 
-    <Grid Margin="40,32">
+    <!-- Width cố định + căn giữa: khi cửa sổ phóng to hai thẻ không kéo dãn hết
+         1920px, khi thu nhỏ cũng không co lại thành hai cột hẹp -->
+    <Grid Margin="40,32" Width="1000" HorizontalAlignment="Center" VerticalAlignment="Center">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>   <!-- người chơi -->
             <RowDefinition Height="Auto"/>   <!-- tên màn hình -->
-            <RowDefinition Height="*"/>      <!-- hai thẻ chế độ / bảng nối máy chủ -->
+            <RowDefinition Height="Auto"/>   <!-- hai thẻ chế độ: cao theo nội dung, không kéo dài xuống đáy -->
             <RowDefinition Height="Auto"/>   <!-- mẹo cuối trang -->
         </Grid.RowDefinitions>
 
@@ -65,9 +66,6 @@
             <TextBlock Text="Chọn chế độ chơi" FontSize="28" FontWeight="Bold"
                        HorizontalAlignment="Center" Margin="0,8,0,0"
                        Foreground="{DynamicResource TextPrimaryBrush}"/>
-            <TextBlock Text="Chơi Cổ điển cho thong thả, hay đua với bạn bè cho vui?"
-                       FontSize="14" HorizontalAlignment="Center" Margin="0,4,0,0"
-                       Foreground="{DynamicResource TextMutedBrush}"/>
         </StackPanel>
 
         <!-- === Hai thẻ chế độ ===
@@ -75,7 +73,7 @@
              trạng thái, tên chế độ, mô tả, hàng chip, rồi nút "Chơi ngay" ghim
              dưới đáy. Nút ghim đáy nên hai thẻ cao bằng nhau và không còn
              khoảng trống lửng lơ như bản cũ. -->
-        <Grid Grid.Row="2" Margin="0,26,0,0">
+        <Grid Grid.Row="2" Margin="0,26,0,0" VerticalAlignment="Top">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
@@ -129,32 +127,7 @@
                         </Border>
                     </StackPanel>
 
-                    <!-- Câu dẫn thay cho đoạn mô tả khô: mấy chuyện 5 mạng,
-                         trợ giúp, lưu tiến trình đã nằm ở hàng chip bên dưới -->
-                    <TextBlock Grid.Row="2" TextWrapping="Wrap" FontSize="15" LineHeight="24"
-                               Margin="0,10,0,0"
-                               Foreground="{DynamicResource TextSecondaryBrush}"
-                               Text="Luyện tay cho chắc, rồi hãy đi giành ngôi vô địch."/>
-
-                    <!-- Hàng chip: mấy điều cần biết trước khi chọn -->
-                    <StackPanel Grid.Row="3" Margin="0,16,0,0">
-                        <Rectangle Height="1" Fill="{DynamicResource CardBorderBrush}"
-                                   Margin="0,0,0,12"/>
-                        <WrapPanel>
-                            <Border Style="{StaticResource Chip}">
-                                <TextBlock Text="❤ 5 mạng" Style="{StaticResource ChipText}"/>
-                            </Border>
-                            <Border Style="{StaticResource Chip}">
-                                <TextBlock Text="◆ 2 trợ giúp" Style="{StaticResource ChipText}"/>
-                            </Border>
-                            <Border Style="{StaticResource Chip}">
-                                <TextBlock Text="↺ Lưu tiến trình"
-                                           Style="{StaticResource ChipText}"/>
-                            </Border>
-                        </WrapPanel>
-                    </StackPanel>
-
-                    <Button Grid.Row="5" Style="{StaticResource PrimaryButton}"
+                    <Button Grid.Row="5" Style="{StaticResource PrimaryButton}" Margin="0,28,0,0"
                             Command="{Binding PlaySoloCommand}" Content="Đi tới menu  →"/>
                 </Grid>
             </Border>
@@ -214,29 +187,6 @@
                         </Border>
                     </StackPanel>
 
-                    <TextBlock Grid.Row="2" TextWrapping="Wrap" FontSize="15" LineHeight="24"
-                               Margin="0,10,0,0"
-                               Foreground="{DynamicResource TextSecondaryBrush}"
-                               Text="Cùng một câu đố, ai nhanh tay hơn thì thắng."/>
-
-                    <StackPanel Grid.Row="3" Margin="0,16,0,0">
-                        <Rectangle Height="1" Fill="{DynamicResource CardBorderBrush}"
-                                   Margin="0,0,0,12"/>
-                        <WrapPanel>
-                            <Border Style="{StaticResource Chip}">
-                                <TextBlock Text="⏱ 20 giây / câu"
-                                           Style="{StaticResource ChipText}"/>
-                            </Border>
-                            <Border Style="{StaticResource Chip}">
-                                <TextBlock Text="⚡ Thi đấu trực tiếp"
-                                           Style="{StaticResource ChipText}"/>
-                            </Border>
-                            <Border Style="{StaticResource Chip}">
-                                <TextBlock Text="★ Nhanh hơn được nhiều điểm hơn"
-                                           Style="{StaticResource ChipText}"/>
-                            </Border>
-                        </WrapPanel>
-                    </StackPanel>
 
                     <!-- Khách thì chưa đấu được, nói rõ ngay trên thẻ -->
                     <Border Grid.Row="4" CornerRadius="10" Padding="12,9" Margin="0,4,0,12"
@@ -250,7 +200,7 @@
                     </Border>
 
                     <!-- Hai lối vào: có phòng bạn bè mở sẵn thì vào, chưa thì tự mở -->
-                    <Grid Grid.Row="5">
+                    <Grid Grid.Row="5" Margin="0,28,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
@@ -266,11 +216,6 @@
             </Border>
         </Grid>
 
-        <!-- === Mẹo cuối trang === -->
-        <TextBlock Grid.Row="3" Margin="0,20,0,0" FontSize="13"
-                   HorizontalAlignment="Center"
-                   Foreground="{DynamicResource TextMutedBrush}"
-                   Text="Mẹo: chơi Cổ điển để luyện, rồi rủ bạn vào đấu cho biết ai nhanh hơn."/>
 
     </Grid>
 </Window>
