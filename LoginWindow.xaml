@@ -27,6 +27,25 @@
         <!-- ==================== Bên trái: giới thiệu chế độ chơi ==================== -->
         <Border Grid.Column="0" Background="{DynamicResource SidebarBrush}"
                 BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,0,1,0">
+          <Grid>
+            <!-- Ảnh nền cột trái: tài nguyên "dang-nhap-nen" (sáng) /
+                 "dang-nhap-nen-toi" (tối) trong Assets/TaiNguyen. Không có file
+                 thì Image rỗng, nền SidebarBrush + bầu trời lộ ra như cũ.
+                 UniformToFill: phủ kín cột, xén bớt mép chứ không bóp méo. -->
+            <Image x:Name="LoginBackdrop" Stretch="UniformToFill"/>
+
+            <!-- Dải mờ bên trái để chữ logo luôn đọc được dù ảnh có gì ở góc đó.
+                 Chỉ hiện khi có ảnh (code-behind bật). -->
+            <Border x:Name="LoginBackdropScrim" Visibility="Collapsed">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="{DynamicResource SidebarScrimColor}" Offset="0"/>
+                        <GradientStop Color="{DynamicResource SidebarScrimColor}" Offset="0.26"/>
+                        <GradientStop Color="Transparent" Offset="0.55"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+
             <StackPanel VerticalAlignment="Center" Margin="48,0">
 
                 <!-- ===== Logo: một bức tranh, mũi tên, rồi hàng ô chữ =====
@@ -85,6 +104,7 @@
                            Foreground="{DynamicResource TextSecondaryBrush}"
                            Text="Nhìn hình đoán chữ."/>
             </StackPanel>
+          </Grid>
         </Border>
 
         <!-- ==================== Bên phải: đăng nhập / đăng ký ==================== -->
