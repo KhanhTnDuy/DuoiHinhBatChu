@@ -30,19 +30,3 @@ Ca hai anh deu duoc cat theo kieu "phu day o" (UniformToFill): anh se bi cat
 bot phan thua chu khong bi bop meo. De y tam anh nam giua.
 
 Thieu file nao thi cho do hien o gach dut chi cho dat, app van chay binh thuong.
-
-  dang-nhap-nen     -> anh NEN cot trai man dang nhap (giao dien sang).
-  dang-nhap-nen-toi -> ban cho giao dien toi; thieu thi dung lai ban sang.
-
-                  Cot trai rong het phan con lai sau cot form 420 px: tren
-                  man 1920x1080 la ~1500 x 1050 -> anh NGANG, ti le xap xi
-                  3:2 (nen ve 1920 x 1280 hoac 2400 x 1600 cho net HiDPI).
-
-                  Logo + chu "DUOI HINH / BAT CHU" nam o mep TRAI, giua theo
-                  chieu doc, chiem khoang 1/4 chieu rong. App tu phu mot dai
-                  mo (mau nen theme) len 1/4 do de chu doc duoc, nen phan
-                  trai anh cu de thoang / it chi tiet, dat nhan vat va diem
-                  nhan o nua PHAI (nhung dung sat mep phai vi bi cat).
-
-                  Cat kieu phu day o nhu hai anh menu. Thieu file thi cot
-                  trai giu nen mo + bau troi nhu cu.

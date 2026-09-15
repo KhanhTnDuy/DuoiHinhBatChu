@@ -13,10 +13,6 @@ public static class ThemeService
 
     public static bool IsDark { get; private set; }
 
-    /// <summary>Bắn sau khi đổi giao diện sáng/tối, cho nơi nào phải nạp lại
-    /// tài nguyên theo theme (ảnh nền màn đăng nhập).</summary>
-    public static event Action? Changed;
-
     public static void Apply(bool dark)
     {
         IsDark = dark;
@@ -29,7 +25,5 @@ public static class ThemeService
         var merged = Application.Current.Resources.MergedDictionaries;
         if (merged.Count > ThemeSlot) merged[ThemeSlot] = dict;
         else merged.Add(dict);
-
-        Changed?.Invoke();
     }
 }
