@@ -47,6 +47,9 @@
     <!-- Lớp phủ -->
     <SolidColorBrush x:Key="ScrimBrush" Color="#0F172A" Opacity="0.72"/>
 
+    <!-- Màu dải mờ che sau logo màn đăng nhập khi có ảnh nền cột trái -->
+    <Color x:Key="SidebarScrimColor">#F4F7FF</Color>
+
     <!-- ===== Nền màn menu: bầu trời ban ngày =====
          Cùng khóa "SkyBrush" với Dark.xaml (bầu trời sao), nên bấm nút sáng/tối
          là trời đổi theo ngay, không cần một dòng code nào: MenuWindow gọi bằng

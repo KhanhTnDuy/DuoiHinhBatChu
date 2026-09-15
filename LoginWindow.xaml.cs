@@ -26,12 +26,20 @@ public partial class LoginWindow : Window
         DataContext = _vm;
 
         LoadQrImage();
+        LoadBackdrop();
+        ThemeService.Changed += LoadBackdrop;
+        Closed += (_, _) => ThemeService.Changed -= LoadBackdrop;
 
         Loaded += (_, _) => UserNameBox.Focus();
     }
 
     /// <summary>Tên tài nguyên của ảnh mã QR trong Assets/TaiNguyen.</summary>
     private const string QrResourceName = "qr-ung-ho";
+
+    /// <summary>Ảnh nền cột trái màn đăng nhập, bản sáng và bản tối.
+    /// Thiếu bản tối thì dùng bản sáng cho cả hai.</summary>
+    private const string BackdropResourceName = "dang-nhap-nen";
+    private const string BackdropDarkResourceName = "dang-nhap-nen-toi";
 
     /// <summary>
     /// Nạp ảnh QR ủng hộ từ thư mục ảnh tài nguyên.
@@ -41,8 +49,36 @@ public partial class LoginWindow : Window
     /// </summary>
     private void LoadQrImage()
     {
-        string? file = AppImageLocator.Find(QrResourceName);
-        if (file == null) return;
+        var image = LoadBitmap(QrResourceName);
+        if (image == null) return;
+
+        QrImage.Source = image;
+        QrImage.Visibility = Visibility.Visible;
+        QrPlaceholder.Visibility = Visibility.Collapsed;
+    }
+
+    /// <summary>
+    /// Nạp ảnh nền cột trái theo giao diện đang dùng. Không có ảnh thì cột
+    /// trái giữ nguyên nền mờ + bầu trời như trước, dải mờ sau logo cũng tắt.
+    /// </summary>
+    private void LoadBackdrop()
+    {
+        BitmapImage? image = null;
+        if (ThemeService.IsDark) image = LoadBitmap(BackdropDarkResourceName);
+        image ??= LoadBitmap(BackdropResourceName);
+
+        LoginBackdrop.Source = image;
+        LoginBackdropScrim.Visibility = image == null ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    /// <summary>
+    /// Đọc một ảnh tài nguyên thành BitmapImage đã đóng băng; null nếu không có
+    /// file hoặc file không phải ảnh.
+    /// </summary>
+    private static BitmapImage? LoadBitmap(string resourceName)
+    {
+        string? file = AppImageLocator.Find(resourceName);
+        if (file == null) return null;
 
         try
         {
@@ -54,14 +90,12 @@ public partial class LoginWindow : Window
             image.UriSource = new Uri(file);
             image.EndInit();
             image.Freeze();
-
-            QrImage.Source = image;
-            QrImage.Visibility = Visibility.Visible;
-            QrPlaceholder.Visibility = Visibility.Collapsed;
+            return image;
         }
         catch
         {
-            // File hỏng hay không phải ảnh thật: giữ nguyên ô gạch đứt
+            // File hỏng hay không phải ảnh thật: coi như không có
+            return null;
         }
     }
 
