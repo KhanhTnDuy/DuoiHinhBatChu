@@ -190,6 +190,12 @@ màn trừ màn đang chơi có **nút quay lại** (style `BackButton`): Chọn
 quy tắc **mở cửa sổ mới trước rồi mới `Close()`** cửa sổ cũ, không thì WPF thấy
 hết cửa sổ là tắt app.
 
+Riêng MatchWindow đóng theo hai nhịp: `Closing` hủy lần đầu, `await` rời phòng
+trên máy chủ, rồi mới đóng thật. Bước đóng thật phải `Dispatcher.BeginInvoke(Close)`
+— chưa nối máy chủ thì việc rời phòng xong tức thì, `await` không nhả luồng,
+gọi `Close()` ngay trong `Closing` là WPF ném lỗi và app sập (bug "mở sảnh chờ
+rồi bấm quay lại liền", sửa 2026-09-15).
+
 ```
 ViewModels/
   GameViewModel      toàn bộ ván chơi một người: mạng, điểm, chuỗi, kim cương,

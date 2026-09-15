@@ -115,6 +115,11 @@ public partial class MatchWindow : Window
     /// <summary>
     /// Rời phòng là việc phải chờ máy chủ, mà Closing thì không chờ được. Nên
     /// hoãn đóng lại, báo cho máy chủ xong mới đóng thật.
+    ///
+    /// Đóng thật phải qua BeginInvoke: chưa nối máy chủ thì LeaveAsync xong
+    /// ngay, await không nhả luồng, Close() sẽ chạy NGAY TRONG Closing của
+    /// chính cửa sổ này → WPF ném lỗi "Close while a Window is closing" và
+    /// app sập (bug 2026-09-15: mở màn đấu rồi bấm quay lại liền).
     /// </summary>
     private async void Window_Closing(object sender, CancelEventArgs e)
     {
@@ -123,7 +128,13 @@ public partial class MatchWindow : Window
         e.Cancel = true;
         _leaving = true;
 
-        await _vm.LeaveAsync();
-        Close();
+        try
+        {
+            await _vm.LeaveAsync();
+        }
+        finally
+        {
+            _ = Dispatcher.BeginInvoke(Close);
+        }
     }
 }
