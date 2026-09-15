@@ -117,16 +117,6 @@ thanh tiêu đề mặc định của Windows (từng có màn nhỏ 880×720 v�
 viền — đổi 2026-09-15 cho khỏi nhảy cỡ khi chuyển màn). Không có câu hướng dẫn
 hay mô tả luật trên màn hình; ô nhập dùng chữ mờ. Nhãn mục (`SectionLabel`) 13px.
 
-**Ảnh trang trí thả tay** nằm trong `Assets/TaiNguyen`, tìm theo tên không cần
-đúng đuôi hay cách viết (`AppImageLocator`): `qr-ung-ho` (bảng "?"),
-`menu-trai` / `menu-phai` (hai cột menu Cổ điển), `dang-nhap-nen` /
-`dang-nhap-nen-toi` (nền cột trái màn đăng nhập, bản sáng / tối; thiếu bản
-tối thì dùng bản sáng, thiếu cả hai thì cột trái giữ nền mờ + bầu trời). Khi
-có ảnh nền đăng nhập, app phủ một dải mờ màu nền theme (`SidebarScrimColor`)
-lên ~1/4 bên trái để logo luôn đọc được; đổi sáng/tối thì `ThemeService.Changed`
-báo cho màn đăng nhập nạp lại ảnh. Kích thước và bố cục từng ảnh ghi trong
-`Assets/TaiNguyen/DOC-TRUOC-KHI-DAT-ANH.txt`.
-
 ## Chạy thử
 
 Cần [.NET 10 SDK](https://dotnet.microsoft.com/download) trên Windows.

@@ -40,9 +40,6 @@
 
     <SolidColorBrush x:Key="ScrimBrush" Color="#060B14" Opacity="0.82"/>
 
-    <!-- Màu dải mờ che sau logo màn đăng nhập khi có ảnh nền cột trái -->
-    <Color x:Key="SidebarScrimColor">#0B1220</Color>
-
     <!-- ===== Nền màn menu: bầu trời sao =====
          Cùng khóa "SkyBrush" với Light.xaml (bầu trời ban ngày). Xem chú thích
          bên đó về UniformToFill. -->
