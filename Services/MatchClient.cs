@@ -45,9 +45,14 @@ public class MatchClient : IAsyncDisposable
     {
         _token = token;
 
+        // KHÔNG tự nối lại (WithAutomaticReconnect). Máy chủ nhận ra đứt dây là
+        // xóa người đó khỏi phòng ngay (GameHub.OnDisconnectedAsync); nối lại
+        // xong là một kết nối MỚI, không ở phòng nào, mà sự kiện Closed lại không
+        // bắn — client cứ tưởng mình vẫn trong phòng, gửi đáp án thì bị "Bạn
+        // chưa ở trong phòng nào". Để đứt là đứt hẳn, Closed bắn, màn đấu về
+        // sảnh chờ và người chơi vào lại phòng cho rõ ràng.
         _hub = new HubConnectionBuilder()
             .WithUrl($"{baseAddress}/game")
-            .WithAutomaticReconnect()
             .Build();
 
         On<RoundInfo>("RoundStarted", x => RoundStarted?.Invoke(x), toUi);

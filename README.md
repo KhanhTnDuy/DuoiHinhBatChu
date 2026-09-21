@@ -109,6 +109,11 @@ dùng để tính điểm và để sắp thứ tự khi chọn "Từ dễ đế
   đủ người sẵn sàng thì chủ phòng bấm **Ván mới**. *Rời phòng* (và ESC) đưa về
   màn chọn chế độ chứ không đóng cửa sổ — cửa sổ đấu là cửa sổ duy nhất, đóng
   thẳng là app tắt.
+- **Đứt kết nối là đứt hẳn**, không tự nối lại (`MatchClient` không dùng
+  `WithAutomaticReconnect`): máy chủ đã xóa người rớt khỏi phòng ngay lúc đứt
+  dây, nối lại cũng là kết nối mới không thuộc phòng nào. Client nhận `Closed`
+  → `MatchViewModel.OnDisconnected` dừng đồng hồ, xóa phòng, về sảnh chờ và
+  báo "Mất kết nối tới máy chủ"; người chơi tạo / vào lại phòng.
 
 ## Giao diện
 
@@ -264,6 +269,10 @@ TokenService.cs   token đăng nhập
   điểm, đầy mạng, `RunSeed = 0`, `CurrentPuzzleId = ""` — chứ không phải ảnh
   chụp ván vừa kết thúc; màn hình vẫn giữ điểm cũ để hiện lớp phủ tổng kết.
 - "Đặt lại hồ sơ" xóa tiến trình nhưng cố ý **giữ `BestScore`**.
+- Mất mạng cuối rồi đóng cửa sổ ngay (trong 1–2 giây chờ hiệu ứng, trước khi
+  `EndRun` kịp chạy) thì bảng còn `Lives = 0` với `RunSeed` khác 0. Lần mở sau
+  `GameViewModel` nhận ra ván đã chết (`CloseDeadRun`): so kỷ lục, chốt sổ,
+  rồi hỏi lối chơi cho ván mới — không để chơi tiếp với 0 mạng.
 
 ### Câu đố đi từ file ảnh vào game
 

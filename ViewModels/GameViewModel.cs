@@ -58,6 +58,17 @@ public class GameViewModel : ViewModelBase
         // Ván mới thì bốc hạt giống mới; ván đang dở thì dùng lại hạt giống cũ
         // để dựng đúng thứ tự câu hôm trước
         bool isNewRun = _profile.RunSeed == 0;
+
+        // Ván dở mà đã hết mạng: người chơi đóng cửa sổ trong 1-2 giây chờ hiệu
+        // ứng, trước khi EndRun kịp chốt sổ. Số mạng 0 đã nằm trong bảng nhưng
+        // ván chưa được đóng — cứ nạp lên là chơi tiếp với 0 mạng, đúng tới đâu
+        // đi tới đó. Chốt sổ ngay tại đây rồi coi như ván mới.
+        if (!isNewRun && _profile.Lives <= 0)
+        {
+            CloseDeadRun();
+            isNewRun = true;
+        }
+
         if (isNewRun) _profile.RunSeed = NewSeed();
 
         _puzzles = _repository.LoadAll();
@@ -341,6 +352,25 @@ public class GameViewModel : ViewModelBase
         // trạng thái ván sau (0 điểm, đầy mạng), còn màn hình vẫn giữ điểm ván
         // vừa xong để hiện lên lớp phủ.
         _state.SaveEndOfRun(_profile);
+    }
+
+    /// <summary>
+    /// Chốt sổ một ván đã chết từ lần chơi trước (hết mạng nhưng chưa kịp
+    /// <see cref="EndRun"/>): so kỷ lục, ghi trạng thái ván sau xuống bảng, rồi
+    /// đưa hồ sơ đang cầm về đúng trạng thái đó để ván mới bắt đầu sạch.
+    /// </summary>
+    private void CloseDeadRun()
+    {
+        if (_profile.Score > _profile.BestScore) _profile.BestScore = _profile.Score;
+        _state.SaveEndOfRun(_profile);
+
+        var fresh = new PlayerProfile();
+        _profile.Score = 0;
+        _profile.CorrectStreak = 0;
+        _profile.Lives = fresh.Lives;
+        _profile.RunSeed = 0;
+        _profile.RunOrder = RunOrder.Random;
+        _profile.CurrentPuzzleId = "";
     }
 
     /// <summary>

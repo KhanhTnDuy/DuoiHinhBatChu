@@ -525,7 +525,7 @@ public class MatchViewModel : ViewModelBase
         client.AnswerJudged += ApplyJudgement;
         client.RoundEnded += EndRound;
         client.MatchEnded += EndMatch;
-        client.Disconnected += reason => Status = reason;
+        client.Disconnected += OnDisconnected;
 
         _myAccountId = auth.Auth.AccountId;
         _client = client;
@@ -577,6 +577,43 @@ public class MatchViewModel : ViewModelBase
     }
 
     // ===== Máy chủ báo về =====
+
+    /// <summary>
+    /// Đứt dây với máy chủ. Máy chủ đã xóa mình khỏi phòng rồi, nên phía này
+    /// cũng phải về sảnh chờ: trước đây chỉ đổi dòng trạng thái, còn màn chơi
+    /// vẫn treo nguyên — đồng hồ chạy, bàn phím gõ được, nút quay lại thì ẩn vì
+    /// IsPlaying vẫn true — người chơi kẹt không lối ra ngoài ESC.
+    /// </summary>
+    private void OnDisconnected(string _)
+    {
+        if (_leaving) return;   // tự đóng cửa sổ thì dây đứt là chuyện đương nhiên
+
+        _tick.Stop();
+        _flash.Stop();
+        _cooldown.Stop();
+
+        IsPlaying = false;
+        IsMatchOver = false;
+        IsAnswered = false;
+        IsCoolingDown = false;
+        IsHost = false;
+        IsReady = false;
+        RoomCode = "";
+        RoomName = "";
+        Players.Clear();
+        Slots.Clear();
+        Tiles.Clear();
+        ImageSource = null;
+        FeedbackText = "";
+        RevealedAnswer = "";
+
+        OnPropertyChanged(nameof(PlayerCountText));
+        RaiseCommandStates();
+
+        // Lý do kỹ thuật ("The remote party closed the WebSocket…") không giúp
+        // gì người chơi, chỉ cần biết là đứt và phải vào lại
+        Status = "Mất kết nối tới máy chủ. Tạo hoặc vào lại phòng để chơi tiếp.";
+    }
 
     private void ApplyRoom(RoomState room)
     {
@@ -953,8 +990,12 @@ public class MatchViewModel : ViewModelBase
     }
 
     /// <summary>Rời phòng cho gọn khi đóng cửa sổ; máy chủ cũng tự dọn khi rớt kết nối.</summary>
+    /// <summary>Đang tự rời (đóng cửa sổ); Closed bắn lúc này không phải là rớt mạng.</summary>
+    private bool _leaving;
+
     public async Task LeaveAsync()
     {
+        _leaving = true;
         _tick.Stop();
         _flash.Stop();
         _cooldown.Stop();
