@@ -85,6 +85,11 @@ public static class LocalServer
             return $"Không bật được máy chủ: {ex.Message}";
         }
 
+        // Process.Start trả null khi hệ thống dùng lại một tiến trình có sẵn —
+        // với file .exe thường thì không xảy ra, nhưng null là không có gì để theo dõi
+        if (_process == null)
+            return "Không bật được máy chủ: hệ thống không tạo tiến trình mới.";
+
         // Máy chủ cần vài giây: mở cơ sở dữ liệu, đối chiếu kho ảnh, rồi mới
         // nghe cổng. Hỏi thăm mỗi nửa giây, tối đa 20 giây.
         for (int i = 0; i < 40; i++)

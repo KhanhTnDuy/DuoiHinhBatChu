@@ -69,8 +69,14 @@ public record RoundInfo(int RoundNumber, int TotalRounds, string ImageName,
 /// Đoán sai thì phải chờ chừng này giây mới được gửi tiếp; 0 là gửi được ngay.
 /// Máy chủ mới là bên giữ mốc chờ — số này chỉ để client hiện ra cho biết.
 /// </param>
+/// <param name="Judged">
+/// Máy chủ có thật sự chấm không. false khi đáp án tới lúc còn trong quãng
+/// phạt (hoặc đã trả lời rồi, câu đã hết): lúc đó Correct = false KHÔNG có
+/// nghĩa là sai — client không được nháy đỏ và xóa chữ đang ghép.
+/// </param>
 public record AnswerResult(string AccountId, string DisplayName, bool Correct,
-                           int Points, double Seconds, double CooldownSeconds);
+                           int Points, double Seconds, double CooldownSeconds,
+                           bool Judged = true);
 
 /// <param name="Answer">Đáp án đầy đủ có dấu, chỉ lộ ra khi câu đã kết thúc.</param>
 public record RoundEnded(int RoundNumber, string Answer, IReadOnlyList<PlayerInfo> Scores);

@@ -111,9 +111,11 @@ public class MenuViewModel : ViewModelBase
 
     public string ContinueTitle => HasProgress ? "Chơi tiếp" : "Bắt đầu chơi";
 
+    // Kim cương là của tài khoản chứ không phải của ván, nên ván mới không
+    // "cấp 2 kim cương" — nói số đang có thật thì đúng với mọi người
     public string ContinueDetail => HasProgress
         ? "Vào lại đúng câu bạn đang dở, giữ nguyên điểm ván và kim cương."
-        : "Bắt đầu từ câu đầu tiên, với 5 mạng và 2 kim cương.";
+        : $"Bắt đầu từ câu đầu tiên, với {_profile.MaxLives} mạng và {_profile.Rubies} kim cương.";
 
     /// <summary>
     /// Đang chơi khách. Nói thẳng ngay trên menu thay vì để người ta chơi cả
