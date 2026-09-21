@@ -161,7 +161,16 @@ Tài khoản trên máy chủ là **sổ riêng** (máy chủ là bên ghi đi�
 người chơi không phải đăng ký lại: client tự đăng nhập bằng tên đăng nhập của
 tài khoản trên máy, "mật khẩu" là mã tài khoản (`Account.Id`, chuỗi ngẫu nhiên
 sinh lúc tạo tài khoản); lần đầu gặp máy chủ thì tự đăng ký
-(`ServerClient.SignInAsync`). Chi tiết: [`Docs/MULTIPLAYER.md`](Docs/MULTIPLAYER.md).
+(`ServerClient.SignInAsync`). Đăng ký cũng bị từ chối vì tên đã có (xóa
+`game.db` rồi đăng ký lại cùng tên → `Account.Id` đổi) thì thử bước ba: gọi
+`reset-password` với số điện thoại đã khai — đúng số thì lấy lại được tài
+khoản trên máy chủ, sai số mới báo lỗi. Chi tiết:
+[`Docs/MULTIPLAYER.md`](Docs/MULTIPLAYER.md).
+
+Đoán sai trong ván đấu bị phạt chờ 1–5 giây (`RoomManager.Judge`). Đáp án gửi
+tới lúc máy chủ còn đang phạt thì **không chấm**: `AnswerResult.Judged = false`,
+client giữ nguyên chữ đang ghép và chỉ nối lại quãng chờ — không nháy đỏ, không
+xóa chữ như khi sai thật.
 
 ## Kiến trúc
 

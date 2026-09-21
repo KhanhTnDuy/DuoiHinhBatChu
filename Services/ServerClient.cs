@@ -109,9 +109,13 @@ public class ServerClient
     /// ngẫu nhiên 32 ký tự sinh lúc tạo tài khoản, chỉ máy này biết. Lần đầu
     /// gặp máy chủ thì đăng nhập không có, chuyển sang đăng ký với cùng bộ đó.
     ///
-    /// Cùng một tên đăng nhập ở hai máy khác nhau sẽ ra hai mã khác nhau, nên
-    /// máy thứ hai đăng ký sẽ bị máy chủ từ chối "tên đã có người dùng" — đó là
-    /// lỗi hiện lên cho người chơi, không phải hỏng hóc.
+    /// Đăng ký cũng bị từ chối (tên đã có trên máy chủ) thì còn một cửa: tài
+    /// khoản cùng tên đó có thể chính là của người này, tạo từ một bản cài
+    /// trước — xóa Data/game.db rồi đăng ký lại cùng tên là mã tài khoản đổi,
+    /// mật khẩu trên máy chủ không khớp nữa và người chơi bị chặn khỏi chế độ
+    /// đấu vĩnh viễn. Máy chủ có sẵn "quên mật khẩu" bằng số điện thoại, nên
+    /// thử luôn: đúng số đã khai thì đặt lại mật khẩu thành mã mới và vào được.
+    /// Sai số (tên đó của người khác thật) thì mới báo lỗi ra ngoài.
     /// </summary>
     public async Task<ServerAuth> SignInAsync(string address, Account account)
     {
@@ -124,8 +128,17 @@ public class ServerClient
         if (auth.Message.StartsWith("Không nối được") || auth.Message.StartsWith("Máy chủ không trả lời"))
             return auth;
 
-        return await RegisterAsync(address, account.UserName, account.DisplayName, secret, account.Phone);
+        ServerAuth reg = await RegisterAsync(address, account.UserName, account.DisplayName, secret, account.Phone);
+        if (reg.Ok || account.Phone.Length == 0) return reg;
+
+        ServerAuth reset = await ResetPasswordAsync(address, account.UserName, account.Phone, secret);
+        return reset.Ok ? reset : reg;   // lấy lại không được thì lỗi đăng ký mới là lỗi thật
     }
+
+    public Task<ServerAuth> ResetPasswordAsync(
+        string address, string userName, string phone, string newPassword) =>
+        PostAuthAsync(address, "reset-password",
+                      new ResetPasswordRequest(userName, phone, newPassword, newPassword));
 
     // ----- Nội bộ -----
 

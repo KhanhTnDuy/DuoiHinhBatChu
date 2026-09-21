@@ -330,7 +330,7 @@ public class RoomManager
             double seconds = (now - room.RoundStartedUtc).TotalSeconds;
 
             if (room.CurrentPuzzle == null || player.AnsweredThisRound)
-                return new AnswerResult(player.AccountId, player.DisplayName, false, 0, seconds, 0);
+                return new AnswerResult(player.AccountId, player.DisplayName, false, 0, seconds, 0, Judged: false);
 
             // Còn trong thời gian phạt của lần sai trước: không chấm gì cả, chỉ
             // nhắc còn phải chờ bao lâu. Chặn ở đây chứ không ở client, vì
@@ -339,7 +339,7 @@ public class RoomManager
             {
                 double waitLeft = (player.BlockedUntilUtc - now).TotalSeconds;
                 return new AnswerResult(player.AccountId, player.DisplayName, false, 0,
-                                        seconds, waitLeft);
+                                        seconds, waitLeft, Judged: false);
             }
 
             bool correct = AnswerChecker.IsCorrect(guess, room.CurrentPuzzle);

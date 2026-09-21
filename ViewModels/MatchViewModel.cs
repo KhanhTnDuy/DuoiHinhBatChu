@@ -624,6 +624,10 @@ public class MatchViewModel : ViewModelBase
         MaxPlayers = room.MaxPlayers;
         IsReady = room.Players.FirstOrDefault(p => p.AccountId == _myAccountId)?.IsReady ?? false;
 
+        // Ai rời phòng giữa câu thì cả phòng nhận RoomChanged; dựng lại bảng mà
+        // quên dấu "đã trả lời" là những người vừa đúng bỗng mất tích
+        var answered = Players.Where(p => p.HasAnswered).Select(p => p.AccountId).ToHashSet();
+
         Players.Clear();
         foreach (PlayerInfo p in room.Players)
             Players.Add(new ScoreRow
@@ -634,6 +638,7 @@ public class MatchViewModel : ViewModelBase
                 IsMe = p.AccountId == _myAccountId,
                 IsReady = p.IsReady,
                 Score = p.Score,
+                HasAnswered = answered.Contains(p.AccountId),
             });
 
         OnPropertyChanged(nameof(PlayerCountText));
@@ -734,6 +739,15 @@ public class MatchViewModel : ViewModelBase
             IsFeedbackGood = true;
             FeedbackText = $"Đúng! +{result.Points} điểm ({result.Seconds:0.0}s)";
             _tick.Stop();
+        }
+        else if (!result.Judged)
+        {
+            // Máy chủ chưa chấm (đáp án tới sớm hơn mốc hết phạt vài chục ms vì
+            // hai đồng hồ lệch nhau): giữ nguyên chữ đang ghép, chỉ nối lại
+            // quãng chờ cho khớp máy chủ rồi để người chơi bấm gửi lần nữa
+            IsFeedbackGood = false;
+            if (result.CooldownSeconds > 0) StartCooldown(result.CooldownSeconds);
+            else FeedbackText = "Máy chủ chưa nhận, gửi lại nhé.";
         }
         else
         {
