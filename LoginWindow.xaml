@@ -352,7 +352,7 @@
                                            Margin="16,0,0,0" MaxWidth="330"
                                            VerticalAlignment="Center"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
-                                           Text="Game miễn phí, làm cho vui. Quét mã bên cạnh nếu bạn muốn ủng hộ mình một ly cà phê."/>
+                                           Text="Game miễn phí! Nếu bạn muốn ủng hộ nhà phát triển, hãy quét mã QR bên cạnh."/>
                             </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
