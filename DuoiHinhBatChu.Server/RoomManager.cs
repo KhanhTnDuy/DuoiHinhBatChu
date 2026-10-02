@@ -13,6 +13,9 @@ public class Player
     public required string DisplayName { get; init; }
     public int Score { get; set; }
 
+    /// <summary>Số mạng còn lại; mất 1 mạng mỗi câu không trả lời đúng kịp giờ.</summary>
+    public int Lives { get; set; } = Room.StartingLives;
+
     /// <summary>Đã bấm sẵn sàng ở sảnh chờ. Về false khi ván bắt đầu, để ván sau phải bấm lại.</summary>
     public bool IsReady { get; set; }
 
@@ -41,7 +44,7 @@ public class Player
     }
 
     public PlayerInfo ToInfo(string hostAccountId) =>
-        new(AccountId, DisplayName, AccountId == hostAccountId, IsReady, Score);
+        new(AccountId, DisplayName, AccountId == hostAccountId, IsReady, Score, Lives);
 }
 
 /// <summary>
@@ -52,8 +55,11 @@ public class Player
 /// </summary>
 public class Room
 {
-    /// <summary>Sức chứa, tính cả chủ phòng.</summary>
-    public const int MaxPlayers = 5;
+    /// <summary>Sức chứa, tính cả chủ phòng: thi đấu chỉ có hai người.</summary>
+    public const int MaxPlayers = 2;
+
+    /// <summary>Số mạng mỗi người lúc bắt đầu ván, bằng chế độ Cổ điển.</summary>
+    public const int StartingLives = 5;
 
     /// <summary>Bỏ các ký tự dễ đọc nhầm: 0/O, 1/I.</summary>
     private const string CodeChars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -174,7 +180,26 @@ public class Room
 
     public void ResetScores()
     {
-        lock (Gate) foreach (Player p in _players) p.Score = 0;
+        lock (Gate)
+            foreach (Player p in _players)
+            {
+                p.Score = 0;
+                p.Lives = StartingLives;
+            }
+    }
+
+    /// <summary>Hết câu: ai chưa trả lời đúng thì mất 1 mạng.</summary>
+    public void LoseLivesOfUnanswered()
+    {
+        lock (Gate)
+            foreach (Player p in _players)
+                if (!p.AnsweredThisRound && p.Lives > 0) p.Lives--;
+    }
+
+    /// <summary>Có ai hết mạng chưa — điều kiện kết thúc ván.</summary>
+    public bool AnyOutOfLives()
+    {
+        lock (Gate) return _players.Any(p => p.Lives <= 0);
     }
 
     public RoomState ToState()
@@ -266,11 +291,14 @@ public class RoomManager
         if (room.Remove(player)) _rooms.TryRemove(room.Code, out _);
     }
 
-    /// <summary>Bốc ngẫu nhiên danh sách câu cho cả ván.</summary>
-    public void StartMatch(Room room, int rounds)
+    /// <summary>
+    /// Xáo ngẫu nhiên cả bộ câu cho ván. Ván không đếm số câu: chạy tới khi một
+    /// người hết mạng (hoặc hết bộ câu).
+    /// </summary>
+    public void StartMatch(Room room)
     {
         room.Order.Clear();
-        room.Order.AddRange(_puzzles.OrderBy(_ => _rng.Next()).Take(rounds));
+        room.Order.AddRange(_puzzles.OrderBy(_ => _rng.Next()));
 
         room.TotalRounds = room.Order.Count;
         room.RoundNumber = 0;

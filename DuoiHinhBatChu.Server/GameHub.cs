@@ -169,7 +169,8 @@ public class GameHub : Hub
         if (room.Mode == MatchMode.Draw)
             throw new HubException("Kiểu \"Tôi vẽ bạn đoán\" đang xây dựng, tạm chọn Thi đấu.");
 
-        _rooms.StartMatch(room, Math.Clamp(rounds, 1, 20));
+        // rounds giữ lại cho khớp client cũ, nhưng ván nay chạy tới khi hết mạng
+        _rooms.StartMatch(room);
         await Clients.Group(room.Code).SendAsync("RoomChanged", room.ToState());
 
         // Chạy nền để lời gọi StartMatch trả về ngay, không giữ kết nối của chủ phòng
@@ -225,12 +226,16 @@ public class GameHub : Hub
                     await Task.Delay(200);
                 }
 
+                // Ai chưa trả lời đúng kịp giờ thì mất 1 mạng
+                room.LoseLivesOfUnanswered();
+
                 string answer = room.CurrentPuzzle?.Answer ?? "";
                 await _hub.Clients.Group(room.Code)
                                 .SendAsync("RoundEnded",
                                            new RoundEnded(round.RoundNumber, answer, room.Scores()));
 
-                if (room.PlayerCount == 0) break;
+                // Một người hết mạng, hoặc đối thủ đã rời phòng: dừng ván
+                if (room.PlayerCount < 2 || room.AnyOutOfLives()) break;
                 await Task.Delay(BreakBetweenRounds);
             }
 
