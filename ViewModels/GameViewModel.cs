@@ -1162,6 +1162,11 @@ public class GameViewModel : ViewModelBase
             _profile.CurrentPuzzleId = "";
         }
 
+        // Đang giữa một câu (kể cả đang chạy, chưa bấm Tạm dừng): ghi số giây còn
+        // lại, không thì thoát game rồi vào lại là được 60 giây mới
+        if (!IsChoosingOrder && !_runEnded && !_locked && !IsGameOver && !IsFinished)
+            _profile.SecondsLeft = _secondsLeft;
+
         // Ván đã kết thúc thì EndRun ghi xong rồi, và cái nó ghi là trạng thái
         // ván MỚI. Ghi đè bằng hồ sơ đang cầm là kéo ván chết sống lại.
         if (_runEnded) _state.SaveEndOfRun(_profile);
