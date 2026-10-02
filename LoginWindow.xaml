@@ -305,7 +305,7 @@
                                     <TextBlock Text="2" Style="{StaticResource StepNumberText}"/>
                                 </Border>
                                 <TextBlock Style="{StaticResource StepText}"
-                                           Text="Bấm các phím chữ cái phía dưới để ghép thành đáp án; bấm lại ô đáp án để lấy chữ ra."/>
+                                           Text="Bấm các phím chữ cái phía dưới để ghép câu trả lời; bấm lại ô trả lời để lấy chữ ra."/>
                             </StackPanel>
 
                             <StackPanel Orientation="Horizontal" Margin="0,10,0,18">

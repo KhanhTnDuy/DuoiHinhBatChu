@@ -1,7 +1,7 @@
 # Đuổi hình bắt chữ
 
 Game đoán chữ từ hình, viết bằng **WPF / C# / .NET 10** cho Windows. Người chơi
-nhìn một tấm ảnh ghép rồi bấm các phím chữ cái để điền vào ô đáp án — kiểu chơi
+nhìn một tấm ảnh ghép rồi bấm các phím chữ cái để điền vào ô trả lời — kiểu chơi
 quen thuộc của game đố chữ trên điện thoại.
 
 Có hai chế độ: **một người** (chơi offline, lưu tiến trình) và **nhiều người**
@@ -42,8 +42,8 @@ Một **ván** là một lượt đi qua bộ câu đố. Ván kết thúc khi *
   "Chơi tiếp" không hỏi lại. Đang hỏi mà đóng cửa sổ thì ván chưa tính, lần
   sau vào hỏi lại. Ván nào cũng bốc hạt giống mới, nên chơi lại không gặp đúng
   dãy câu vừa rồi.
-- Ô đáp án và phím chữ **luôn không dấu**; chỉ lúc báo kết quả mới hiện đáp án
-  đầy đủ có dấu.
+- Ô trả lời và phím chữ **luôn không dấu**; đáp án đầy đủ có dấu chỉ hiện khi
+  trả lời đúng hoặc bấm bỏ qua. Sai hoặc hết giờ chỉ báo sai, không lộ đáp án.
 - **Gõ bằng bàn phím vật lý** như màn Đấu: chữ cái điền vào ô, Backspace lấy
   chữ cuối ra (chữ mở bằng trợ giúp thì giữ), Enter trả lời khi đã kín. Không
   nhận phím khi đang tạm dừng, đang hỏi kim cương hay đang chọn ô để mở.

@@ -63,8 +63,9 @@
                             <!-- Ô trống: viền nét đứt theo thiết kế -->
                             <Rectangle x:Name="Dash" RadiusX="12" RadiusY="12"
                                        Stroke="{DynamicResource SlotEmptyBrush}"
-                                       StrokeThickness="2" StrokeDashArray="4 3"/>
-                            <Border x:Name="Fill" CornerRadius="12" Background="Transparent"/>
+                                       StrokeThickness="2.5" StrokeDashArray="4 3"/>
+                            <Border x:Name="Fill" CornerRadius="12"
+                                    Background="{DynamicResource SlotEmptyFillBrush}"/>
                             <TextBlock x:Name="Char" Text="{Binding DisplayText}"
                                        FontSize="26" FontWeight="Bold"
                                        Foreground="{DynamicResource SlotFilledTextBrush}"
@@ -448,7 +449,7 @@
             <StackPanel Grid.Row="2"
                         Visibility="{Binding IsPaused, Converter={StaticResource BoolVis},
                                      ConverterParameter=Invert}">
-                <TextBlock Text="ĐÁP ÁN" Style="{StaticResource SectionLabel}"
+                <TextBlock Text="TRẢ LỜI" Style="{StaticResource SectionLabel}"
                            HorizontalAlignment="Center"/>
 
                 <!-- Lời nhắc lúc đang chờ chỉ ô để mở. Nói luôn cả cách đổi ý,

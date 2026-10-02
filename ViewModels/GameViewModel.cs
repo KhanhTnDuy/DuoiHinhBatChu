@@ -541,7 +541,7 @@ public class GameViewModel : ViewModelBase
         Lives--;
         CorrectStreak = 0;
         IsFeedbackGood = false;
-        FeedbackText = $"Hết giờ! Đáp án: {Current.Answer}";
+        FeedbackText = "Hết giờ!";
         _state.SaveProfile(_profile);
 
         RunAfter(1.6, () =>

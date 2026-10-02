@@ -32,8 +32,9 @@
                         <Grid x:Name="Root" Width="56" Height="64">
                             <Rectangle x:Name="Dash" RadiusX="12" RadiusY="12"
                                        Stroke="{DynamicResource SlotEmptyBrush}"
-                                       StrokeThickness="2" StrokeDashArray="4 3"/>
-                            <Border x:Name="Fill" CornerRadius="12" Background="Transparent"/>
+                                       StrokeThickness="2.5" StrokeDashArray="4 3"/>
+                            <Border x:Name="Fill" CornerRadius="12"
+                                    Background="{DynamicResource SlotEmptyFillBrush}"/>
                             <TextBlock x:Name="Char" Text="{Binding DisplayText}"
                                        FontSize="26" FontWeight="Bold"
                                        Foreground="{DynamicResource SlotFilledTextBrush}"
