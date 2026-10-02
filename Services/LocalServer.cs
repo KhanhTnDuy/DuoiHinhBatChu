@@ -75,7 +75,10 @@ public static class LocalServer
                 WorkingDirectory = Path.GetDirectoryName(exe)!,
                 // Chạy thẳng file .exe thì Kestrel không đọc launchSettings.json,
                 // nên phải chỉ rõ cổng, không thì nó nghe ở 5000
-                Arguments = $"--urls {ServerClient.Normalize(address)}",
+                // Nghe ở mọi card mạng (0.0.0.0) chứ không chỉ localhost, để máy
+                // khác trong LAN nối vào được. Chỉ nghe localhost thì máy kia
+                // gõ đúng IP cũng bị từ chối.
+                Arguments = $"--urls http://0.0.0.0:{ListenPort(address)}",
                 UseShellExecute = false,
                 CreateNoWindow = true,
             });
@@ -105,6 +108,12 @@ public static class LocalServer
 
         return "Máy chủ đã bật nhưng chưa trả lời sau 20 giây.";
     }
+
+    /// <summary>Cổng trong địa chỉ, không ghi cổng thì dùng cổng mặc định.</summary>
+    private static int ListenPort(string address) =>
+        Uri.TryCreate(ServerClient.Normalize(address), UriKind.Absolute, out Uri? uri) && uri.Port > 0
+            ? uri.Port
+            : DefaultPort;
 
     /// <summary>Có ai đang nghe ở cổng của <paramref name="address"/> không, trả lời trong tối đa nửa giây.</summary>
     private static async Task<bool> IsPortOpenAsync(string address)

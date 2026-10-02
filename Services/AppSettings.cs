@@ -14,9 +14,9 @@ public class AppSettings
     public string LastUserName { get; set; } = "";
 
     /// <summary>
-    /// Địa chỉ máy chủ đấu nhiều người. KHÔNG hiện trên giao diện — mặc định
-    /// là máy này; muốn đấu qua LAN thì sửa tay trong Data/app-settings.json
-    /// thành địa chỉ máy đang chạy DuoiHinhBatChu.Server, ví dụ "192.168.1.10:5180".
+    /// Địa chỉ máy chủ đấu nhiều người mà người VÀO phòng nối tới. Mặc định là
+    /// máy này; đấu qua LAN thì gõ IP máy tạo phòng vào ô "Địa chỉ máy chủ" ở
+    /// màn Vào phòng, ví dụ "192.168.1.10:5180".
     /// </summary>
     public string ServerAddress { get; set; } = "localhost:5180";
 

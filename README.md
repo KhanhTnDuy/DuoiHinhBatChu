@@ -78,9 +78,10 @@ dùng để tính điểm và để sắp thứ tự khi chọn "Từ dễ đế
   phòng không cần bấm — bấm bắt đầu tức là sẵn sàng). Nút bắt đầu mờ đi kèm lý
   do; máy chủ kiểm tra lại lần nữa (`AllGuestsReady`). Ván bắt đầu thì cờ sẵn
   sàng xóa hết, ván sau phải bấm lại.
-- Không phải chọn máy chủ hay đăng nhập máy chủ: app **tự nối** lúc bấm tạo /
-  vào phòng (địa chỉ nằm trong `Data/app-settings.json`, mặc định
-  `localhost:5180`).
+- Không phải đăng nhập máy chủ: app **tự nối** lúc bấm tạo / vào phòng. Người
+  **tạo phòng** thì máy chủ tự bật ngay trên máy họ (nghe mọi card mạng, cổng
+  5180). Người **vào phòng** gõ IP máy tạo phòng vào ô "Địa chỉ máy chủ" (để
+  trống = máy này); địa chỉ lưu ở `Data/app-settings.json`.
 - Trong phòng, **chỉ chủ phòng** chọn **kiểu chơi** (ván không còn số câu cố định);
   người vào sau ở sảnh chờ, thấy lựa chọn của chủ phòng nhưng không đổi được. Hai kiểu chơi:
   - **Thi đấu** — hai người cùng nhận một ảnh (câu bốc ngẫu nhiên từ bộ câu), ai ghép chữ nhanh hơn được nhiều điểm hơn. Mỗi người **5 ♥**, hết câu mà chưa trả lời đúng thì mất 1 ♥. Một người hết mạng (hoặc đối thủ rời phòng) là **ván dừng**, ai **điểm cao hơn** thắng, bằng điểm thì hòa
@@ -155,7 +156,7 @@ Vẫn mở tay được nếu muốn xem log:
 dotnet run --project DuoiHinhBatChu.Server
 ```
 
-Muốn đấu qua LAN thì máy chủ phải chạy ở máy kia (`dotnet run --project
+Đấu qua LAN: người tạo phòng cứ bấm Tạo phòng (app tự bật máy chủ ở máy họ), cho phép Windows Firewall ở mạng Riêng tư; người vào gõ IP máy đó vào ô Địa chỉ máy chủ. Chạy máy chủ tay thì (`dotnet run --project
 DuoiHinhBatChu.Server --launch-profile lan`), còn máy client sửa `ServerAddress`
 trong `Data/app-settings.json` thành địa chỉ máy đó (ví dụ `192.168.1.10:5180`)
 — địa chỉ không phải máy này thì app không tự bật gì cả.
