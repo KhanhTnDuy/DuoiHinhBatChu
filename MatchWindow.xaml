@@ -345,22 +345,17 @@
                                 </Button>
 
                                 <Button Grid.Column="1" Style="{StaticResource ModeCard}" Margin="6,0,0,0"
-                                        Tag="{Binding IsDraw}" IsEnabled="{Binding IsHost}"
+                                        Tag="{Binding IsDuel}" IsEnabled="{Binding IsHost}"
                                         Command="{Binding ChooseModeCommand}"
-                                        CommandParameter="{x:Static m:MatchMode.Draw}">
+                                        CommandParameter="{x:Static m:MatchMode.Duel}">
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="✏ Tôi vẽ bạn đoán" FontSize="16" FontWeight="Bold"
+                                            <TextBlock Text="🎯 Đố nhau" FontSize="16" FontWeight="Bold"
                                                        Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                            <!-- Chưa làm: chọn được nhưng chưa bắt đầu được -->
-                                            <Border Style="{StaticResource Chip}" Margin="8,0,0,0"
-                                                    VerticalAlignment="Center">
-                                                <TextBlock Text="Sắp có" Style="{StaticResource ChipText}"/>
-                                            </Border>
                                         </StackPanel>
                                         <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,4,0,0"
                                                    Foreground="{DynamicResource TextSecondaryBrush}"
-                                                   Text="Một người vẽ, cả phòng đoán chữ."/>
+                                                   Text="Hai người lần lượt chọn một câu để đố nhau. Đối thủ không đoán ra thì bạn được điểm."/>
                                     </StackPanel>
                                 </Button>
                             </Grid>
@@ -461,7 +456,9 @@
 
                     <ItemsControl ItemsSource="{Binding Slots}"
                                   ItemTemplate="{StaticResource SlotTemplate}"
-                                  HorizontalAlignment="Center" Margin="0,4,0,0">
+                                  HorizontalAlignment="Center" Margin="0,4,0,0"
+                                  Visibility="{Binding IsAsker, Converter={StaticResource BoolVis},
+                                               ConverterParameter=Invert}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
@@ -471,7 +468,9 @@
                 </StackPanel>
 
                 <!-- Bàn phím chữ cái -->
-                <Border Grid.Row="3" Style="{StaticResource Card}" Margin="0,12,0,0" Padding="20,16">
+                <Border Grid.Row="3" Style="{StaticResource Card}" Margin="0,12,0,0" Padding="20,16"
+                        Visibility="{Binding IsAsker, Converter={StaticResource BoolVis},
+                                     ConverterParameter=Invert}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="220"/>
@@ -504,6 +503,72 @@
                                    Foreground="{DynamicResource TextMutedBrush}"
                                    Text="{Binding Status}"/>
                     </Grid>
+                </Border>
+
+                <!-- Đố nhau: người ra đề chọn 1 trong 6 câu (thấy cả đáp án) -->
+                <Border Grid.RowSpan="4" CornerRadius="24" Padding="24"
+                        Background="{DynamicResource CardBrush}"
+                        BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                        Visibility="{Binding IsPicking, Converter={StaticResource BoolVis}}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Margin="0,0,0,14">
+                            <TextBlock Text="{Binding PickPrompt}" FontSize="22" FontWeight="Bold"
+                                       HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{Binding PickLeftText}" FontSize="16" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center" Margin="0,4,0,0"
+                                       Foreground="{DynamicResource ErrorBrush}"/>
+                        </StackPanel>
+
+                        <ItemsControl Grid.Row="1" ItemsSource="{Binding PickCards}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="3"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Margin="6" Padding="8" Cursor="Hand"
+                                            Style="{StaticResource ModeCard}"
+                                            Command="{Binding DataContext.PickPuzzleCommand,
+                                                      RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}">
+                                        <StackPanel>
+                                            <Image Source="{Binding Image}" Height="120" Stretch="Uniform"/>
+                                            <TextBlock Text="{Binding Answer}" FontSize="15" FontWeight="Bold"
+                                                       HorizontalAlignment="Center" Margin="0,6,0,0"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="{Binding Category}" FontSize="12"
+                                                       HorizontalAlignment="Center"
+                                                       Foreground="{DynamicResource TextMutedBrush}"/>
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </Border>
+
+                <!-- Đố nhau: người đoán chờ đối thủ chọn câu -->
+                <Border Grid.RowSpan="4" CornerRadius="24" Padding="24"
+                        Background="{DynamicResource CardBrush}"
+                        BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                        Visibility="{Binding IsWaitingPick, Converter={StaticResource BoolVis}}">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{Binding PickPrompt}" FontSize="24" FontWeight="Bold"
+                                   HorizontalAlignment="Center" TextWrapping="Wrap"
+                                   TextAlignment="Center"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding PickLeftText}" FontSize="18" FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" Margin="0,8,0,0"
+                                   Foreground="{DynamicResource ErrorBrush}"/>
+                    </StackPanel>
                 </Border>
             </Grid>
         </Grid>

@@ -33,4 +33,11 @@ public static class MatchScoring
 
         return (int)Math.Round(BasePoints * level * factor);
     }
+
+    /// <summary>
+    /// Chế độ Đố nhau: người đoán không ra thì người ra đề được chừng này —
+    /// một nửa điểm gốc nhân độ khó, để ra câu khó có giá trị.
+    /// </summary>
+    public static int AskerPoints(int difficulty) =>
+        BasePoints / 2 * Math.Clamp(difficulty, 1, 5);
 }

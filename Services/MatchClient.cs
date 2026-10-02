@@ -24,6 +24,9 @@ public class MatchClient : IAsyncDisposable
     /// <summary>Có người vừa gửi đáp án và máy chủ đã chấm xong.</summary>
     public event Action<AnswerResult>? AnswerJudged;
 
+    /// <summary>Đố nhau: đầu mỗi câu, máy chủ báo ai đang chọn câu (người ra đề nhận kèm danh sách).</summary>
+    public event Action<PickInfo>? PickStarted;
+
     /// <summary>Hết câu: lúc này đáp án mới lộ ra.</summary>
     public event Action<RoundEnded>? RoundEnded;
 
@@ -57,6 +60,7 @@ public class MatchClient : IAsyncDisposable
 
         On<RoundInfo>("RoundStarted", x => RoundStarted?.Invoke(x), toUi);
         On<AnswerResult>("AnswerJudged", x => AnswerJudged?.Invoke(x), toUi);
+        On<PickInfo>("PickStarted", x => PickStarted?.Invoke(x), toUi);
         On<RoundEnded>("RoundEnded", x => RoundEnded?.Invoke(x), toUi);
         On<MatchEnded>("MatchEnded", x => MatchEnded?.Invoke(x), toUi);
         On<RoomState>("RoomChanged", x => RoomChanged?.Invoke(x), toUi);
@@ -87,6 +91,9 @@ public class MatchClient : IAsyncDisposable
 
     public Task StartMatchAsync(int rounds) =>
         _hub.InvokeAsync("StartMatch", _token, rounds);
+
+    public Task PickPuzzleAsync(string imageKey) =>
+        _hub.InvokeAsync("PickPuzzle", _token, imageKey);
 
     public Task SubmitAnswerAsync(string answer) =>
         _hub.InvokeAsync("SubmitAnswer", _token, answer);

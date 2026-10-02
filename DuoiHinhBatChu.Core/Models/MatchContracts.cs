@@ -28,9 +28,10 @@ public record HealthResponse(string App, string Version, int PuzzleCount, int Ro
 /// <summary>
 /// Kiểu chơi của một phòng, chỉ chủ phòng chọn được, chọn trước khi bắt đầu.
 ///   - Compete: cả phòng cùng nhận một ảnh câu đố, ai ghép chữ nhanh hơn thắng.
-///   - Draw: "Tôi vẽ bạn đoán" — một người vẽ, những người còn lại đoán chữ.
+///   - Duel: "Đố nhau" — hai người lần lượt làm người ra đề: chọn một câu từ
+///     kho để đố người kia; người kia ghép chữ trong thời gian cho phép.
 /// </summary>
-public enum MatchMode { Compete = 0, Draw = 1 }
+public enum MatchMode { Compete = 0, Duel = 1 }
 
 /// <param name="IsHost">Người tạo phòng, chỉ người này bấm bắt đầu được.</param>
 /// <param name="IsReady">Đã bấm "sẵn sàng" ở sảnh chờ; chủ phòng chỉ bắt đầu được khi mọi người đều sẵn sàng.</param>
@@ -62,9 +63,26 @@ public record RoomState(string Code, string Name, string HostAccountId, MatchMod
 /// Cổ điển. Chỉ gửi tên chủ đề; câu dẫn "Đây là một con vật" do client dựng
 /// bằng <c>CategoryPrompt</c>.
 /// </param>
+/// <param name="AskerAccountId">
+/// Chế độ Đố nhau: người ra đề của câu này (người kia là người đoán). Rỗng ở
+/// chế độ Thi đấu, nơi cả hai cùng đoán.
+/// </param>
 public record RoundInfo(int RoundNumber, int TotalRounds, string ImageName,
                         int[] WordLengths, string Tiles, int Difficulty,
-                        double SecondsAllowed, string Category = "");
+                        double SecondsAllowed, string Category = "",
+                        string AskerAccountId = "", string AskerName = "");
+
+/// <summary>Một câu trong số các câu người ra đề được chọn. Người ra đề thấy cả đáp án.</summary>
+/// <param name="ImageKey">Mã tải ảnh, giống <see cref="RoundInfo.ImageName"/>.</param>
+public record PickOption(string ImageKey, string Answer, string Category);
+
+/// <summary>
+/// Chế độ Đố nhau, đầu mỗi câu: máy chủ báo ai đang chọn câu. Chỉ người ra đề
+/// nhận được <paramref name="Options"/>; người đoán nhận mảng rỗng, nên không
+/// đọc trước được đáp án nào.
+/// </summary>
+public record PickInfo(int RoundNumber, string AskerAccountId, string AskerName,
+                       double SecondsToPick, PickOption[] Options);
 
 /// <param name="Seconds">Thời gian trả lời, do máy chủ đo.</param>
 /// <param name="CooldownSeconds">
@@ -81,6 +99,8 @@ public record AnswerResult(string AccountId, string DisplayName, bool Correct,
                            bool Judged = true);
 
 /// <param name="Answer">Đáp án đầy đủ có dấu, chỉ lộ ra khi câu đã kết thúc.</param>
-public record RoundEnded(int RoundNumber, string Answer, IReadOnlyList<PlayerInfo> Scores);
+/// <param name="AskerBonus">Chế độ Đố nhau: điểm người ra đề nhận được vì người kia không đoán ra.</param>
+public record RoundEnded(int RoundNumber, string Answer, IReadOnlyList<PlayerInfo> Scores,
+                         int AskerBonus = 0);
 
 public record MatchEnded(IReadOnlyList<PlayerInfo> Scores);

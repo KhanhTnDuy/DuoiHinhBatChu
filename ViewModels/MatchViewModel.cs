@@ -55,6 +55,21 @@ public class ScoreRow : ViewModelBase
     }
 }
 
+/// <summary>Một câu người ra đề có thể chọn (Đố nhau): ảnh nhỏ + đáp án + chủ đề.</summary>
+public class PickCard : ViewModelBase
+{
+    public required string ImageKey { get; init; }
+    public required string Answer { get; init; }
+    public required string Category { get; init; }
+
+    private BitmapImage? _image;
+    public BitmapImage? Image
+    {
+        get => _image;
+        set => SetProperty(ref _image, value);
+    }
+}
+
 /// <summary>
 /// Màn đấu nhiều người: phòng chờ rồi vào ván.
 ///
@@ -105,7 +120,11 @@ public class MatchViewModel : ViewModelBase
         _lobbyMode = mode;
         PlayerName = account.DisplayName;
 
-        _tick.Tick += (_, _) => OnPropertyChanged(nameof(SecondsLeftText));
+        _tick.Tick += (_, _) =>
+        {
+            OnPropertyChanged(nameof(SecondsLeftText));
+            OnPropertyChanged(nameof(PickLeftText));
+        };
         _flash.Tick += (_, _) => { _flash.Stop(); ClearSlots(); };
         _cooldown.Tick += (_, _) => ShowCooldownLeft();
 
@@ -119,6 +138,7 @@ public class MatchViewModel : ViewModelBase
         SwitchLobbyModeCommand = new RelayCommand(_ => IsCreating = !IsCreating);
         BackCommand = new RelayCommand(_ => GoBack?.Invoke(), _ => IsInLobby);
         ToggleReadyCommand = new RelayCommand(async _ => await ToggleReadyAsync(), _ => IsInRoom && !IsPlaying && !IsBusy);
+        PickPuzzleCommand = new RelayCommand(async p => await PickPuzzleAsync(p as PickCard));
         ChooseModeCommand = new RelayCommand(async p => await ChooseModeAsync((MatchMode)p!), _ => IsHost && !IsBusy);
     }
 
@@ -134,6 +154,7 @@ public class MatchViewModel : ViewModelBase
     public RelayCommand BackCommand { get; }
     public RelayCommand ToggleReadyCommand { get; }
     public RelayCommand ChooseModeCommand { get; }
+    public RelayCommand PickPuzzleCommand { get; }
 
     // ----- Dữ liệu hiển thị -----
     public ObservableCollection<AnswerSlot> Slots { get; } = new();
@@ -446,17 +467,17 @@ public class MatchViewModel : ViewModelBase
         {
             if (!SetProperty(ref _mode, value)) return;
             OnPropertyChanged(nameof(IsCompete));
-            OnPropertyChanged(nameof(IsDraw));
+            OnPropertyChanged(nameof(IsDuel));
             OnPropertyChanged(nameof(ModeText));
         }
     }
 
     public bool IsCompete => Mode == MatchMode.Compete;
-    public bool IsDraw => Mode == MatchMode.Draw;
+    public bool IsDuel => Mode == MatchMode.Duel;
 
     public string ModeText => Mode switch
     {
-        MatchMode.Draw => "Tôi vẽ bạn đoán",
+        MatchMode.Duel => "Đố nhau",
         _ => "Thi đấu",
     };
 
@@ -465,6 +486,136 @@ public class MatchViewModel : ViewModelBase
         if (_client == null || !IsHost || mode == Mode) return;
         await _client.SetModeAsync(mode);
     });
+
+    // ----- Đố nhau: chọn câu -----
+
+    public ObservableCollection<PickCard> PickCards { get; } = new();
+
+    private bool _isPicking;
+    /// <summary>Mình là người ra đề và đang chọn câu để đố.</summary>
+    public bool IsPicking
+    {
+        get => _isPicking;
+        private set => SetProperty(ref _isPicking, value);
+    }
+
+    private bool _isWaitingPick;
+    /// <summary>Mình là người đoán, đang chờ đối thủ chọn câu.</summary>
+    public bool IsWaitingPick
+    {
+        get => _isWaitingPick;
+        private set => SetProperty(ref _isWaitingPick, value);
+    }
+
+    private bool _isAsker;
+    /// <summary>Câu này mình là người ra đề: chỉ xem, không có bàn phím để đoán.</summary>
+    public bool IsAsker
+    {
+        get => _isAsker;
+        private set => SetProperty(ref _isAsker, value);
+    }
+
+    private string _pickPrompt = "";
+    public string PickPrompt
+    {
+        get => _pickPrompt;
+        private set => SetProperty(ref _pickPrompt, value);
+    }
+
+    private DateTime _pickDeadline;
+
+    public string PickLeftText =>
+        $"{Math.Max(0, Math.Ceiling((_pickDeadline - DateTime.UtcNow).TotalSeconds)):0}s";
+
+    /// <summary>Máy chủ báo đầu câu Đố nhau: ai ra đề, và (nếu là mình) danh sách câu để chọn.</summary>
+    private void OnPickStarted(PickInfo info)
+    {
+        // Dọn màn của câu trước
+        _tick.Stop();
+        _flash.Stop();
+        _cooldown.Stop();
+        IsCoolingDown = false;
+        Slots.Clear();
+        Tiles.Clear();
+        ImageSource = null;
+        IsImageBroken = false;
+        RevealedAnswer = "";
+        FeedbackText = "";
+        PromptText = CategoryPrompt.Fallback;
+        DifficultyText = "";
+        foreach (ScoreRow row in Players) row.HasAnswered = false;
+
+        IsPlaying = true;
+        IsMatchOver = false;
+        IsAnswered = true;                       // chưa có câu nào để đoán
+        ProgressText = $"Câu {info.RoundNumber}";
+
+        PickCards.Clear();
+        bool iAmAsker = info.AskerAccountId == _myAccountId;
+
+        if (iAmAsker)
+        {
+            foreach (PickOption o in info.Options)
+            {
+                var card = new PickCard { ImageKey = o.ImageKey, Answer = o.Answer, Category = o.Category };
+                PickCards.Add(card);
+                _ = LoadCardImageAsync(card);
+            }
+
+            PickPrompt = "Chọn một câu để đố đối thủ";
+        }
+        else
+        {
+            PickPrompt = $"{info.AskerName} đang chọn câu để đố bạn…";
+        }
+
+        IsPicking = iAmAsker;
+        IsWaitingPick = !iAmAsker;
+
+        _pickDeadline = DateTime.UtcNow.AddSeconds(info.SecondsToPick);
+        _secondsAllowed = 0;
+        _tick.Start();
+    }
+
+    private async Task LoadCardImageAsync(PickCard card)
+    {
+        byte[]? bytes = await _server.DownloadImageAsync(card.ImageKey);
+        if (bytes == null) return;
+
+        try
+        {
+            var image = new BitmapImage();
+            image.BeginInit();
+            image.StreamSource = new MemoryStream(bytes);
+            image.DecodePixelWidth = 260;   // ảnh nhỏ trong thẻ, khỏi giữ bản đầy đủ
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.EndInit();
+            image.Freeze();
+            card.Image = image;
+        }
+        catch
+        {
+            // Thẻ không có ảnh vẫn chọn được theo đáp án
+        }
+    }
+
+    private async Task PickPuzzleAsync(PickCard? card)
+    {
+        if (card == null || !IsPicking || _client == null) return;
+
+        IsPicking = false;
+        IsWaitingPick = true;
+        PickPrompt = "Đã chọn. Đang gửi câu cho đối thủ…";
+
+        try
+        {
+            await _client.PickPuzzleAsync(card.ImageKey);
+        }
+        catch (Exception ex)
+        {
+            Status = CleanHubError(ex.Message);
+        }
+    }
 
     // ===== Hành động của người chơi =====
 
@@ -546,6 +697,7 @@ public class MatchViewModel : ViewModelBase
         client.RoomChanged += ApplyRoom;
         client.RoundStarted += StartRound;
         client.AnswerJudged += ApplyJudgement;
+        client.PickStarted += OnPickStarted;
         client.RoundEnded += EndRound;
         client.MatchEnded += EndMatch;
         client.Disconnected += OnDisconnected;
@@ -619,6 +771,9 @@ public class MatchViewModel : ViewModelBase
         IsPlaying = false;
         IsMatchOver = false;
         IsAnswered = false;
+        IsPicking = false;
+        IsWaitingPick = false;
+        IsAsker = false;
         IsCoolingDown = false;
         IsHost = false;
         IsReady = false;
@@ -675,9 +830,22 @@ public class MatchViewModel : ViewModelBase
     {
         IsPlaying = true;
         IsMatchOver = false;
-        IsAnswered = false;
+        IsPicking = false;
+        IsWaitingPick = false;
         RevealedAnswer = "";
         FeedbackText = "";
+
+        // Đố nhau: người ra đề chỉ xem, không có bàn phím; người kia đoán như thường
+        IsAsker = round.AskerAccountId.Length > 0 && round.AskerAccountId == _myAccountId;
+        IsAnswered = IsAsker;
+        if (IsAsker)
+        {
+            string answer = PickCards.FirstOrDefault(c => c.ImageKey == round.ImageName)?.Answer ?? "";
+            IsFeedbackGood = true;
+            FeedbackText = answer.Length > 0
+                ? $"Bạn ra đề: {answer}. Chờ đối thủ đoán…"
+                : "Bạn ra đề. Chờ đối thủ đoán…";
+        }
 
         // Câu mới thì quãng phạt của câu cũ hết hiệu lực - máy chủ cũng dọn
         // đúng như vậy trong Room.ResetAnswers()
@@ -826,7 +994,14 @@ public class MatchViewModel : ViewModelBase
         RevealedAnswer = ended.Answer;
         ApplyScores(ended.Scores);
 
-        if (!IsAnswered)
+        if (IsAsker)
+        {
+            IsFeedbackGood = ended.AskerBonus > 0;
+            FeedbackText = ended.AskerBonus > 0
+                ? $"Đối thủ không đoán ra! Bạn được +{ended.AskerBonus} điểm."
+                : "Đối thủ đoán đúng rồi.";
+        }
+        else if (!IsAnswered)
         {
             IsFeedbackGood = false;
             FeedbackText = "Hết giờ câu này.";
@@ -842,6 +1017,9 @@ public class MatchViewModel : ViewModelBase
         ApplyScores(ended.Scores);
         IsPlaying = false;
         IsMatchOver = true;
+        IsPicking = false;
+        IsWaitingPick = false;
+        IsAsker = false;
 
         ScoreRow? best = Players.FirstOrDefault();
         int top = best?.Score ?? 0;
