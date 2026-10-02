@@ -45,6 +45,9 @@ public class PlayerProfile
     /// Lưu bằng mã chứ không phải số thứ tự — xem <see cref="Data.PlayerState.CurrentPuzzleId"/>.
     /// </summary>
     public string CurrentPuzzleId { get; set; } = "";
+
+    /// <summary>Số giây còn lại lúc tạm dừng, xem <see cref="Data.PlayerState.SecondsLeft"/>.</summary>
+    public double SecondsLeft { get; set; } = 0;
     public List<string> SolvedPuzzleIds { get; set; } = new();
     public Dictionary<string, int> PuzzleStars { get; set; } = new();
     public bool IsSoundEnabled { get; set; } = true;

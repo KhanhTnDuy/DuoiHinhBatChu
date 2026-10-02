@@ -77,6 +77,7 @@ public class GameStateService
             RunSeed = state.RunSeed,
             RunOrder = (RunOrder)state.RunOrder,
             CurrentPuzzleId = state.CurrentPuzzleId,
+            SecondsLeft = state.SecondsLeft,
             IsSoundEnabled = state.IsSoundEnabled,
             IsBgmEnabled = state.IsBgmEnabled,
             IsTimerEnabled = state.IsTimerEnabled,
@@ -121,6 +122,7 @@ public class GameStateService
         state.RunSeed = profile.RunSeed;
         state.RunOrder = (int)profile.RunOrder;
         state.CurrentPuzzleId = profile.CurrentPuzzleId;
+        state.SecondsLeft = profile.SecondsLeft;
         state.IsSoundEnabled = profile.IsSoundEnabled;
         state.IsBgmEnabled = profile.IsBgmEnabled;
         state.IsTimerEnabled = profile.IsTimerEnabled;

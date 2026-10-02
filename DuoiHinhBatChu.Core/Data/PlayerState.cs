@@ -59,6 +59,13 @@ public class PlayerState
     /// </summary>
     public string CurrentPuzzleId { get; set; } = "";
 
+    /// <summary>
+    /// Số giây còn lại của câu đang dừng dở. 0 = không có gì để khôi phục.
+    /// Chỉ ghi lúc bấm Tạm dừng; thoát game rồi vào lại thì đồng hồ chạy tiếp
+    /// từ đây chứ không quay về 60 giây.
+    /// </summary>
+    public double SecondsLeft { get; set; }
+
     public bool IsSoundEnabled { get; set; } = true;
     public bool IsBgmEnabled { get; set; } = true;
     public bool IsTimerEnabled { get; set; } = true;

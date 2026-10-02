@@ -34,8 +34,8 @@
     <SolidColorBrush x:Key="TileTextBrush"    Color="#EAF1FF"/>
     <SolidColorBrush x:Key="TileHoverBrush"   Color="#2A3A5A"/>
 
-    <SolidColorBrush x:Key="SlotEmptyBrush"       Color="#7C8BAE"/>
-    <SolidColorBrush x:Key="SlotEmptyFillBrush"   Color="#FFFFFF" Opacity="0.08"/>
+    <SolidColorBrush x:Key="SlotEmptyBrush"       Color="#A9B8DA"/>
+    <SolidColorBrush x:Key="SlotEmptyFillBrush"   Color="#FFFFFF" Opacity="0.14"/>
     <SolidColorBrush x:Key="SlotFilledBrush"      Color="#5A67F0"/>
     <SolidColorBrush x:Key="SlotFilledTextBrush"  Color="#FFFFFF"/>
 
