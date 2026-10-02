@@ -107,8 +107,30 @@ public class GameViewModel : ViewModelBase
 
         // Ván mới thì hỏi lối chơi trước đã, chọn xong mới nạp câu đầu; ván
         // dở thì lối chơi đã có trong hồ sơ, vào thẳng chỗ cũ
-        if (isNewRun) BeginChoosingOrder();
-        else LoadPuzzle(ResumeIndex());
+        if (isNewRun)
+        {
+            BeginChoosingOrder();
+            return;
+        }
+
+        // Lần trước thoát game lúc đang tạm dừng: chạy tiếp từ số giây đã lưu
+        // chứ không quay về 60. Chỉ khôi phục khi vẫn đúng câu đó (câu bị xóa
+        // ảnh thì ResumeIndex đã chuyển sang câu khác). Vào lại ở trạng thái
+        // tạm dừng để người chơi chủ động bấm Tiếp tục.
+        string savedPuzzleId = _profile.CurrentPuzzleId;
+        double savedSeconds = _profile.SecondsLeft;
+
+        LoadPuzzle(ResumeIndex());
+
+        if (savedSeconds > 0 && savedSeconds < SoloScoring.MaxSeconds
+            && _profile.CurrentPuzzleId == savedPuzzleId)
+        {
+            _secondsLeft = savedSeconds;
+            OnPropertyChanged(nameof(TimeText));
+            OnPropertyChanged(nameof(TimeFraction));
+            OnPropertyChanged(nameof(IsTimeLow));
+            IsPaused = true;
+        }
     }
 
     // ----- Lối chơi của ván -----
@@ -482,10 +504,15 @@ public class GameViewModel : ViewModelBase
         IsPaused = true;
         IsPickingReveal = false;
         CancelHelp();
+        _profile.SecondsLeft = _secondsLeft;   // thoát game lúc này thì vào lại còn đúng số giây
         _state.SaveProfile(_profile);
     }
 
-    private void Resume() => IsPaused = false;
+    private void Resume()
+    {
+        IsPaused = false;
+        _profile.SecondsLeft = 0;   // đang chạy lại: số giây đã lưu hết giá trị
+    }
 
     // ----- Đồng hồ đếm ngược -----
 
@@ -576,6 +603,7 @@ public class GameViewModel : ViewModelBase
         IsPickingReveal = false;
         CancelHelp();
         _profile.CurrentPuzzleId = _puzzles[index].Id;
+        _profile.SecondsLeft = 0;
         ResetClock();
 
         Slots.Clear();

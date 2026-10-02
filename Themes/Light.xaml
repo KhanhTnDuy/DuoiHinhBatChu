@@ -40,8 +40,8 @@
     <SolidColorBrush x:Key="TileHoverBrush"   Color="#EFF4FF"/>
 
     <!-- Ô đáp án -->
-    <SolidColorBrush x:Key="SlotEmptyBrush"       Color="#6B7A94"/>
-    <SolidColorBrush x:Key="SlotEmptyFillBrush"   Color="#FFFFFF" Opacity="0.7"/>
+    <SolidColorBrush x:Key="SlotEmptyBrush"       Color="#3F4A63"/>
+    <SolidColorBrush x:Key="SlotEmptyFillBrush"   Color="#FFFFFF" Opacity="0.9"/>
     <SolidColorBrush x:Key="SlotFilledBrush"      Color="#3A47D5"/>
     <SolidColorBrush x:Key="SlotFilledTextBrush"  Color="#FFFFFF"/>
 
