@@ -47,7 +47,7 @@ Một **ván** là một lượt đi qua bộ câu đố. Ván kết thúc khi *
 - **Gõ bằng bàn phím vật lý** như màn Đấu: chữ cái điền vào ô, Backspace lấy
   chữ cuối ra (chữ mở bằng trợ giúp thì giữ), Enter trả lời khi đã kín. Không
   nhận phím khi đang tạm dừng, đang hỏi kim cương hay đang chọn ô để mở.
-- **Tạm dừng rồi thoát game:** số giây còn lại được lưu, vào lại thì câu đó
+- **Thoát game giữa câu (tạm dừng hay không):** số giây còn lại được lưu, vào lại thì câu đó
   hiện ở trạng thái tạm dừng với đúng số giây cũ, bấm Tiếp tục để chạy tiếp.
   Bộ gõ tiếng Việt của Windows (Telex/VNI) đang bật cũng không sao: cửa sổ
   chơi tắt IME (`InputMethod.IsInputMethodEnabled=False`) và đọc
