@@ -198,6 +198,23 @@ public class MatchViewModel : ViewModelBase
         set => SetProperty(ref _roomNameInput, value);
     }
 
+    /// <summary>
+    /// Địa chỉ máy tạo phòng, người vào gõ để đấu qua LAN (vd "192.168.3.110:5180").
+    /// Để trống thì nối máy chủ ở chính máy này. Người TẠO phòng không dùng ô
+    /// này: máy chủ luôn bật ngay trên máy họ.
+    /// </summary>
+    public string ServerAddressInput
+    {
+        get => _settings.ServerAddress == $"localhost:{LocalServer.DefaultPort}" ? "" : _settings.ServerAddress;
+        set
+        {
+            string v = (value ?? "").Trim();
+            _settings.ServerAddress = v.Length == 0 ? $"localhost:{LocalServer.DefaultPort}" : v;
+            _settings.Save();
+            OnPropertyChanged();
+        }
+    }
+
     private string _joinCode = "";
     /// <summary>Mã phòng người chơi gõ để vào; chỉ dùng ở dạng "vào phòng".</summary>
     public string JoinCode
@@ -499,9 +516,10 @@ public class MatchViewModel : ViewModelBase
 
         Status = "Đang nối máy chủ...";
 
-        string address = _settings.ServerAddress.Trim().Length > 0
-            ? _settings.ServerAddress
-            : $"localhost:{LocalServer.DefaultPort}";
+        // Tạo phòng: máy chủ luôn ở máy này. Vào phòng: địa chỉ người chơi đã gõ
+        string address = IsCreating || _settings.ServerAddress.Trim().Length == 0
+            ? $"localhost:{LocalServer.DefaultPort}"
+            : _settings.ServerAddress;
 
         // Máy chủ ở chính máy này mà chưa bật thì bật giúp, khỏi bắt người chơi
         // mở cửa sổ dòng lệnh
