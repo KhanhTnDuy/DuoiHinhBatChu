@@ -86,8 +86,12 @@ dùng để tính điểm và để sắp thứ tự khi chọn "Từ dễ đế
   người vào sau ở sảnh chờ, thấy lựa chọn của chủ phòng nhưng không đổi được. Hai kiểu chơi:
   - **Thi đấu** — hai người cùng nhận một ảnh (câu bốc ngẫu nhiên từ bộ câu), ai ghép chữ nhanh hơn được nhiều điểm hơn. Mỗi người **5 ♥**, hết câu mà chưa trả lời đúng thì mất 1 ♥. Một người hết mạng (hoặc đối thủ rời phòng) là **ván dừng**, ai **điểm cao hơn** thắng, bằng điểm thì hòa
     (đã chạy, luật bên dưới).
-  - **Tôi vẽ bạn đoán** — một người vẽ, cả phòng đoán. *Đang để dành*, chọn
-    được nhưng chưa bắt đầu được.
+  - **Đố nhau** — hai người **luân phiên ra đề**. Đến lượt mình, máy chủ đưa **6 câu
+    ngẫu nhiên** (kèm đáp án, chưa ra trong ván) để chọn một câu đố đối thủ, có
+    15 giây (hết giờ máy chủ chọn bừa). Người kia ghép chữ trong 20 giây: đoán đúng
+    được điểm theo tốc độ; không đoán ra thì **mất 1 ♥** và **người ra đề được
+    `50 × độ khó` điểm**. Người ra đề không đoán câu của mình, cũng không mất mạng.
+    Hết mạng / bỏ phòng thì dừng ván như Thi đấu, điểm cao hơn thắng.
 - Màn đấu cũng hiện câu dẫn theo chủ đề (*"Đây là một con vật"*) như màn Cổ
   điển: máy chủ gửi `RoundInfo.Category`, client dựng câu bằng
   `CategoryPrompt` (Core). Máy chủ phải có `Data/puzzles.json` (dự án Server
@@ -332,9 +336,7 @@ theo tài khoản hay tiến trình của ai.
 
 - 52 câu đố, đã chấm chủ đề + độ khó đủ 52 (phân bố 2/7/25/16/2).
 - Hệ số ×1,5 của lối Ngẫu nhiên là giá trị đầu, chưa có số liệu để chỉnh.
-- Kiểu chơi **Tôi vẽ bạn đoán** mới có chỗ chọn, chưa có luật và màn chơi —
-  làm sau khi Thi đấu hoàn thiện.
-- Chưa có test tự động.
+- Chưa có test tự động trong repo (đã chạy thử Đố nhau bằng một client SignalR giả: luân phiên, chọn câu, điểm, mất mạng đều đúng).
 
 ## Tài liệu khác
 

@@ -96,6 +96,15 @@ public class Room
     /// <summary>Thứ tự câu đã bốc sẵn cho cả ván, để mọi người nhận cùng một bộ.</summary>
     public List<Puzzle> Order { get; } = new();
 
+    /// <summary>Đố nhau: người đang ra đề, các câu được chọn, và câu đã chọn (null = chưa chọn).</summary>
+    public string AskerAccountId { get; set; } = "";
+    public List<Puzzle> PickOptions { get; } = new();
+    public volatile string? PickedKey;
+    public volatile bool IsPicking;
+
+    /// <summary>Mã các câu đã ra trong ván này, để không lặp lại.</summary>
+    public HashSet<string> UsedPuzzleIds { get; } = new();
+
     public Puzzle? CurrentPuzzle { get; set; }
     public PuzzleRound? CurrentRound { get; set; }
 
@@ -111,6 +120,9 @@ public class Room
     // ----- Lối vào danh sách người chơi, tất cả đều khóa -----
 
     public int PlayerCount { get { lock (Gate) return _players.Count; } }
+
+    /// <summary>Bản chụp danh sách người chơi theo thứ tự vào phòng, để duyệt không lo bị sửa giữa chừng.</summary>
+    public List<Player> Snapshot() { lock (Gate) return _players.ToList(); }
 
     public bool IsFull { get { lock (Gate) return _players.Count >= MaxPlayers; } }
 
@@ -303,6 +315,9 @@ public class RoomManager
         room.TotalRounds = room.Order.Count;
         room.RoundNumber = 0;
         room.IsPlaying = true;
+        room.UsedPuzzleIds.Clear();
+        room.AskerAccountId = "";
+        room.IsPicking = false;
 
         room.ResetScores();
         room.ClearReady();   // ván sau phải bấm sẵn sàng lại
@@ -321,7 +336,15 @@ public class RoomManager
 
         Puzzle puzzle = room.Order[room.RoundNumber];
         room.RoundNumber++;
+        return BeginRound(room, puzzle, null);
+    }
 
+    /// <summary>
+    /// Dựng bản tin cho một câu đã biết. Đố nhau: <paramref name="asker"/> là người ra
+    /// đề, được tính là "đã trả lời" sẵn để câu chỉ chờ người kia đoán.
+    /// </summary>
+    private RoundInfo BeginRound(Room room, Puzzle puzzle, Player? asker)
+    {
         PuzzleRound round = PuzzleRound.Create(
             puzzle.Answer,
             _puzzles.Where(p => p != puzzle).Select(p => p.Answer),
@@ -332,6 +355,7 @@ public class RoomManager
         room.RoundStartedUtc = DateTime.UtcNow;
 
         room.ResetAnswers();
+        if (asker != null) asker.AnsweredThisRound = true;
 
         return new RoundInfo(
             room.RoundNumber,
@@ -341,7 +365,56 @@ public class RoomManager
             new string(round.Tiles.Select(t => t.Character).ToArray()),
             puzzle.Difficulty,
             MatchScoring.MaxSeconds,
-            puzzle.Category);
+            puzzle.Category,
+            asker?.AccountId ?? "",
+            asker?.DisplayName ?? "");
+    }
+
+    // ----- Đố nhau -----
+
+    /// <summary>Số câu để người ra đề chọn.</summary>
+    public const int PickCount = 6;
+
+    /// <summary>Bốc ngẫu nhiên các câu chưa ra trong ván cho người ra đề chọn. Rỗng khi hết kho.</summary>
+    public PickOption[] BuildPickOptions(Room room)
+    {
+        room.PickOptions.Clear();
+        room.PickOptions.AddRange(_puzzles
+            .Where(p => !room.UsedPuzzleIds.Contains(p.Id))
+            .OrderBy(_ => _rng.Next())
+            .Take(PickCount));
+
+        return room.PickOptions
+            .Select(p => new PickOption(ImageKey(p), p.Answer, p.Category))
+            .ToArray();
+    }
+
+    /// <summary>Câu trong danh sách chọn ứng với mã ảnh, null nếu mã lạ.</summary>
+    public Puzzle? FindPickOption(Room room, string imageKey) =>
+        room.PickOptions.FirstOrDefault(p => ImageKey(p) == imageKey);
+
+    /// <summary>Người ra đề đã chọn (hoặc hết giờ chọn thì bốc bừa một câu): dựng câu và phát.</summary>
+    public RoundInfo BeginDuelRound(Room room, Puzzle puzzle, Player asker)
+    {
+        room.UsedPuzzleIds.Add(puzzle.Id);
+        room.RoundNumber++;
+        return BeginRound(room, puzzle, asker);
+    }
+
+    /// <summary>
+    /// Hết câu Đố nhau: người đoán không ra thì người ra đề được điểm. Trả về số điểm đã cộng.
+    /// </summary>
+    public int AwardAskerIfUnsolved(Room room, Player asker)
+    {
+        lock (room.Gate)
+        {
+            bool solved = room.Snapshot().Any(p => p != asker && p.AnsweredThisRound);
+            if (solved || room.CurrentPuzzle == null) return 0;
+
+            int bonus = MatchScoring.AskerPoints(room.CurrentPuzzle.Difficulty);
+            asker.Score += bonus;
+            return bonus;
+        }
     }
 
     /// <summary>Sai lần thứ n thì phải chờ chừng này giây: 1, 2, 3… tối đa 5.</summary>
