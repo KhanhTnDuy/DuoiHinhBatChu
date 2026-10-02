@@ -69,9 +69,10 @@ dùng để tính điểm và để sắp thứ tự khi chọn "Từ dễ đế
   **không có đoạn hướng dẫn**: ô nhập tự nói mình là gì bằng chữ mờ
   (`conv:Placeholder.Text`, `Converters/Placeholder.cs` — mất khi bấm vào ô,
   hiện lại khi rời ô còn trống; PasswordBox theo dõi qua `Placeholder.HasContent`).
-- Mỗi phòng tối đa **5 người** kể cả chủ phòng (`Room.MaxPlayers`); đầy thì
+- Mỗi phòng chỉ **2 người** kể cả chủ phòng (`Room.MaxPlayers`); đầy thì
   máy chủ từ chối, kiểm tra trong cùng khóa với lúc thêm để hai người cùng vào
-  chỗ cuối không lọt cả hai.
+  chỗ cuối không lọt cả hai. Chơi qua LAN: chủ phòng mở phòng, người kia nối
+  tới IP của máy chủ.
 - **Sẵn sàng:** người vào phòng bấm *Sẵn sàng* (bấm lại để hủy). Chủ phòng chỉ
   bắt đầu được khi phòng có **từ 2 người** và **mọi khách đã sẵn sàng** (chủ
   phòng không cần bấm — bấm bắt đầu tức là sẵn sàng). Nút bắt đầu mờ đi kèm lý
@@ -80,9 +81,9 @@ dùng để tính điểm và để sắp thứ tự khi chọn "Từ dễ đế
 - Không phải chọn máy chủ hay đăng nhập máy chủ: app **tự nối** lúc bấm tạo /
   vào phòng (địa chỉ nằm trong `Data/app-settings.json`, mặc định
   `localhost:5180`).
-- Trong phòng, **chỉ chủ phòng** chọn **kiểu chơi** và số câu (1–20, mặc định 5);
+- Trong phòng, **chỉ chủ phòng** chọn **kiểu chơi** (ván không còn số câu cố định);
   người vào sau ở sảnh chờ, thấy lựa chọn của chủ phòng nhưng không đổi được. Hai kiểu chơi:
-  - **Thi đấu** — cả phòng cùng nhận một ảnh, ai ghép chữ nhanh hơn thắng
+  - **Thi đấu** — hai người cùng nhận một ảnh (câu bốc ngẫu nhiên từ bộ câu), ai ghép chữ nhanh hơn được nhiều điểm hơn. Mỗi người **5 ♥**, hết câu mà chưa trả lời đúng thì mất 1 ♥. Một người hết mạng (hoặc đối thủ rời phòng) là **ván dừng**, ai **điểm cao hơn** thắng, bằng điểm thì hòa
     (đã chạy, luật bên dưới).
   - **Tôi vẽ bạn đoán** — một người vẽ, cả phòng đoán. *Đang để dành*, chọn
     được nhưng chưa bắt đầu được.

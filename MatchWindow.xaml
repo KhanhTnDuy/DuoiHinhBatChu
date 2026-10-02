@@ -125,9 +125,15 @@
                         </Border>
                     </StackPanel>
 
-                    <TextBlock Grid.Column="1" Text="{Binding Score}"
-                               Style="{StaticResource HudValue}" FontSize="16"
-                               Foreground="{DynamicResource PrimaryBrush}"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Mạng còn lại trong ván; ẩn ở sảnh chờ (Lives = 0) -->
+                        <TextBlock Text="{Binding LivesText}" FontSize="14" FontWeight="SemiBold"
+                                   Margin="0,0,12,0" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource ErrorBrush}"/>
+                        <TextBlock Text="{Binding Score}"
+                                   Style="{StaticResource HudValue}" FontSize="16"
+                                   Foreground="{DynamicResource PrimaryBrush}"/>
+                    </StackPanel>
                 </Grid>
             </Border>
             <DataTemplate.Triggers>
@@ -351,13 +357,6 @@
                                     </StackPanel>
                                 </Button>
                             </Grid>
-
-                            <TextBlock Style="{StaticResource FieldLabel}" Margin="0,18,0,0"
-                                       Text="Số câu mỗi ván (1 - 20)"/>
-                            <TextBox Style="{StaticResource Field}" Width="120"
-                                     HorizontalAlignment="Left"
-                                     IsEnabled="{Binding IsHost}"
-                                     Text="{Binding Rounds, UpdateSourceTrigger=PropertyChanged}"/>
 
                             <!-- Chủ phòng: bắt đầu (sáng khi đủ 2 người và mọi khách sẵn sàng) -->
                             <StackPanel Visibility="{Binding IsHost, Converter={StaticResource BoolVis}}">

@@ -34,7 +34,9 @@ public enum MatchMode { Compete = 0, Draw = 1 }
 
 /// <param name="IsHost">Người tạo phòng, chỉ người này bấm bắt đầu được.</param>
 /// <param name="IsReady">Đã bấm "sẵn sàng" ở sảnh chờ; chủ phòng chỉ bắt đầu được khi mọi người đều sẵn sàng.</param>
-public record PlayerInfo(string AccountId, string DisplayName, bool IsHost, bool IsReady, int Score);
+/// <param name="Lives">Số mạng còn lại trong ván; hết mạng là ván kết thúc, ai nhiều điểm hơn thắng.</param>
+public record PlayerInfo(string AccountId, string DisplayName, bool IsHost, bool IsReady, int Score,
+                         int Lives = 0);
 
 /// <param name="Code">Mã phòng máy chủ sinh ra, chủ phòng đọc cho bạn bè gõ vào.</param>
 /// <param name="Name">Tên phòng chủ phòng đặt, chỉ để hiển thị; rỗng nếu không đặt.</param>

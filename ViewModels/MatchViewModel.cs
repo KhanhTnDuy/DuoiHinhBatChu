@@ -33,6 +33,19 @@ public class ScoreRow : ViewModelBase
         set => SetProperty(ref _score, value);
     }
 
+    private int _lives;
+    /// <summary>Số mạng còn lại trong ván.</summary>
+    public int Lives
+    {
+        get => _lives;
+        set
+        {
+            if (SetProperty(ref _lives, value)) OnPropertyChanged(nameof(LivesText));
+        }
+    }
+
+    public string LivesText => Lives > 0 ? $"♥ {Lives}" : "";
+
     private bool _hasAnswered;
     /// <summary>Đã trả lời đúng câu đang chạy — cả phòng cùng nhìn thấy.</summary>
     public bool HasAnswered
@@ -227,7 +240,7 @@ public class MatchViewModel : ViewModelBase
         private set => SetProperty(ref _roomName, value);
     }
 
-    private int _maxPlayers = 5;
+    private int _maxPlayers = 2;
     /// <summary>Sức chứa máy chủ báo, để hiện "3/5".</summary>
     public int MaxPlayers
     {
@@ -276,14 +289,6 @@ public class MatchViewModel : ViewModelBase
         {
             if (SetProperty(ref _isHost, value)) RaiseCommandStates();
         }
-    }
-
-    private int _rounds = 5;
-    /// <summary>Số câu của ván, chủ phòng chọn trước khi bắt đầu.</summary>
-    public int Rounds
-    {
-        get => _rounds;
-        set => SetProperty(ref _rounds, Math.Clamp(value, 1, 20));
     }
 
     /// <summary>Máy chủ đòi ít nhất hai người và mọi khách đã sẵn sàng, nên nút chỉ sáng khi đủ cả hai.</summary>
@@ -536,7 +541,8 @@ public class MatchViewModel : ViewModelBase
     {
         if (_client == null) return;
 
-        await _client.StartMatchAsync(Rounds);
+        // Ván chạy tới khi một người hết mạng, không còn số câu cố định
+        await _client.StartMatchAsync(0);
         Status = "Bắt đầu!";
     });
 
@@ -638,6 +644,7 @@ public class MatchViewModel : ViewModelBase
                 IsMe = p.AccountId == _myAccountId,
                 IsReady = p.IsReady,
                 Score = p.Score,
+                Lives = p.Lives,
                 HasAnswered = answered.Contains(p.AccountId),
             });
 
@@ -659,7 +666,7 @@ public class MatchViewModel : ViewModelBase
         _cooldown.Stop();
         IsCoolingDown = false;
 
-        ProgressText = $"Câu {round.RoundNumber}/{round.TotalRounds}";
+        ProgressText = $"Câu {round.RoundNumber}";
         DifficultyText = $"{round.Difficulty}/5";
         PromptText = CategoryPrompt.For(round.Category);
 
@@ -688,7 +695,7 @@ public class MatchViewModel : ViewModelBase
         byte[]? bytes = await _server.DownloadImageAsync(imageName);
 
         // Máy chủ đã sang câu khác thì ảnh này không còn dùng vào đâu nữa
-        if (!ProgressText.StartsWith($"Câu {roundNumber}/")) return;
+        if (ProgressText != $"Câu {roundNumber}") return;
 
         if (bytes == null)
         {
@@ -822,14 +829,31 @@ public class MatchViewModel : ViewModelBase
         int top = best?.Score ?? 0;
         var leaders = Players.Where(p => p.Score == top).ToList();
 
-        // Hai người bằng điểm (hay cả phòng 0 điểm) mà bảo "bạn thắng" thì kỳ
-        WinnerText = best == null
-            ? "Ván đã kết thúc."
-            : leaders.Count > 1
-                ? (leaders.Any(p => p.IsMe) ? $"Hòa {top} điểm!" : $"Hòa {top} điểm.")
-                : best.IsMe
-                    ? $"Bạn thắng với {best.Score} điểm!"
-                    : $"{best.DisplayName} thắng với {best.Score} điểm.";
+        // Lý do ván dừng: ai đó hết mạng, hoặc đối thủ bỏ đi
+        ScoreRow? dead = Players.FirstOrDefault(p => p.Lives <= 0);
+        string reason = Players.Count < 2
+            ? "Đối thủ đã rời phòng."
+            : dead == null
+                ? "Đã hết bộ câu."
+                : dead.IsMe ? "Bạn đã hết mạng." : $"{dead.DisplayName} đã hết mạng.";
+
+        // Đối thủ bỏ đi thì người ở lại thắng, dù điểm đang thấp hơn
+        if (Players.Count < 2 && best != null)
+        {
+            WinnerText = $"{reason}\nBạn thắng!";
+        }
+        else
+        {
+            // Hai người bằng điểm (hay cả phòng 0 điểm) mà bảo "bạn thắng" thì kỳ
+            string result = best == null
+                ? "Ván đã kết thúc."
+                : leaders.Count > 1
+                    ? (leaders.Any(p => p.IsMe) ? $"Hòa {top} điểm!" : $"Hòa {top} điểm.")
+                    : best.IsMe
+                        ? $"Bạn thắng với {best.Score} điểm!"
+                        : $"{best.DisplayName} thắng với {best.Score} điểm.";
+            WinnerText = $"{reason}\n{result}";
+        }
 
         // Cờ sẵn sàng đã bị xóa lúc ván bắt đầu, nên khách phải bấm lại; nói
         // rõ kẻo chủ phòng thấy nút "Ván mới" mờ mà không hiểu vì sao
@@ -843,7 +867,9 @@ public class MatchViewModel : ViewModelBase
         foreach (PlayerInfo info in scores)
         {
             ScoreRow? row = Players.FirstOrDefault(p => p.AccountId == info.AccountId);
-            if (row != null) row.Score = info.Score;
+            if (row == null) continue;
+            row.Score = info.Score;
+            row.Lives = info.Lives;
         }
 
         Reorder();
