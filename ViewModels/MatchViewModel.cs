@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -6,6 +6,9 @@ using DuoiHinhBatChu.Models;
 using DuoiHinhBatChu.Services;
 
 namespace DuoiHinhBatChu.ViewModels;
+
+/// <summary>Việc người chơi định làm khi bước vào phòng chờ.</summary>
+public enum LobbyMode { Join, Create }
 
 /// <summary>Một dòng trong bảng điểm.</summary>
 public class ScoreRow : ViewModelBase
@@ -15,6 +18,14 @@ public class ScoreRow : ViewModelBase
     public required bool IsHost { get; init; }
     public required bool IsMe { get; init; }
 
+    private bool _isReady;
+    /// <summary>Đã bấm sẵn sàng ở sảnh chờ.</summary>
+    public bool IsReady
+    {
+        get => _isReady;
+        set => SetProperty(ref _isReady, value);
+    }
+
     private int _score;
     public int Score
     {
@@ -22,12 +33,40 @@ public class ScoreRow : ViewModelBase
         set => SetProperty(ref _score, value);
     }
 
+    private int _lives;
+    /// <summary>Số mạng còn lại trong ván.</summary>
+    public int Lives
+    {
+        get => _lives;
+        set
+        {
+            if (SetProperty(ref _lives, value)) OnPropertyChanged(nameof(LivesText));
+        }
+    }
+
+    public string LivesText => Lives > 0 ? $"♥ {Lives}" : "";
+
     private bool _hasAnswered;
     /// <summary>Đã trả lời đúng câu đang chạy — cả phòng cùng nhìn thấy.</summary>
     public bool HasAnswered
     {
         get => _hasAnswered;
         set => SetProperty(ref _hasAnswered, value);
+    }
+}
+
+/// <summary>Một câu người ra đề có thể chọn (Đố nhau): ảnh nhỏ + đáp án + chủ đề.</summary>
+public class PickCard : ViewModelBase
+{
+    public required string ImageKey { get; init; }
+    public required string Answer { get; init; }
+    public required string Category { get; init; }
+
+    private BitmapImage? _image;
+    public BitmapImage? Image
+    {
+        get => _image;
+        set => SetProperty(ref _image, value);
     }
 }
 
@@ -44,44 +83,63 @@ public class MatchViewModel : ViewModelBase
     /// <summary>Đoán sai thì tô đỏ chừng này rồi trả ô về trống cho ghép lại.</summary>
     private static readonly TimeSpan WrongFlash = TimeSpan.FromMilliseconds(700);
 
-    private readonly MatchClient _client;
-    private readonly ServerClient _server;
+    private readonly Account _account;
     private readonly AppSettings _settings;
-    private readonly string _myAccountId;
+    private readonly ServerClient _server = new();
+
+    /// <summary>
+    /// Đường dây tới máy chủ. Null cho tới khi người chơi tạo / vào phòng lần
+    /// đầu — cửa sổ này mở ra mà chưa nối gì cả, xem <see cref="EnsureConnectedAsync"/>.
+    /// </summary>
+    private MatchClient? _client;
+
+    /// <summary>Mã tài khoản TRÊN MÁY CHỦ, chỉ biết sau khi đăng nhập máy chủ xong.</summary>
+    private string _myAccountId = "";
 
     /// <summary>Nhịp đếm ngược, chỉ để hiện lên màn hình — mốc thật nằm ở máy chủ.</summary>
     private readonly DispatcherTimer _tick = new() { Interval = TimeSpan.FromMilliseconds(100) };
     private readonly DispatcherTimer _flash = new() { Interval = WrongFlash };
 
+    /// <summary>Đếm ngược quãng chờ sau khi đoán sai.</summary>
+    private readonly DispatcherTimer _cooldown =
+        new() { Interval = TimeSpan.FromMilliseconds(200) };
+
+    private DateTime _blockedUntil;
+
     private DateTime _roundStartedLocal;
     private double _secondsAllowed = 1;
     private int _nextTileId;
 
-    public MatchViewModel(MatchClient client, ServerClient server, AppSettings settings,
-                          string myAccountId, string myDisplayName)
+    /// <summary>Bắn lên khi người chơi bấm quay lại ở phòng chờ.</summary>
+    public event Action? GoBack;
+
+    public MatchViewModel(Account account, AppSettings settings, LobbyMode mode)
     {
-        _client = client;
-        _server = server;
+        _account = account;
         _settings = settings;
-        _myAccountId = myAccountId;
-        PlayerName = myDisplayName;
+        _lobbyMode = mode;
+        PlayerName = account.DisplayName;
 
-        _client.RoomChanged += ApplyRoom;
-        _client.RoundStarted += StartRound;
-        _client.AnswerJudged += ApplyJudgement;
-        _client.RoundEnded += EndRound;
-        _client.MatchEnded += EndMatch;
-        _client.Disconnected += reason => Status = reason;
-
-        _tick.Tick += (_, _) => OnPropertyChanged(nameof(SecondsLeftText));
+        _tick.Tick += (_, _) =>
+        {
+            OnPropertyChanged(nameof(SecondsLeftText));
+            OnPropertyChanged(nameof(PickLeftText));
+        };
         _flash.Tick += (_, _) => { _flash.Stop(); ClearSlots(); };
+        _cooldown.Tick += (_, _) => ShowCooldownLeft();
 
         CreateRoomCommand = new RelayCommand(async _ => await CreateRoomAsync(), _ => !IsBusy);
         JoinRoomCommand = new RelayCommand(async _ => await JoinRoomAsync(), _ => !IsBusy);
         StartMatchCommand = new RelayCommand(async _ => await StartMatchAsync(), _ => CanStart);
         PlaceLetterCommand = new RelayCommand(p => PlaceLetter(p as LetterTile));
         TakeBackCommand = new RelayCommand(p => TakeBack(p as AnswerSlot));
+        SubmitCommand = new RelayCommand(_ => Submit(), _ => CanSubmit);
         ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
+        SwitchLobbyModeCommand = new RelayCommand(_ => IsCreating = !IsCreating);
+        BackCommand = new RelayCommand(_ => GoBack?.Invoke(), _ => IsInLobby);
+        ToggleReadyCommand = new RelayCommand(async _ => await ToggleReadyAsync(), _ => IsInRoom && !IsPlaying && !IsBusy);
+        PickPuzzleCommand = new RelayCommand(async p => await PickPuzzleAsync(p as PickCard));
+        ChooseModeCommand = new RelayCommand(async p => await ChooseModeAsync((MatchMode)p!), _ => IsHost && !IsBusy);
     }
 
     // ----- Lệnh cho giao diện -----
@@ -90,7 +148,13 @@ public class MatchViewModel : ViewModelBase
     public RelayCommand StartMatchCommand { get; }
     public RelayCommand PlaceLetterCommand { get; }
     public RelayCommand TakeBackCommand { get; }
+    public RelayCommand SubmitCommand { get; }
     public RelayCommand ToggleThemeCommand { get; }
+    public RelayCommand SwitchLobbyModeCommand { get; }
+    public RelayCommand BackCommand { get; }
+    public RelayCommand ToggleReadyCommand { get; }
+    public RelayCommand ChooseModeCommand { get; }
+    public RelayCommand PickPuzzleCommand { get; }
 
     // ----- Dữ liệu hiển thị -----
     public ObservableCollection<AnswerSlot> Slots { get; } = new();
@@ -101,7 +165,7 @@ public class MatchViewModel : ViewModelBase
 
     public bool IsDarkTheme => _settings.IsDarkTheme;
 
-    private string _status = "Tạo phòng mới, hoặc nhập mã phòng bạn bè đọc cho.";
+    private string _status = "";
     public string Status
     {
         get => _status;
@@ -117,18 +181,82 @@ public class MatchViewModel : ViewModelBase
             if (SetProperty(ref _isBusy, value)) RaiseCommandStates();
         }
     }
-
     // ----- Phòng chờ -----
 
+    private LobbyMode _lobbyMode;
+    /// <summary>
+    /// Đang ở dạng "tạo phòng" hay "vào phòng". Cùng một cặp ô tên + mật khẩu,
+    /// chỉ khác nút bấm gọi lệnh nào — tách ra hai dạng để người chơi không
+    /// phải nghĩ "tôi nên bấm nút nào", vì họ đã chọn từ màn chế độ rồi.
+    /// </summary>
+    public bool IsCreating
+    {
+        get => _lobbyMode == LobbyMode.Create;
+        private set
+        {
+            LobbyMode next = value ? LobbyMode.Create : LobbyMode.Join;
+            if (next == _lobbyMode) return;
+
+            _lobbyMode = next;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(LobbyTitle));
+            OnPropertyChanged(nameof(SwitchLobbyModeText));
+        }
+    }
+
+    public string LobbyTitle => IsCreating ? "TẠO PHÒNG MỚI" : "VÀO PHÒNG CÓ SẴN";
+
+    public string SwitchLobbyModeText => IsCreating
+        ? "Đã có phòng bạn bè mở? Vào phòng"
+        : "Chưa ai mở phòng? Tạo phòng mới";
+
+
+    private string _roomNameInput = "";
+    /// <summary>Tên phòng chủ phòng đặt lúc tạo; để trống cũng được.</summary>
+    public string RoomNameInput
+    {
+        get => _roomNameInput;
+        set => SetProperty(ref _roomNameInput, value);
+    }
+
+    /// <summary>
+    /// Địa chỉ máy tạo phòng, người vào gõ để đấu qua LAN (vd "192.168.3.110:5180").
+    /// Để trống thì nối máy chủ ở chính máy này. Người TẠO phòng không dùng ô
+    /// này: máy chủ luôn bật ngay trên máy họ.
+    /// </summary>
+    public string ServerAddressInput
+    {
+        get => _settings.ServerAddress == $"localhost:{LocalServer.DefaultPort}" ? "" : _settings.ServerAddress;
+        set
+        {
+            string v = (value ?? "").Trim();
+            _settings.ServerAddress = v.Length == 0 ? $"localhost:{LocalServer.DefaultPort}" : v;
+            _settings.Save();
+            OnPropertyChanged();
+        }
+    }
+
     private string _joinCode = "";
+    /// <summary>Mã phòng người chơi gõ để vào; chỉ dùng ở dạng "vào phòng".</summary>
     public string JoinCode
     {
         get => _joinCode;
         set => SetProperty(ref _joinCode, value);
     }
 
+    /// <summary>
+    /// Mật khẩu phòng. PasswordBox không ràng buộc hai chiều được, nên
+    /// code-behind của cửa sổ đẩy giá trị vào đây mỗi lần người chơi gõ.
+    /// </summary>
+    private string _roomPassword = "";
+    public string RoomPassword
+    {
+        get => _roomPassword;
+        set => SetProperty(ref _roomPassword, value);
+    }
+
     private string _roomCode = "";
-    /// <summary>Mã phòng đang ở; rỗng nghĩa là chưa vào phòng nào.</summary>
+    /// <summary>Mã phòng đang ở (máy chủ cấp); rỗng nghĩa là chưa vào phòng nào.</summary>
     public string RoomCode
     {
         get => _roomCode;
@@ -142,6 +270,55 @@ public class MatchViewModel : ViewModelBase
 
     public bool IsInRoom => RoomCode.Length > 0;
 
+    private string _roomName = "";
+    /// <summary>Tên phòng đang ở; rỗng nếu chủ phòng không đặt.</summary>
+    public string RoomName
+    {
+        get => _roomName;
+        private set => SetProperty(ref _roomName, value);
+    }
+
+    private int _maxPlayers = 2;
+    /// <summary>Sức chứa máy chủ báo, để hiện "3/5".</summary>
+    public int MaxPlayers
+    {
+        get => _maxPlayers;
+        private set
+        {
+            if (SetProperty(ref _maxPlayers, value)) OnPropertyChanged(nameof(PlayerCountText));
+        }
+    }
+
+    public string PlayerCountText => $"{Players.Count}/{MaxPlayers} người";
+
+    private bool _isReady;
+    /// <summary>Mình đã bấm sẵn sàng chưa; giá trị lấy từ RoomState máy chủ gửi về.</summary>
+    public bool IsReady
+    {
+        get => _isReady;
+        private set
+        {
+            if (SetProperty(ref _isReady, value)) OnPropertyChanged(nameof(ReadyButtonText));
+        }
+    }
+
+    public string ReadyButtonText => IsReady ? "✓ Đã sẵn sàng — bấm để hủy" : "Sẵn sàng";
+
+    /// <summary>Mọi người trừ chủ phòng đã sẵn sàng — điều kiện thứ hai để bắt đầu.</summary>
+    public bool AllGuestsReady => Players.All(p => p.IsReady || p.IsHost);
+
+    /// <summary>Vì sao chưa bắt đầu được, hiện ngay dưới nút cho chủ phòng đỡ đoán.</summary>
+    public string StartBlockedText
+    {
+        get
+        {
+            if (!IsHost || IsPlaying) return "";
+            if (Players.Count < 2) return "Cần ít nhất 2 người.";
+            if (!AllGuestsReady) return "Còn người chưa bấm sẵn sàng.";
+            return "";
+        }
+    }
+
     private bool _isHost;
     public bool IsHost
     {
@@ -152,16 +329,8 @@ public class MatchViewModel : ViewModelBase
         }
     }
 
-    private int _rounds = 5;
-    /// <summary>Số câu của ván, chủ phòng chọn trước khi bắt đầu.</summary>
-    public int Rounds
-    {
-        get => _rounds;
-        set => SetProperty(ref _rounds, Math.Clamp(value, 1, 20));
-    }
-
-    /// <summary>Máy chủ đòi ít nhất hai người, nên nút bắt đầu chỉ sáng khi đủ.</summary>
-    public bool CanStart => IsHost && !IsPlaying && !IsBusy && Players.Count >= 2;
+    /// <summary>Máy chủ đòi ít nhất hai người và mọi khách đã sẵn sàng, nên nút chỉ sáng khi đủ cả hai.</summary>
+    public bool CanStart => IsHost && !IsPlaying && !IsBusy && Players.Count >= 2 && AllGuestsReady;
 
     private bool _isPlaying;
     public bool IsPlaying
@@ -214,6 +383,14 @@ public class MatchViewModel : ViewModelBase
         private set => SetProperty(ref _difficultyText, value);
     }
 
+    private string _promptText = CategoryPrompt.Fallback;
+    /// <summary>Câu dẫn theo chủ đề ("Đây là một con vật"…), cùng bảng với màn Cổ điển.</summary>
+    public string PromptText
+    {
+        get => _promptText;
+        private set => SetProperty(ref _promptText, value);
+    }
+
     /// <summary>Đồng hồ đếm ngược phía client, xê xích chút so với máy chủ nhưng đủ để nhìn.</summary>
     public string SecondsLeftText
     {
@@ -246,6 +423,14 @@ public class MatchViewModel : ViewModelBase
         private set => SetProperty(ref _isAnswered, value);
     }
 
+    private bool _isCoolingDown;
+    /// <summary>Đang trong quãng chờ vì vừa đoán sai; bàn phím chữ tạm khóa.</summary>
+    public bool IsCoolingDown
+    {
+        get => _isCoolingDown;
+        private set => SetProperty(ref _isCoolingDown, value);
+    }
+
     private string _revealedAnswer = "";
     /// <summary>Đáp án của câu vừa xong, chỉ có sau khi máy chủ báo hết câu.</summary>
     public string RevealedAnswer
@@ -267,13 +452,178 @@ public class MatchViewModel : ViewModelBase
         get => _winnerText;
         private set => SetProperty(ref _winnerText, value);
     }
+    // ----- Kiểu chơi của phòng -----
+
+    private MatchMode _mode = MatchMode.Compete;
+    /// <summary>
+    /// Kiểu chơi máy chủ đang giữ cho phòng này. Client KHÔNG tự đổi giá trị này
+    /// khi bấm — gửi lên máy chủ rồi chờ RoomChanged về, để mọi người trong
+    /// phòng (kể cả chủ phòng) nhìn cùng một nguồn sự thật.
+    /// </summary>
+    public MatchMode Mode
+    {
+        get => _mode;
+        private set
+        {
+            if (!SetProperty(ref _mode, value)) return;
+            OnPropertyChanged(nameof(IsCompete));
+            OnPropertyChanged(nameof(IsDuel));
+            OnPropertyChanged(nameof(ModeText));
+        }
+    }
+
+    public bool IsCompete => Mode == MatchMode.Compete;
+    public bool IsDuel => Mode == MatchMode.Duel;
+
+    public string ModeText => Mode switch
+    {
+        MatchMode.Duel => "Đố nhau",
+        _ => "Thi đấu",
+    };
+
+    private async Task ChooseModeAsync(MatchMode mode) => await CallAsync(async () =>
+    {
+        if (_client == null || !IsHost || mode == Mode) return;
+        await _client.SetModeAsync(mode);
+    });
+
+    // ----- Đố nhau: chọn câu -----
+
+    public ObservableCollection<PickCard> PickCards { get; } = new();
+
+    private bool _isPicking;
+    /// <summary>Mình là người ra đề và đang chọn câu để đố.</summary>
+    public bool IsPicking
+    {
+        get => _isPicking;
+        private set => SetProperty(ref _isPicking, value);
+    }
+
+    private bool _isWaitingPick;
+    /// <summary>Mình là người đoán, đang chờ đối thủ chọn câu.</summary>
+    public bool IsWaitingPick
+    {
+        get => _isWaitingPick;
+        private set => SetProperty(ref _isWaitingPick, value);
+    }
+
+    private bool _isAsker;
+    /// <summary>Câu này mình là người ra đề: chỉ xem, không có bàn phím để đoán.</summary>
+    public bool IsAsker
+    {
+        get => _isAsker;
+        private set => SetProperty(ref _isAsker, value);
+    }
+
+    private string _pickPrompt = "";
+    public string PickPrompt
+    {
+        get => _pickPrompt;
+        private set => SetProperty(ref _pickPrompt, value);
+    }
+
+    private DateTime _pickDeadline;
+
+    public string PickLeftText =>
+        $"{Math.Max(0, Math.Ceiling((_pickDeadline - DateTime.UtcNow).TotalSeconds)):0}s";
+
+    /// <summary>Máy chủ báo đầu câu Đố nhau: ai ra đề, và (nếu là mình) danh sách câu để chọn.</summary>
+    private void OnPickStarted(PickInfo info)
+    {
+        // Dọn màn của câu trước
+        _tick.Stop();
+        _flash.Stop();
+        _cooldown.Stop();
+        IsCoolingDown = false;
+        Slots.Clear();
+        Tiles.Clear();
+        ImageSource = null;
+        IsImageBroken = false;
+        RevealedAnswer = "";
+        FeedbackText = "";
+        PromptText = CategoryPrompt.Fallback;
+        DifficultyText = "";
+        foreach (ScoreRow row in Players) row.HasAnswered = false;
+
+        IsPlaying = true;
+        IsMatchOver = false;
+        IsAnswered = true;                       // chưa có câu nào để đoán
+        ProgressText = $"Câu {info.RoundNumber}";
+
+        PickCards.Clear();
+        bool iAmAsker = info.AskerAccountId == _myAccountId;
+
+        if (iAmAsker)
+        {
+            foreach (PickOption o in info.Options)
+            {
+                var card = new PickCard { ImageKey = o.ImageKey, Answer = o.Answer, Category = o.Category };
+                PickCards.Add(card);
+                _ = LoadCardImageAsync(card);
+            }
+
+            PickPrompt = "Chọn một câu để đố đối thủ";
+        }
+        else
+        {
+            PickPrompt = $"{info.AskerName} đang chọn câu để đố bạn…";
+        }
+
+        IsPicking = iAmAsker;
+        IsWaitingPick = !iAmAsker;
+
+        _pickDeadline = DateTime.UtcNow.AddSeconds(info.SecondsToPick);
+        _secondsAllowed = 0;
+        _tick.Start();
+    }
+
+    private async Task LoadCardImageAsync(PickCard card)
+    {
+        byte[]? bytes = await _server.DownloadImageAsync(card.ImageKey);
+        if (bytes == null) return;
+
+        try
+        {
+            var image = new BitmapImage();
+            image.BeginInit();
+            image.StreamSource = new MemoryStream(bytes);
+            image.DecodePixelWidth = 260;   // ảnh nhỏ trong thẻ, khỏi giữ bản đầy đủ
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.EndInit();
+            image.Freeze();
+            card.Image = image;
+        }
+        catch
+        {
+            // Thẻ không có ảnh vẫn chọn được theo đáp án
+        }
+    }
+
+    private async Task PickPuzzleAsync(PickCard? card)
+    {
+        if (card == null || !IsPicking || _client == null) return;
+
+        IsPicking = false;
+        IsWaitingPick = true;
+        PickPrompt = "Đã chọn. Đang gửi câu cho đối thủ…";
+
+        try
+        {
+            await _client.PickPuzzleAsync(card.ImageKey);
+        }
+        catch (Exception ex)
+        {
+            Status = CleanHubError(ex.Message);
+        }
+    }
 
     // ===== Hành động của người chơi =====
 
     private async Task CreateRoomAsync() => await CallAsync(async () =>
     {
-        ApplyRoom(await _client.CreateRoomAsync());
-        Status = $"Đã mở phòng {RoomCode}. Đọc mã này cho bạn bè vào.";
+        MatchClient client = await EnsureConnectedAsync();
+        ApplyRoom(await client.CreateRoomAsync(RoomNameInput, RoomPassword));
+        Status = $"Đã mở phòng. Đọc mã {RoomCode} và mật khẩu cho bạn bè; đủ người và ai cũng sẵn sàng thì bấm bắt đầu.";
     });
 
     private async Task JoinRoomAsync() => await CallAsync(async () =>
@@ -284,13 +634,85 @@ public class MatchViewModel : ViewModelBase
             return;
         }
 
-        ApplyRoom(await _client.JoinRoomAsync(JoinCode));
-        Status = $"Đã vào phòng {RoomCode}. Chờ chủ phòng bấm bắt đầu.";
+        MatchClient client = await EnsureConnectedAsync();
+        ApplyRoom(await client.JoinRoomAsync(JoinCode, RoomPassword));
+        Status = $"Đã vào phòng {RoomCode}. Bấm Sẵn sàng rồi chờ chủ phòng bắt đầu.";
     });
+
+    private async Task ToggleReadyAsync() => await CallAsync(async () =>
+    {
+        if (_client == null || !IsInRoom || IsPlaying) return;
+        await _client.SetReadyAsync(!IsReady);   // IsReady đổi khi RoomChanged về
+    });
+
+    /// <summary>
+    /// Nối máy chủ NGAY LÚC CẦN, tức là lúc người chơi bấm tạo / vào phòng —
+    /// không có bước "chọn máy chủ" hay "đăng nhập máy chủ" riêng nữa.
+    ///
+    /// Địa chỉ lấy từ <see cref="AppSettings.ServerAddress"/>; tài khoản máy chủ
+    /// do <see cref="ServerClient.SignInAsync"/> tự lo bằng tài khoản ở máy này.
+    /// Nối được một lần thì giữ đường dây đó cho cả phiên; rớt thì lần bấm sau
+    /// nối lại.
+    /// </summary>
+    private async Task<MatchClient> EnsureConnectedAsync()
+    {
+        if (_client is { IsConnected: true }) return _client;
+
+        // Đường dây cũ đã rớt (hoặc chưa có): dọn rồi mở lại từ đầu
+        if (_client != null)
+        {
+            await _client.DisposeAsync();
+            _client = null;
+        }
+
+        Status = "Đang nối máy chủ...";
+
+        // Tạo phòng: máy chủ luôn ở máy này. Vào phòng: địa chỉ người chơi đã gõ
+        string address = IsCreating || _settings.ServerAddress.Trim().Length == 0
+            ? $"localhost:{LocalServer.DefaultPort}"
+            : _settings.ServerAddress;
+
+        // Máy chủ ở chính máy này mà chưa bật thì bật giúp, khỏi bắt người chơi
+        // mở cửa sổ dòng lệnh
+        string launchError = await LocalServer.EnsureRunningAsync(address, s => Status = s);
+        if (launchError.Length > 0)
+            throw new InvalidOperationException(launchError);
+
+        ServerAuth auth = await _server.SignInAsync(address, _account);
+        if (!auth.Ok || auth.Auth == null)
+            throw new InvalidOperationException(auth.Message);
+
+        var client = new MatchClient(_server.BaseAddress, auth.Auth.Token, App.OnUiThread);
+
+        try
+        {
+            await client.ConnectAsync();
+        }
+        catch (Exception ex)
+        {
+            await client.DisposeAsync();
+            throw new InvalidOperationException($"Không mở được kênh đấu: {ex.Message}");
+        }
+
+        client.RoomChanged += ApplyRoom;
+        client.RoundStarted += StartRound;
+        client.AnswerJudged += ApplyJudgement;
+        client.PickStarted += OnPickStarted;
+        client.RoundEnded += EndRound;
+        client.MatchEnded += EndMatch;
+        client.Disconnected += OnDisconnected;
+
+        _myAccountId = auth.Auth.AccountId;
+        _client = client;
+        return client;
+    }
 
     private async Task StartMatchAsync() => await CallAsync(async () =>
     {
-        await _client.StartMatchAsync(Rounds);
+        if (_client == null) return;
+
+        // Ván chạy tới khi một người hết mạng, không còn số câu cố định
+        await _client.StartMatchAsync(0);
         Status = "Bắt đầu!";
     });
 
@@ -310,7 +732,7 @@ public class MatchViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Status = ex.Message;
+            Status = CleanHubError(ex.Message);
         }
         finally
         {
@@ -318,12 +740,72 @@ public class MatchViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// SignalR bọc lỗi máy chủ thành "An unexpected error occurred invoking
+    /// 'StartMatch' on the server. HubException: Cần ít nhất 2 người…" — người
+    /// chơi chỉ cần đọc phần sau dấu hai chấm.
+    /// </summary>
+    private static string CleanHubError(string message)
+    {
+        const string marker = "HubException: ";
+        int i = message.IndexOf(marker, StringComparison.Ordinal);
+        return i >= 0 ? message[(i + marker.Length)..] : message;
+    }
+
     // ===== Máy chủ báo về =====
+
+    /// <summary>
+    /// Đứt dây với máy chủ. Máy chủ đã xóa mình khỏi phòng rồi, nên phía này
+    /// cũng phải về sảnh chờ: trước đây chỉ đổi dòng trạng thái, còn màn chơi
+    /// vẫn treo nguyên — đồng hồ chạy, bàn phím gõ được, nút quay lại thì ẩn vì
+    /// IsPlaying vẫn true — người chơi kẹt không lối ra ngoài ESC.
+    /// </summary>
+    private void OnDisconnected(string _)
+    {
+        if (_leaving) return;   // tự đóng cửa sổ thì dây đứt là chuyện đương nhiên
+
+        _tick.Stop();
+        _flash.Stop();
+        _cooldown.Stop();
+
+        IsPlaying = false;
+        IsMatchOver = false;
+        IsAnswered = false;
+        IsPicking = false;
+        IsWaitingPick = false;
+        IsAsker = false;
+        IsCoolingDown = false;
+        IsHost = false;
+        IsReady = false;
+        RoomCode = "";
+        RoomName = "";
+        Players.Clear();
+        Slots.Clear();
+        Tiles.Clear();
+        ImageSource = null;
+        FeedbackText = "";
+        RevealedAnswer = "";
+
+        OnPropertyChanged(nameof(PlayerCountText));
+        RaiseCommandStates();
+
+        // Lý do kỹ thuật ("The remote party closed the WebSocket…") không giúp
+        // gì người chơi, chỉ cần biết là đứt và phải vào lại
+        Status = "Mất kết nối tới máy chủ. Tạo hoặc vào lại phòng để chơi tiếp.";
+    }
 
     private void ApplyRoom(RoomState room)
     {
         RoomCode = room.Code;
+        RoomName = room.Name;
         IsHost = room.HostAccountId == _myAccountId;
+        Mode = room.Mode;
+        MaxPlayers = room.MaxPlayers;
+        IsReady = room.Players.FirstOrDefault(p => p.AccountId == _myAccountId)?.IsReady ?? false;
+
+        // Ai rời phòng giữa câu thì cả phòng nhận RoomChanged; dựng lại bảng mà
+        // quên dấu "đã trả lời" là những người vừa đúng bỗng mất tích
+        var answered = Players.Where(p => p.HasAnswered).Select(p => p.AccountId).ToHashSet();
 
         Players.Clear();
         foreach (PlayerInfo p in room.Players)
@@ -333,9 +815,14 @@ public class MatchViewModel : ViewModelBase
                 DisplayName = p.DisplayName,
                 IsHost = p.IsHost,
                 IsMe = p.AccountId == _myAccountId,
+                IsReady = p.IsReady,
                 Score = p.Score,
+                Lives = p.Lives,
+                HasAnswered = answered.Contains(p.AccountId),
             });
 
+        OnPropertyChanged(nameof(PlayerCountText));
+        OnPropertyChanged(nameof(AllGuestsReady));
         RaiseCommandStates();
     }
 
@@ -343,12 +830,31 @@ public class MatchViewModel : ViewModelBase
     {
         IsPlaying = true;
         IsMatchOver = false;
-        IsAnswered = false;
+        IsPicking = false;
+        IsWaitingPick = false;
         RevealedAnswer = "";
         FeedbackText = "";
 
-        ProgressText = $"Câu {round.RoundNumber}/{round.TotalRounds}";
+        // Đố nhau: người ra đề chỉ xem, không có bàn phím; người kia đoán như thường
+        IsAsker = round.AskerAccountId.Length > 0 && round.AskerAccountId == _myAccountId;
+        IsAnswered = IsAsker;
+        if (IsAsker)
+        {
+            string answer = PickCards.FirstOrDefault(c => c.ImageKey == round.ImageName)?.Answer ?? "";
+            IsFeedbackGood = true;
+            FeedbackText = answer.Length > 0
+                ? $"Bạn ra đề: {answer}. Chờ đối thủ đoán…"
+                : "Bạn ra đề. Chờ đối thủ đoán…";
+        }
+
+        // Câu mới thì quãng phạt của câu cũ hết hiệu lực - máy chủ cũng dọn
+        // đúng như vậy trong Room.ResetAnswers()
+        _cooldown.Stop();
+        IsCoolingDown = false;
+
+        ProgressText = $"Câu {round.RoundNumber}";
         DifficultyText = $"{round.Difficulty}/5";
+        PromptText = CategoryPrompt.For(round.Category);
 
         BuildSlots(round.WordLengths);
         BuildTiles(round.Tiles);
@@ -375,7 +881,7 @@ public class MatchViewModel : ViewModelBase
         byte[]? bytes = await _server.DownloadImageAsync(imageName);
 
         // Máy chủ đã sang câu khác thì ảnh này không còn dùng vào đâu nữa
-        if (!ProgressText.StartsWith($"Câu {roundNumber}/")) return;
+        if (ProgressText != $"Câu {roundNumber}") return;
 
         if (bytes == null)
         {
@@ -427,24 +933,75 @@ public class MatchViewModel : ViewModelBase
             FeedbackText = $"Đúng! +{result.Points} điểm ({result.Seconds:0.0}s)";
             _tick.Stop();
         }
+        else if (!result.Judged)
+        {
+            // Máy chủ chưa chấm (đáp án tới sớm hơn mốc hết phạt vài chục ms vì
+            // hai đồng hồ lệch nhau): giữ nguyên chữ đang ghép, chỉ nối lại
+            // quãng chờ cho khớp máy chủ rồi để người chơi bấm gửi lần nữa
+            IsFeedbackGood = false;
+            if (result.CooldownSeconds > 0) StartCooldown(result.CooldownSeconds);
+            else FeedbackText = "Máy chủ chưa nhận, gửi lại nhé.";
+        }
         else
         {
             IsFeedbackGood = false;
-            FeedbackText = "Chưa đúng, thử lại!";
             foreach (AnswerSlot slot in Slots) slot.IsWrong = !slot.IsSpace;
             _flash.Start();
+            StartCooldown(result.CooldownSeconds);
         }
+    }
+
+    /// <summary>
+    /// Bắt đầu quãng chờ sau khi đoán sai. Máy chủ mới là bên thật sự chặn
+    /// (xem <c>RoomManager.Judge</c>); phần này chỉ để người chơi nhìn thấy còn
+    /// phải chờ bao lâu, thay vì bấm mãi mà không hiểu sao không ăn thua.
+    /// </summary>
+    private void StartCooldown(double seconds)
+    {
+        if (seconds <= 0)
+        {
+            FeedbackText = "Chưa đúng, thử lại!";
+            return;
+        }
+
+        _blockedUntil = DateTime.UtcNow.AddSeconds(seconds);
+        IsCoolingDown = true;
+        ShowCooldownLeft();
+        _cooldown.Start();
+    }
+
+    private void ShowCooldownLeft()
+    {
+        double left = (_blockedUntil - DateTime.UtcNow).TotalSeconds;
+
+        if (left <= 0)
+        {
+            _cooldown.Stop();
+            IsCoolingDown = false;
+            FeedbackText = "Thử lại đi!";
+            return;
+        }
+
+        FeedbackText = $"Chưa đúng — chờ {Math.Ceiling(left):0}s";
     }
 
     private void EndRound(RoundEnded ended)
     {
         _tick.Stop();
         _flash.Stop();
+        _cooldown.Stop();
 
         RevealedAnswer = ended.Answer;
         ApplyScores(ended.Scores);
 
-        if (!IsAnswered)
+        if (IsAsker)
+        {
+            IsFeedbackGood = ended.AskerBonus > 0;
+            FeedbackText = ended.AskerBonus > 0
+                ? $"Đối thủ không đoán ra! Bạn được +{ended.AskerBonus} điểm."
+                : "Đối thủ đoán đúng rồi.";
+        }
+        else if (!IsAnswered)
         {
             IsFeedbackGood = false;
             FeedbackText = "Hết giờ câu này.";
@@ -455,19 +1012,50 @@ public class MatchViewModel : ViewModelBase
     {
         _tick.Stop();
         _flash.Stop();
+        _cooldown.Stop();
 
         ApplyScores(ended.Scores);
         IsPlaying = false;
         IsMatchOver = true;
+        IsPicking = false;
+        IsWaitingPick = false;
+        IsAsker = false;
 
         ScoreRow? best = Players.FirstOrDefault();
-        WinnerText = best == null
-            ? "Ván đã kết thúc."
-            : best.IsMe
-                ? $"Bạn thắng với {best.Score} điểm!"
-                : $"{best.DisplayName} thắng với {best.Score} điểm.";
+        int top = best?.Score ?? 0;
+        var leaders = Players.Where(p => p.Score == top).ToList();
 
-        Status = $"Ván xong. Vẫn ở phòng {RoomCode}, chủ phòng bấm bắt đầu là chơi ván mới.";
+        // Lý do ván dừng: ai đó hết mạng, hoặc đối thủ bỏ đi
+        ScoreRow? dead = Players.FirstOrDefault(p => p.Lives <= 0);
+        string reason = Players.Count < 2
+            ? "Đối thủ đã rời phòng."
+            : dead == null
+                ? "Đã hết bộ câu."
+                : dead.IsMe ? "Bạn đã hết mạng." : $"{dead.DisplayName} đã hết mạng.";
+
+        // Đối thủ bỏ đi thì người ở lại thắng, dù điểm đang thấp hơn
+        if (Players.Count < 2 && best != null)
+        {
+            WinnerText = $"{reason}\nBạn thắng!";
+        }
+        else
+        {
+            // Hai người bằng điểm (hay cả phòng 0 điểm) mà bảo "bạn thắng" thì kỳ
+            string result = best == null
+                ? "Ván đã kết thúc."
+                : leaders.Count > 1
+                    ? (leaders.Any(p => p.IsMe) ? $"Hòa {top} điểm!" : $"Hòa {top} điểm.")
+                    : best.IsMe
+                        ? $"Bạn thắng với {best.Score} điểm!"
+                        : $"{best.DisplayName} thắng với {best.Score} điểm.";
+            WinnerText = $"{reason}\n{result}";
+        }
+
+        // Cờ sẵn sàng đã bị xóa lúc ván bắt đầu, nên khách phải bấm lại; nói
+        // rõ kẻo chủ phòng thấy nút "Ván mới" mờ mà không hiểu vì sao
+        Status = IsHost
+            ? $"Ván xong. Vẫn ở phòng {RoomCode}; mọi người bấm Sẵn sàng lại là bạn bắt đầu được ván mới."
+            : $"Ván xong. Vẫn ở phòng {RoomCode}; bấm Sẵn sàng lại để chủ phòng mở ván mới.";
     }
 
     private void ApplyScores(IReadOnlyList<PlayerInfo> scores)
@@ -475,7 +1063,9 @@ public class MatchViewModel : ViewModelBase
         foreach (PlayerInfo info in scores)
         {
             ScoreRow? row = Players.FirstOrDefault(p => p.AccountId == info.AccountId);
-            if (row != null) row.Score = info.Score;
+            if (row == null) continue;
+            row.Score = info.Score;
+            row.Lives = info.Lives;
         }
 
         Reorder();
@@ -519,7 +1109,7 @@ public class MatchViewModel : ViewModelBase
 
     private void PlaceLetter(LetterTile? tile)
     {
-        if (tile == null || tile.IsUsed || IsAnswered || !IsPlaying) return;
+        if (tile == null || tile.IsUsed || IsAnswered || IsCoolingDown || !IsPlaying) return;
 
         AnswerSlot? slot = Slots.FirstOrDefault(s => !s.IsSpace && !s.HasValue);
         if (slot == null) return;
@@ -529,9 +1119,43 @@ public class MatchViewModel : ViewModelBase
         slot.IsWrong = false;
         tile.IsUsed = true;
 
-        // Điền kín là gửi luôn: ván đấu tính từng phần mười giây, bắt bấm thêm
-        // một nút "gửi" nữa thì chỉ tổ chậm
-        if (Slots.All(s => s.IsSpace || s.HasValue)) _ = SubmitAsync();
+        // KHÔNG tự gửi khi điền kín nữa. Trước đây có, vì đấu tính từng phần
+        // mười giây; nhưng gõ bàn phím nhanh thì chữ cuối gõ nhầm là mất luôn
+        // lượt (sai là chịu phạt chờ). Người chơi bấm Enter khi thấy ưng.
+        RaiseCommandStates();
+    }
+
+    /// <summary>Điền kín hết ô rồi thì mới gửi được.</summary>
+    public bool CanSubmit =>
+        IsPlaying && !IsAnswered && !IsCoolingDown
+        && Slots.Count > 0 && Slots.All(s => s.IsSpace || s.HasValue);
+
+    /// <summary>
+    /// Gõ một chữ trên bàn phím vật lý. Tìm phím trên màn hình còn trống có
+    /// đúng chữ đó rồi đặt vào ô kế tiếp — y như bấm phím đó bằng chuột. Chữ
+    /// không có trên bàn phím (hoặc đã dùng hết) thì bỏ qua.
+    ///
+    /// Đấu là cuộc đua tốc độ; gõ 7 chữ trên bàn phím thật nhanh hơn hẳn nhắm
+    /// rồi bấm 7 ô trên màn hình.
+    /// </summary>
+    public void TypeLetter(char c)
+    {
+        c = char.ToUpperInvariant(c);
+        LetterTile? tile = Tiles.FirstOrDefault(t => !t.IsUsed && t.Character == c);
+        if (tile != null) PlaceLetter(tile);
+    }
+
+    /// <summary>Backspace: lấy chữ ở ô có chữ cuối cùng ra.</summary>
+    public void EraseLast()
+    {
+        AnswerSlot? last = Slots.LastOrDefault(s => !s.IsSpace && s.HasValue);
+        if (last != null) TakeBack(last);
+    }
+
+    /// <summary>Enter (hoặc nút Gửi): nộp đáp án nếu đã điền kín.</summary>
+    public void Submit()
+    {
+        if (CanSubmit) _ = SubmitAsync();
     }
 
     private void TakeBack(AnswerSlot? slot)
@@ -544,6 +1168,7 @@ public class MatchViewModel : ViewModelBase
         slot.CurrentChar = null;
         slot.SourceTileId = null;
         slot.IsWrong = false;
+        RaiseCommandStates();
     }
 
     private async Task SubmitAsync()
@@ -552,7 +1177,7 @@ public class MatchViewModel : ViewModelBase
 
         try
         {
-            await _client.SubmitAnswerAsync(guess);
+            if (_client != null) await _client.SubmitAnswerAsync(guess);
         }
         catch (Exception ex)
         {
@@ -589,26 +1214,37 @@ public class MatchViewModel : ViewModelBase
     private void RaiseCommandStates()
     {
         OnPropertyChanged(nameof(CanStart));
+        OnPropertyChanged(nameof(StartBlockedText));
+        ToggleReadyCommand.RaiseCanExecuteChanged();
         CreateRoomCommand.RaiseCanExecuteChanged();
         JoinRoomCommand.RaiseCanExecuteChanged();
         StartMatchCommand.RaiseCanExecuteChanged();
+        BackCommand.RaiseCanExecuteChanged();
+        ChooseModeCommand.RaiseCanExecuteChanged();
+        SubmitCommand.RaiseCanExecuteChanged();
+        OnPropertyChanged(nameof(CanSubmit));
     }
 
     /// <summary>Rời phòng cho gọn khi đóng cửa sổ; máy chủ cũng tự dọn khi rớt kết nối.</summary>
+    /// <summary>Đang tự rời (đóng cửa sổ); Closed bắn lúc này không phải là rớt mạng.</summary>
+    private bool _leaving;
+
     public async Task LeaveAsync()
     {
+        _leaving = true;
         _tick.Stop();
         _flash.Stop();
+        _cooldown.Stop();
 
         try
         {
-            if (_client.IsConnected) await _client.LeaveRoomAsync();
+            if (_client is { IsConnected: true }) await _client.LeaveRoomAsync();
         }
         catch
         {
             // Đang đóng cửa sổ rồi, lỗi ở đây không cứu được gì
         }
 
-        await _client.DisposeAsync();
+        if (_client != null) await _client.DisposeAsync();
     }
 }

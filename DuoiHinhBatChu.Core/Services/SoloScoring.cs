@@ -1,3 +1,5 @@
+using DuoiHinhBatChu.Models;
+
 namespace DuoiHinhBatChu.Services;
 
 /// <summary>
@@ -31,7 +33,25 @@ public static class SoloScoring
         return (int)Math.Round(Base(difficulty) * left);
     }
 
-    /// <summary>Tổng điểm cho một câu trả lời đúng.</summary>
+    /// <summary>Tổng điểm cho một câu trả lời đúng, chưa tính lối chơi.</summary>
     public static int Points(int difficulty, double seconds) =>
         Base(difficulty) + SpeedBonus(difficulty, seconds);
+
+    /// <summary>
+    /// Hệ số nhân cho lối chơi Ngẫu nhiên.
+    ///
+    /// Chơi ngẫu nhiên có thể gặp câu khó 4–5 ngay từ đầu và mất mạng sớm
+    /// (bot chơi thử 2026-09-15: người chơi thường chết ở câu 15/39), còn từ
+    /// dễ đến khó thì đi được xa hơn với cùng trình độ. Nhân thêm để hai lối
+    /// chơi cùng đáng để chọn — 1,5 là giá trị đầu, chỉnh khi có số liệu.
+    /// </summary>
+    public const double RandomOrderMultiplier = 1.5;
+
+    /// <summary>Hệ số nhân điểm của một lối chơi.</summary>
+    public static double Multiplier(RunOrder order) =>
+        order == RunOrder.Random ? RandomOrderMultiplier : 1.0;
+
+    /// <summary>Điểm thực nhận cho một câu đúng, đã nhân hệ số lối chơi.</summary>
+    public static int Points(int difficulty, double seconds, RunOrder order) =>
+        (int)Math.Round(Points(difficulty, seconds) * Multiplier(order));
 }

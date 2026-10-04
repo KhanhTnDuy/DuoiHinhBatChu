@@ -13,8 +13,12 @@ public class AppSettings
     public bool IsDarkTheme { get; set; }
     public string LastUserName { get; set; } = "";
 
-    /// <summary>Địa chỉ máy chủ đấu nhiều người dùng lần gần nhất.</summary>
-    public string ServerAddress { get; set; } = "";
+    /// <summary>
+    /// Địa chỉ máy chủ đấu nhiều người mà người VÀO phòng nối tới. Mặc định là
+    /// máy này; đấu qua LAN thì gõ IP máy tạo phòng vào ô "Địa chỉ máy chủ" ở
+    /// màn Vào phòng, ví dụ "192.168.1.10:5180".
+    /// </summary>
+    public string ServerAddress { get; set; } = "localhost:5180";
 
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 

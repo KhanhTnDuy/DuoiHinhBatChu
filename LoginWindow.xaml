@@ -1,4 +1,4 @@
-<Window x:Class="DuoiHinhBatChu.LoginWindow"
+﻿<Window x:Class="DuoiHinhBatChu.LoginWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         mc:Ignorable="d"
@@ -6,9 +6,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:conv="clr-namespace:DuoiHinhBatChu.Converters"
         Title="Đuổi hình bắt chữ - Đăng nhập"
-        Width="960" Height="740"
+        WindowState="Maximized" MinWidth="1280" MinHeight="900"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"
         FontFamily="Segoe UI"
         TextOptions.TextFormattingMode="Ideal"
         Background="{DynamicResource SkyBrush}"
@@ -306,7 +305,7 @@
                                     <TextBlock Text="2" Style="{StaticResource StepNumberText}"/>
                                 </Border>
                                 <TextBlock Style="{StaticResource StepText}"
-                                           Text="Bấm các phím chữ cái phía dưới để ghép thành đáp án; bấm lại ô đáp án để lấy chữ ra."/>
+                                           Text="Bấm các phím chữ cái phía dưới để ghép câu trả lời; bấm lại ô trả lời để lấy chữ ra."/>
                             </StackPanel>
 
                             <StackPanel Orientation="Horizontal" Margin="0,10,0,18">
@@ -353,7 +352,7 @@
                                            Margin="16,0,0,0" MaxWidth="330"
                                            VerticalAlignment="Center"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
-                                           Text="Game miễn phí, làm cho vui. Quét mã bên cạnh nếu bạn muốn ủng hộ mình một ly cà phê."/>
+                                           Text="Game miễn phí! Nếu bạn muốn ủng hộ nhà phát triển, hãy quét mã QR bên cạnh."/>
                             </StackPanel>
                         </StackPanel>
                     </ScrollViewer>

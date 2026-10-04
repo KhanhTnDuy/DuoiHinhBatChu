@@ -22,11 +22,15 @@ namespace DuoiHinhBatChu.Core.Data.Migrations
                     b.Property<string>("AccountId")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("BestScore")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("CorrectStreak")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("CurrentPuzzleIndex")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("CurrentPuzzleId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("IsBgmEnabled")
                         .HasColumnType("INTEGER");
@@ -46,8 +50,17 @@ namespace DuoiHinhBatChu.Core.Data.Migrations
                     b.Property<int>("Rubies")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("RunOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RunSeed")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Score")
                         .HasColumnType("INTEGER");
+
+                    b.Property<double>("SecondsLeft")
+                        .HasColumnType("REAL");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");

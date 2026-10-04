@@ -1,4 +1,4 @@
-using DuoiHinhBatChu.Models;
+﻿using DuoiHinhBatChu.Models;
 using DuoiHinhBatChu.Services;
 
 namespace DuoiHinhBatChu.ViewModels;
@@ -15,7 +15,15 @@ public class MenuViewModel : ViewModelBase
     private readonly Account _account;
     private readonly AppSettings _settings;
     private readonly GameStateService _state;
-    private readonly int _totalPuzzles;
+    /// <summary>
+    /// Có ván nào đang chơi dở không.
+    ///
+    /// Dấu hiệu là hạt giống xáo bài: mỗi ván có một hạt giống, và ván kết thúc
+    /// thì nó về 0 (xem <see cref="GameStateService.SaveEndOfRun"/>). KHÔNG dựa
+    /// vào "đã giải câu nào chưa" nữa — chơi xong một ván là danh sách đã giải
+    /// có tên, mà lúc đó đâu còn ván nào để "tiếp".
+    /// </summary>
+    private bool _hasRun;
 
     /// <summary>
     /// Hỏi một lần lúc dựng màn, TRƯỚC khi người chơi kịp bấm gì.
@@ -42,8 +50,7 @@ public class MenuViewModel : ViewModelBase
         _hasPlayedBefore = _state.HasPlayedBefore();
         _profile = _state.LoadProfile();
 
-        // Chỉ cần con số tổng, đếm thẳng trong cơ sở dữ liệu chứ không nạp cả bộ câu
-        _totalPuzzles = new PuzzleRepository().Count();
+        _hasRun = _profile.RunSeed != 0;
 
         ContinueCommand = new RelayCommand(_ => StartGame?.Invoke());
         NewGameCommand = new RelayCommand(_ => AskNewGame());
@@ -100,14 +107,15 @@ public class MenuViewModel : ViewModelBase
     /// Đã chơi dở hay chưa. Tài khoản mới tinh thì không có gì để "tiếp", nên
     /// nút đổi tên thành Bắt đầu chơi và thẻ Chơi mới ẩn đi.
     /// </summary>
-    public bool HasProgress =>
-        _profile.CurrentPuzzleIndex > 0 || _profile.Score > 0 || _profile.SolvedPuzzleIds.Count > 0;
+    public bool HasProgress => _hasRun;
 
     public string ContinueTitle => HasProgress ? "Chơi tiếp" : "Bắt đầu chơi";
 
+    // Kim cương là của tài khoản chứ không phải của ván, nên ván mới không
+    // "cấp 2 kim cương" — nói số đang có thật thì đúng với mọi người
     public string ContinueDetail => HasProgress
-        ? "Vào lại đúng câu bạn đang dở, giữ nguyên điểm và kim cương."
-        : "Bắt đầu từ câu đầu tiên, với 5 mạng và 3 kim cương.";
+        ? "Vào lại đúng câu bạn đang dở, giữ nguyên điểm ván và kim cương."
+        : $"Bắt đầu từ câu đầu tiên, với {_profile.MaxLives} mạng và {_profile.Rubies} kim cương.";
 
     /// <summary>
     /// Đang chơi khách. Nói thẳng ngay trên menu thay vì để người ta chơi cả
@@ -116,17 +124,22 @@ public class MenuViewModel : ViewModelBase
     public bool IsGuest => _account.IsGuest;
 
     /// <summary>
-    /// Viên nhãn trên thẻ Chơi tiếp: "CÂU 3" hoặc "VÁN MỚI".
+    /// Viên nhãn trên thẻ Chơi tiếp.
     ///
-    /// Vẫn kẹp theo tổng số câu — chơi hết bộ rồi thì số đang lưu là "câu thứ 7"
-    /// của bộ 6 câu, hiện thẳng ra là sai — nhưng KHÔNG hiện tổng ra ngoài,
-    /// cùng lý do với <see cref="SolvedText"/>.
+    /// Từng hiện "CÂU 22". Bỏ con số đi vì thứ tự câu nay xáo lại mỗi ván, nên
+    /// "câu thứ 22" không nói lên điều gì: nó không phải câu thứ 22 của bộ, mà
+    /// là câu thứ 22 của một thứ tự chỉ ván này mới có.
     /// </summary>
-    public string ContinuePill => HasProgress
-        ? $"CÂU {Math.Min(_profile.CurrentPuzzleIndex + 1, _totalPuzzles)}"
-        : "VÁN MỚI";
+    public string ContinuePill => HasProgress ? "ĐANG DỞ" : "VÁN MỚI";
 
-    public string ScoreText => _profile.Score.ToString();
+    /// <summary>
+    /// Kỷ lục, KHÔNG phải điểm ván đang dở.
+    ///
+    /// Menu là chỗ nhìn lại thành tích, mà điểm ván đang dở thì nay còn mai mất
+    /// — thua một ván là nó về 0. Con số đáng khoe ở đây là điểm ván cao nhất.
+    /// Điểm ván đang chạy vẫn hiện đầy đủ trên thanh trạng thái màn chơi.
+    /// </summary>
+    public string BestScoreText => _profile.BestScore.ToString();
     public string RubiesText => _profile.Rubies.ToString();
     public string LivesText => $"{Math.Max(0, _profile.Lives)}/{_profile.MaxLives}";
     /// <summary>
@@ -145,12 +158,13 @@ public class MenuViewModel : ViewModelBase
     public void Refresh()
     {
         _profile = _state.LoadProfile();
+        _hasRun = _profile.RunSeed != 0;
 
         OnPropertyChanged(nameof(HasProgress));
         OnPropertyChanged(nameof(ContinueTitle));
         OnPropertyChanged(nameof(ContinueDetail));
         OnPropertyChanged(nameof(ContinuePill));
-        OnPropertyChanged(nameof(ScoreText));
+        OnPropertyChanged(nameof(BestScoreText));
         OnPropertyChanged(nameof(RubiesText));
         OnPropertyChanged(nameof(LivesText));
         OnPropertyChanged(nameof(SolvedText));

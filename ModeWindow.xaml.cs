@@ -1,5 +1,4 @@
 using System.Windows;
-using System.Windows.Controls;
 using DuoiHinhBatChu.Models;
 using DuoiHinhBatChu.Services;
 using DuoiHinhBatChu.ViewModels;
@@ -25,6 +24,7 @@ public partial class ModeWindow : Window
         _vm = new ModeViewModel(account, settings);
         _vm.StartSolo += StartSolo;
         _vm.StartMatch += StartMatch;
+        _vm.GoBack += GoBack;
         DataContext = _vm;
     }
 
@@ -42,22 +42,24 @@ public partial class ModeWindow : Window
         Close();
     }
 
-    /// <summary>
-    /// Sang màn đấu, mang theo đường dây đã mở sẵn. Tên hiện trong phòng lấy
-    /// theo tài khoản trên máy chủ, vì đó mới là tên người khác nhìn thấy.
-    /// </summary>
-    private void StartMatch(MatchClient client, ServerClient server, AuthResponse auth)
+    /// <summary>Đăng xuất: về màn đăng nhập. Mở cửa sổ mới trước rồi mới đóng.</summary>
+    private void GoBack()
     {
-        var match = new MatchWindow(client, server, _settings, auth.AccountId, auth.DisplayName);
-        Application.Current.MainWindow = match;
-        match.Show();
+        var login = new LoginWindow();
+        Application.Current.MainWindow = login;
+        login.Show();
         Close();
     }
 
     /// <summary>
-    /// PasswordBox không cho ràng buộc dữ liệu vào Password, nên đẩy tay sang
-    /// view model giống màn đăng nhập.
+    /// Sang màn đấu ngay, chưa nối máy chủ. Màn đấu tự nối và đăng nhập máy
+    /// chủ lúc người chơi bấm tạo / vào phòng.
     /// </summary>
-    private void ServerPasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
-        => _vm.ServerPassword = ((PasswordBox)sender).Password;
+    private void StartMatch(LobbyMode mode)
+    {
+        var match = new MatchWindow(_account, _settings, mode);
+        Application.Current.MainWindow = match;
+        match.Show();
+        Close();
+    }
 }

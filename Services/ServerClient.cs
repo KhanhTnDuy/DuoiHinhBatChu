@@ -100,9 +100,45 @@ public class ServerClient
         PostAuthAsync(address, "register",
                       new RegisterRequest(userName, displayName, password, password, phone));
 
-    // Máy chủ có sẵn đường /api/auth/reset-password, nhưng màn đăng nhập máy chủ
-    // chưa có mục "Quên mật khẩu?" nên client chưa gọi tới. Thêm màn đó thì viết
-    // lại một hàm ResetPasswordAsync theo đúng khuôn hai hàm trên.
+    /// <summary>
+    /// Vào máy chủ bằng chính tài khoản ở máy này, không hỏi gì thêm.
+    ///
+    /// Máy chủ vẫn giữ sổ tài khoản riêng (nó là bên ghi điểm ván đấu), nhưng
+    /// người chơi không phải đăng ký lần nữa: client tự đăng nhập bằng tên đăng
+    /// nhập của tài khoản trên máy, còn "mật khẩu" là mã tài khoản — chuỗi
+    /// ngẫu nhiên 32 ký tự sinh lúc tạo tài khoản, chỉ máy này biết. Lần đầu
+    /// gặp máy chủ thì đăng nhập không có, chuyển sang đăng ký với cùng bộ đó.
+    ///
+    /// Đăng ký cũng bị từ chối (tên đã có trên máy chủ) thì còn một cửa: tài
+    /// khoản cùng tên đó có thể chính là của người này, tạo từ một bản cài
+    /// trước — xóa Data/game.db rồi đăng ký lại cùng tên là mã tài khoản đổi,
+    /// mật khẩu trên máy chủ không khớp nữa và người chơi bị chặn khỏi chế độ
+    /// đấu vĩnh viễn. Máy chủ có sẵn "quên mật khẩu" bằng số điện thoại, nên
+    /// thử luôn: đúng số đã khai thì đặt lại mật khẩu thành mã mới và vào được.
+    /// Sai số (tên đó của người khác thật) thì mới báo lỗi ra ngoài.
+    /// </summary>
+    public async Task<ServerAuth> SignInAsync(string address, Account account)
+    {
+        string secret = account.Id;
+
+        ServerAuth auth = await LoginAsync(address, account.UserName, secret);
+        if (auth.Ok) return auth;
+
+        // Không nối được thì đăng ký cũng vô ích, báo luôn lỗi kết nối
+        if (auth.Message.StartsWith("Không nối được") || auth.Message.StartsWith("Máy chủ không trả lời"))
+            return auth;
+
+        ServerAuth reg = await RegisterAsync(address, account.UserName, account.DisplayName, secret, account.Phone);
+        if (reg.Ok || account.Phone.Length == 0) return reg;
+
+        ServerAuth reset = await ResetPasswordAsync(address, account.UserName, account.Phone, secret);
+        return reset.Ok ? reset : reg;   // lấy lại không được thì lỗi đăng ký mới là lỗi thật
+    }
+
+    public Task<ServerAuth> ResetPasswordAsync(
+        string address, string userName, string phone, string newPassword) =>
+        PostAuthAsync(address, "reset-password",
+                      new ResetPasswordRequest(userName, phone, newPassword, newPassword));
 
     // ----- Nội bộ -----
 

@@ -1,4 +1,4 @@
-<Window x:Class="DuoiHinhBatChu.MenuWindow"
+﻿<Window x:Class="DuoiHinhBatChu.MenuWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         mc:Ignorable="d"
@@ -6,9 +6,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:conv="clr-namespace:DuoiHinhBatChu.Converters"
         Title="Đuổi hình bắt chữ - Cổ điển"
-        Width="1120" Height="760"
+        WindowState="Maximized" MinWidth="1280" MinHeight="900"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"
         FontFamily="Segoe UI"
         TextOptions.TextFormattingMode="Ideal"
         Background="{DynamicResource SkyBrush}"
@@ -28,7 +27,6 @@
                 <RowDefinition Height="Auto"/>   <!-- tên màn hình -->
                 <RowDefinition Height="Auto"/>   <!-- bốn con số hồ sơ -->
                 <RowDefinition Height="*"/>      <!-- ba lựa chọn -->
-                <RowDefinition Height="Auto"/>   <!-- quay lại -->
             </Grid.RowDefinitions>
 
             <!-- === Đầu trang: người đang chơi === -->
@@ -51,9 +49,13 @@
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
                 </StackPanel>
 
-                <Button Style="{StaticResource ThemeToggleButton}"
-                        HorizontalAlignment="Right" VerticalAlignment="Top"
-                        Command="{Binding ToggleThemeCommand}"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                    <Button Style="{StaticResource BackButton}" Margin="0,0,8,0"
+                            ToolTip="Về màn chọn chế độ"
+                            Command="{Binding BackCommand}"/>
+                    <Button Style="{StaticResource ThemeToggleButton}"
+                            Command="{Binding ToggleThemeCommand}"/>
+                </StackPanel>
             </Grid>
 
             <!-- === Tên màn hình === -->
@@ -100,8 +102,8 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="ĐIỂM" Style="{StaticResource SectionLabel}"/>
-                        <TextBlock Text="{Binding ScoreText}" Style="{StaticResource HudValue}"
+                        <TextBlock Text="KỶ LỤC" Style="{StaticResource SectionLabel}"/>
+                        <TextBlock Text="{Binding BestScoreText}" Style="{StaticResource HudValue}"
                                    FontSize="26" Margin="0,4,0,0"
                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
                     </StackPanel>
@@ -165,9 +167,6 @@
                                                Foreground="{DynamicResource PrimaryBrush}"/>
                                 </Border>
                             </StackPanel>
-                            <TextBlock Text="{Binding ContinueDetail}" TextWrapping="Wrap"
-                                       FontSize="14" LineHeight="22" Margin="0,6,0,0"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
                         </StackPanel>
 
                         <Button Grid.Column="2" Style="{StaticResource PrimaryButton}"
@@ -201,10 +200,6 @@
                                            Foreground="{DynamicResource TextPrimaryBrush}"/>
                             </StackPanel>
 
-                            <TextBlock TextWrapping="Wrap" FontSize="14"
-                                       LineHeight="22" Margin="0,12,0,0"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       Text="Làm lại từ câu đầu. Điểm, kim cương và câu đã giải sẽ bị xóa."/>
 
                             <Button Style="{StaticResource SoftButton}"
                                     Margin="0,14,0,0" HorizontalAlignment="Left"
@@ -243,10 +238,6 @@
                                            Foreground="{DynamicResource TextPrimaryBrush}"/>
                             </StackPanel>
 
-                            <TextBlock TextWrapping="Wrap" FontSize="14"
-                                       LineHeight="22" Margin="0,12,0,0"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       Text="Ai chơi trên máy này được bao nhiêu điểm, giải được mấy câu."/>
 
                             <Button Style="{StaticResource SoftButton}"
                                     Margin="0,14,0,0" HorizontalAlignment="Left"
@@ -257,11 +248,6 @@
 
                 </StackPanel>
             </Grid>
-
-            <!-- === Quay lại === -->
-            <Button Grid.Row="4" Style="{StaticResource GhostButton}" Margin="0,16,0,0"
-                    HorizontalAlignment="Center"
-                    Command="{Binding BackCommand}" Content="← Đổi chế độ chơi"/>
         </Grid>
 
         <!-- ==================== Lớp phủ: hỏi lại trước khi xóa tiến trình ==================== -->
@@ -274,7 +260,7 @@
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock TextWrapping="Wrap" FontSize="14" LineHeight="22" Margin="0,12,0,0"
                                Foreground="{DynamicResource TextSecondaryBrush}"
-                               Text="Điểm, kim cương và danh sách câu đã giải sẽ bị xóa hết. Việc này không lấy lại được."/>
+                               Text="Kim cương, mạng và danh sách câu đã giải sẽ về lại như mới. Kỷ lục của bạn thì vẫn giữ nguyên."/>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
                                 Margin="0,22,0,0">
@@ -300,7 +286,7 @@
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock DockPanel.Dock="Top" FontSize="13" Margin="0,0,0,16"
                                Foreground="{DynamicResource TextMutedBrush}"
-                               Text="Tính theo các tài khoản chơi Cổ điển trên máy này."/>
+                               Text="Điểm ván cao nhất của từng tài khoản chơi Cổ điển trên máy này."/>
 
                     <Button DockPanel.Dock="Bottom" Style="{StaticResource PrimaryButton}"
                             HorizontalAlignment="Center" Margin="0,20,0,0"
@@ -337,7 +323,7 @@
 
                                             <TextBlock Grid.Column="2"
                                                        Style="{StaticResource HudValue}"
-                                                       Text="{Binding Score}"
+                                                       Text="{Binding BestScore}"
                                                        Foreground="{DynamicResource PrimaryBrush}"/>
                                         </Grid>
                                     </Border>

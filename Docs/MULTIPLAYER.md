@@ -1,7 +1,8 @@
-# Chế độ đấu nhiều người — kế hoạch
+# Chế độ đấu nhiều người
 
-Bản hiện tại **chưa có** chế độ này. Tài liệu ghi lại cách làm đã chọn, để phần
-đăng nhập vừa viết không phải đập đi làm lại.
+Tài liệu thiết kế của chế độ đấu, viết trước khi làm và giữ lại làm căn cứ.
+Chế độ này **đã chạy được** (`DuoiHinhBatChu.Server` + `MatchWindow`); luật
+điểm và luồng ván hiện tại xem mục "Chế độ đấu nhiều người" trong README gốc.
 
 ## Vì sao 1 người offline, 2 người trở lên phải online
 

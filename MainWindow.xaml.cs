@@ -32,6 +32,21 @@ public partial class MainWindow : Window
         }
 
         DataContext = _vm;
+
+        // Lớp phủ (tạm dừng, chọn lối chơi, hỏi kim cương) đóng lại thì kéo
+        // focus về cửa sổ. Nút vừa bấm trong lớp phủ bị ẩn đi nhưng vẫn giữ
+        // focus bàn phím, và chữ gõ sau đó rơi vào cái nút vô hình ấy chứ
+        // không tới Window_KeyDown — bot thử 2026-09-15 gõ mà ô không nhận.
+        _vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(GameViewModel.IsPaused)
+                                or nameof(GameViewModel.IsChoosingOrder)
+                                or nameof(GameViewModel.IsConfirmingHelp)
+                                or nameof(GameViewModel.IsGameOver)
+                                or nameof(GameViewModel.IsFinished))
+                Dispatcher.BeginInvoke(() => Keyboard.Focus(this));
+        };
+        Loaded += (_, _) => Keyboard.Focus(this);
     }
 
     /// <summary>
@@ -40,16 +55,41 @@ public partial class MainWindow : Window
     /// </summary>
     private void Window_KeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key != Key.Escape) return;
-
         if (_vm == null)
         {
-            Close();   // màn chơi mở không được, ESC là lối thoát duy nhất
+            if (e.Key == Key.Escape) Close();   // màn chơi mở không được, ESC là lối thoát duy nhất
             return;
         }
 
-        if (_vm.IsPaused) _vm.ResumeCommand.Execute(null);
-        else _vm.PauseCommand.Execute(null);
+        if (e.Key == Key.Escape)
+        {
+            if (_vm.IsPaused) _vm.ResumeCommand.Execute(null);
+            else _vm.PauseCommand.Execute(null);
+            return;
+        }
+
+        // Bàn phím vật lý: chữ điền vào ô, Backspace lấy ra, Enter trả lời —
+        // giống màn Đấu. View model tự từ chối khi đang tạm dừng, đang hỏi
+        // kim cương, đang chọn ô để mở…
+        // Bộ gõ tiếng Việt (Telex/VNI của Windows) đang bật thì phím tới dưới dạng
+        // ImeProcessed; lấy phím thật ra, không thì chữ đi vào ô ghép của bộ gõ
+        Key key = e.Key == Key.ImeProcessed ? e.ImeProcessedKey : e.Key;
+
+        if (key is >= Key.A and <= Key.Z)
+        {
+            _vm.TypeLetter((char)('A' + (key - Key.A)));
+            e.Handled = true;
+        }
+        else if (key == Key.Back)
+        {
+            _vm.EraseLast();
+            e.Handled = true;
+        }
+        else if (key == Key.Enter)
+        {
+            _vm.SubmitFromKeyboard();
+            e.Handled = true;
+        }
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
