@@ -1,6 +1,5 @@
 ﻿using System.Collections.ObjectModel;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using DuoiHinhBatChu.Models;
@@ -211,7 +210,20 @@ public class GameViewModel : ThemedViewModel, ILetterTyping
     private void Arrange(int seed, RunOrder order)
     {
         var shuffled = _baseOrder.ToList();
-        new Random(seed).Shuffle(CollectionsMarshal.AsSpan(shuffled));
+
+        // Fisher-Yates đếm lùi, viết tay CHỦ Ý — đừng thay bằng Random.Shuffle.
+        // Hạt giống được LƯU vào cơ sở dữ liệu, nên thuật toán này là một phần
+        // của định dạng lưu: Random.Shuffle xáo tiến từ đầu và cho thứ tự khác
+        // hẳn với cùng hạt giống (đo 2026-10-05: 0/1000 hạt giống trùng nhau).
+        // Đổi đi là mọi ván đang dở sống dậy với phần còn lại bị xáo lại, có thể
+        // gặp lại câu đã giải. (Xáo phím ở PuzzleRound thì không ai lưu, dùng
+        // Random.Shuffle được.)
+        var rng = new Random(seed);
+        for (int i = shuffled.Count - 1; i > 0; i--)
+        {
+            int j = rng.Next(i + 1);
+            (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]);
+        }
 
         _puzzles.Clear();
         _puzzles.AddRange(order == RunOrder.EasyFirst

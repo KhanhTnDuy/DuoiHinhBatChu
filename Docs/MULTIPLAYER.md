@@ -43,7 +43,7 @@ lẫn đem lên máy chủ thật sau này.
    - Còn nợ: đang dùng lại `AccountService` ghi JSON, chưa đổi sang SQLite.
      Vé để trong bộ nhớ nên khởi động lại máy chủ là phải đăng nhập lại.
 3. ~~**Hub phòng chơi** `GameHub`.~~ **Xong.**
-   - `CreateRoom` → mã 6 ký tự; `JoinRoom(code)`; `StartMatch(rounds)`.
+   - `CreateRoom` → mã 6 ký tự; `JoinRoom(code)`; `StartMatch()`.
    - Máy chủ phát `RoundStarted` kèm số ô và bộ phím chữ, **không kèm đáp án**.
    - `SubmitAnswer` — máy chủ chấm và tự đo thời gian; đáp án chỉ lộ ở `RoundEnded`.
    - Chưa có: đá người treo máy, chơi lại ngay trong phòng cũ.

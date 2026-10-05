@@ -308,9 +308,10 @@ Mã câu = đáp án đã chuẩn hóa (`"CÁ HEO"` → `"CAHEO"`). Đáp án hi
 
 ### Vòng lặp một ván đấu (server)
 
-`StartMatch` bốc ngẫu nhiên N câu → với mỗi câu: phát `RoundInfo`, chờ tới khi
-mọi người đã trả lời hoặc hết 20 giây, phát `RoundEnded` (kèm đáp án), nghỉ 3
-giây → hết N câu phát `MatchEnded`. Vòng lặp chạy nền ngoài lời gọi hub nên
+`StartMatch()` (không tham số) xáo cả bộ câu → với mỗi câu: phát `RoundInfo`,
+chờ tới khi mọi người đã trả lời hoặc hết 20 giây, ai chưa đúng mất 1 mạng,
+phát `RoundEnded` (kèm đáp án), nghỉ 3 giây → một người hết mạng (hoặc hết bộ
+câu, hoặc đối thủ rời phòng) thì phát `MatchEnded`. Vòng lặp chạy nền ngoài lời gọi hub nên
 dùng `IHubContext<GameHub>`; danh sách người chơi khóa bằng `Room.Gate` vì
 người vào/ra phòng sửa nó cùng lúc.
 
