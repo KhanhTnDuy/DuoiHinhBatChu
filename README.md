@@ -359,6 +359,7 @@ theo tài khoản hay tiến trình của ai.
 
 - [`Docs/DATABASE.md`](Docs/DATABASE.md) — cơ sở dữ liệu, migrations
 - [`Docs/MULTIPLAYER.md`](Docs/MULTIPLAYER.md) — thiết kế chế độ đấu nhiều người
+- [`Docs/GIOI-THIEU-CODE.md`](Docs/GIOI-THIEU-CODE.md) — độ phức tạp, kiến trúc, lộ trình học code và Q&A thuyết trình
 - [`Assets/tongquanthietke/DESIGN.md`](Assets/tongquanthietke/DESIGN.md) — bảng màu, typography
 - [`tools/nguyenlieu/HUONG DAN.md`](tools/nguyenlieu/HUONG%20DAN.md) — quy tắc đặt tên ảnh nguyên liệu
 
