@@ -193,6 +193,24 @@ tới lúc máy chủ còn đang phạt thì **không chấm**: `AnswerResult.Ju
 client giữ nguyên chữ đang ghép và chỉ nối lại quãng chờ — không nháy đỏ, không
 xóa chữ như khi sai thật.
 
+### Đóng gói bản gửi bạn bè (một file .exe)
+
+Bản này để bạn bè **vào phòng** của bạn, chạy không cần cài .NET (tự chứa runtime,
+~67 MB). Không kèm bộ ảnh câu đố (~360 MB, đóng một file thì chúng bị nhét hẳn vào
+.exe) nên chế độ Cổ điển không dùng được — ảnh khi chơi mạng do máy chủ gửi.
+
+```powershell
+dotnet publish DuoiHinhBatChu.csproj -c Release -r win-x64 --self-contained true `
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+  -p:EnableCompressionInSingleFile=true -p:ExcludeCauHoi=true `
+  -p:DebugType=None -p:DebugSymbols=false -o publish-ban-be
+```
+
+Cờ `ExcludeCauHoi=true` trong `DuoiHinhBatChu.csproj` bỏ `Assets\CauHoi` ra khỏi gói
+(bản dev thường không đặt cờ nên vẫn kèm đủ ảnh). File chưa ký số nên Windows hiện
+cảnh báo SmartScreen ("More info" → "Run anyway"). Dữ liệu tài khoản tự tạo ở
+`Data\` cạnh file .exe.
+
 ## Kiến trúc
 
 Ba dự án trong một solution (`DuoiHinhBatChu.slnx`):

@@ -34,7 +34,13 @@
 
   <ItemGroup>
     <!-- Ảnh câu đố: mỗi file là một câu, tên file chính là đáp án (vd "CÁ HEO.png") -->
-    <Content Include="Assets\CauHoi\**\*.*">
+    <!--
+      ExcludeCauHoi=true (dotnet publish -p:ExcludeCauHoi=true) bỏ bộ ảnh ra khỏi gói:
+      bộ ảnh nặng ~360 MB, và đóng gói một file thì chúng bị nhét hẳn vào trong .exe.
+      Bản gửi bạn bè chỉ để VÀO PHÒNG nên không cần ảnh (máy chủ của chủ phòng gửi ảnh
+      cho họ). Bản dev bình thường không đặt cờ này nên vẫn kèm đủ ảnh.
+    -->
+    <Content Include="Assets\CauHoi\**\*.*" Condition="'$(ExcludeCauHoi)' != 'true'">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <!-- Ảnh tài nguyên của app: mã QR ủng hộ, logo... (xem AppImageLocator) -->
