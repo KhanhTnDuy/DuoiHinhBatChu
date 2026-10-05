@@ -32,7 +32,6 @@ File này **không** quyết định có bao nhiêu câu, nó chỉ bổ sung th
     "answer": "CÁ HEO",
     "category": "Động vật",
     "difficulty": 2,
-    "hint": "Con vật sống dưới biển nhưng thở bằng phổi, rất thông minh.",
     "acceptedAnswers": ["CÁ HEO XANH"]
   }
 ]
@@ -43,7 +42,6 @@ File này **không** quyết định có bao nhiêu câu, nó chỉ bổ sung th
 | `answer` | Đáp án hiển thị khi báo kết quả. Ưu tiên giá trị này hơn tên file, vì tên file hay gõ thiếu dấu. |
 | `category` | Chủ đề, luôn hiện sẵn trên màn chơi: Đồ vật, Động vật, Thực vật, Địa danh, Thể thao, Cụm từ, Ca dao - tục ngữ, Nhân vật... |
 | `difficulty` | 1–5, nhân với điểm nền khi tính điểm. Chấm tay theo thang bên dưới. |
-| `hint` | Gợi ý lời. Hiện tại **không dùng** trong game (trợ giúp "Gợi ý" đã bỏ vì chủ đề đã hiện sẵn), giữ lại để sau. |
 | `acceptedAnswers` | Các cách viết khác cũng được tính đúng, lưu ở bảng `PuzzleAnswers`. |
 
 ### Thang độ khó

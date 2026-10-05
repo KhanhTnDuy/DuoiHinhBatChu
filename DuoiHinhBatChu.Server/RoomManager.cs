@@ -91,7 +91,6 @@ public class Room
 
     public bool IsPlaying { get; set; }
     public int RoundNumber { get; set; }
-    public int TotalRounds { get; set; }
 
     /// <summary>Thứ tự câu đã bốc sẵn cho cả ván, để mọi người nhận cùng một bộ.</summary>
     public List<Puzzle> Order { get; } = new();
@@ -123,8 +122,6 @@ public class Room
 
     /// <summary>Bản chụp danh sách người chơi theo thứ tự vào phòng, để duyệt không lo bị sửa giữa chừng.</summary>
     public List<Player> Snapshot() { lock (Gate) return _players.ToList(); }
-
-    public bool IsFull { get { lock (Gate) return _players.Count >= MaxPlayers; } }
 
     /// <summary>Mọi người TRỪ chủ phòng đã sẵn sàng chưa — chủ phòng bấm bắt đầu tức là đã sẵn sàng.</summary>
     public bool AllGuestsReady
@@ -217,7 +214,7 @@ public class Room
     public RoomState ToState()
     {
         lock (Gate)
-            return new RoomState(Code, Name, HostAccountId, Mode, IsPlaying, RoundNumber, TotalRounds, MaxPlayers,
+            return new RoomState(Code, Name, HostAccountId, Mode, IsPlaying, RoundNumber, MaxPlayers,
                                  _players.Select(p => p.ToInfo(HostAccountId)).ToList());
     }
 
@@ -255,15 +252,25 @@ public class RoomManager
         // ("SÓNG CHÓ.png"), gửi thẳng xuống là đưa đáp án cho ai chịu khó đọc
         // gói tin — trái với nguyên tắc "đáp án không rời máy chủ" của ván đấu.
         foreach (Puzzle p in _puzzles)
-            _imageKeys[Convert.ToHexString(RandomNumberGenerator.GetBytes(12))] = p.ImageName;
+        {
+            string key = Convert.ToHexString(RandomNumberGenerator.GetBytes(12));
+            _imageKeys[key] = p.ImageName;
+            _keysByImage[p.ImageName] = key;
+        }
     }
 
     /// <summary>Mã tải ảnh (ngẫu nhiên) → tên file ảnh thật trong bảng.</summary>
     private readonly Dictionary<string, string> _imageKeys = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Chiều ngược lại của <see cref="_imageKeys"/>. Giữ sẵn cả hai chiều vì
+    /// mỗi câu phát ra đều phải tra mã, mà dò ngược trong từ điển là quét cả bộ
+    /// — riêng lúc dựng 6 câu cho người ra đề chọn đã là 6 lần quét.
+    /// </summary>
+    private readonly Dictionary<string, string> _keysByImage = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Mã tải ảnh của một câu, gửi cho client thay cho tên file.</summary>
-    private string ImageKey(Puzzle puzzle) =>
-        _imageKeys.First(kv => kv.Value == puzzle.ImageName).Key;
+    private string ImageKey(Puzzle puzzle) => _keysByImage[puzzle.ImageName];
 
     public int PuzzleCount => _puzzles.Count;
     public int RoomCount => _rooms.Count;
@@ -312,7 +319,6 @@ public class RoomManager
         room.Order.Clear();
         room.Order.AddRange(_puzzles.OrderBy(_ => _rng.Next()));
 
-        room.TotalRounds = room.Order.Count;
         room.RoundNumber = 0;
         room.IsPlaying = true;
         room.UsedPuzzleIds.Clear();
@@ -359,7 +365,6 @@ public class RoomManager
 
         return new RoundInfo(
             room.RoundNumber,
-            room.TotalRounds,
             ImageKey(puzzle),
             round.WordLengths,
             new string(round.Tiles.Select(t => t.Character).ToArray()),

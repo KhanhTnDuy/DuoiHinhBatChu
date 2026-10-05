@@ -89,8 +89,8 @@ public class MatchClient : IAsyncDisposable
     public Task SetModeAsync(MatchMode mode) =>
         _hub.InvokeAsync("SetMode", _token, mode);
 
-    public Task StartMatchAsync(int rounds) =>
-        _hub.InvokeAsync("StartMatch", _token, rounds);
+    /// <summary>Ván chạy tới khi một người hết mạng, không còn số câu cố định.</summary>
+    public Task StartMatchAsync() => _hub.InvokeAsync("StartMatch", _token);
 
     public Task PickPuzzleAsync(string imageKey) =>
         _hub.InvokeAsync("PickPuzzle", _token, imageKey);

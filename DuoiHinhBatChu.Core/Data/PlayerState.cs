@@ -67,8 +67,6 @@ public class PlayerState
     public double SecondsLeft { get; set; }
 
     public bool IsSoundEnabled { get; set; } = true;
-    public bool IsBgmEnabled { get; set; } = true;
-    public bool IsTimerEnabled { get; set; } = true;
 
     /// <summary>Lần lưu gần nhất, để sau này làm mục "chơi tiếp".</summary>
     public DateTime UpdatedAt { get; set; } = DateTime.Now;

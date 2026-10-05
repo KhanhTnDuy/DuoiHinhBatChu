@@ -23,8 +23,8 @@ So với cách cũ (mỗi tài khoản một file JSON) thì được thêm:
 |---|---|---|
 | `Accounts` | tài khoản: tên đăng nhập, tên hiển thị, số điện thoại, mật khẩu đã băm | `Id` |
 | `PlayerStates` | tiến trình chơi đơn: điểm, mạng, kim cương, câu đang chơi, tùy chọn âm thanh | `AccountId` |
-| `PuzzleResults` | mỗi dòng là "tài khoản X đã giải câu Y", kèm số sao | `Id` |
-| `Puzzles` | câu đố: đáp án, chủ đề, gợi ý, độ khó, **và byte của ảnh** | `Id` |
+| `PuzzleResults` | mỗi dòng là "tài khoản X đã giải câu Y" | `Id` |
+| `Puzzles` | câu đố: đáp án, chủ đề, độ khó, **và byte của ảnh** | `Id` |
 | `PuzzleAnswers` | các cách viết khác cũng được chấm đúng | `Id` |
 
 Quan hệ:

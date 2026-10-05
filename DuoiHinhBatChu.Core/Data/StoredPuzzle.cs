@@ -30,9 +30,6 @@ public class StoredPuzzle
     /// <summary>Chủ đề của đáp án, vd "Đồ vật" — gợi ý nhỏ hiện sẵn cho người chơi.</summary>
     public string Category { get; set; } = "";
 
-    /// <summary>Gợi ý bằng lời.</summary>
-    public string Hint { get; set; } = "";
-
     /// <summary>Độ khó 1..5.</summary>
     public int Difficulty { get; set; }
 

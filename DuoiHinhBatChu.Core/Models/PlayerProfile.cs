@@ -48,10 +48,43 @@ public class PlayerProfile
 
     /// <summary>Số giây còn lại lúc tạm dừng, xem <see cref="Data.PlayerState.SecondsLeft"/>.</summary>
     public double SecondsLeft { get; set; } = 0;
-    public List<string> SolvedPuzzleIds { get; set; } = new();
-    public Dictionary<string, int> PuzzleStars { get; set; } = new();
-    public bool IsSoundEnabled { get; set; } = true;
-    public bool IsBgmEnabled { get; set; } = true;
-    public bool IsTimerEnabled { get; set; } = true;
 
+    /// <summary>
+    /// Mã các câu đã giải. Dùng tập hợp chứ không phải danh sách vì mỗi câu
+    /// đúng đều phải tra "giải chưa" — tra trong tập hợp là tức thì, còn dò
+    /// danh sách thì phải đi hết cả bộ.
+    /// </summary>
+    public HashSet<string> SolvedPuzzleIds { get; set; } = new();
+
+    public bool IsSoundEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Đưa phần "ván" về trạng thái chưa bắt đầu, giữ nguyên phần thuộc về tài
+    /// khoản (kỷ lục, kim cương, câu đã giải, tùy chọn).
+    /// </summary>
+    public void ResetRun()
+    {
+        Score = 0;
+        CorrectStreak = 0;
+        Lives = MaxLives;
+        RunSeed = 0;                 // ván sau xáo lại thứ tự câu
+        RunOrder = RunOrder.Random;  // và hỏi lại lối chơi
+        // Đi cùng RunSeed: ván sau xáo lại thì câu đang dở của ván cũ không còn
+        // nghĩa gì, giữ lại là ván mới nhảy vào giữa danh sách vừa xáo
+        CurrentPuzzleId = "";
+        SecondsLeft = 0;
+    }
+
+    /// <summary>
+    /// Bản hồ sơ của ván SAU, dùng lúc một ván vừa chốt sổ.
+    ///
+    /// Phải là một bản riêng vì hồ sơ trên tay người gọi không được đụng tới:
+    /// màn hình còn phải hiện điểm của ván vừa xong.
+    /// </summary>
+    public PlayerProfile ForNextRun()
+    {
+        var next = (PlayerProfile)MemberwiseClone();
+        next.ResetRun();
+        return next;
+    }
 }

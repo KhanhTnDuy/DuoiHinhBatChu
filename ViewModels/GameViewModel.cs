@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using DuoiHinhBatChu.Models;
@@ -11,7 +12,7 @@ namespace DuoiHinhBatChu.ViewModels;
 /// Toàn bộ luật chơi của màn chơi: nạp câu đố, xếp ô đáp án, phát chữ cái,
 /// kiểm tra đúng/sai, mạng, kim cương, điểm và các trợ giúp.
 /// </summary>
-public class GameViewModel : ViewModelBase
+public class GameViewModel : ThemedViewModel, ILetterTyping
 {
     // Giá các trợ giúp: trợ giúp nào cũng đúng 1 kim cương.
     // Kim cương rất hiếm (tài khoản mới có 2, đúng 5 câu liền mới được thêm 1)
@@ -25,7 +26,6 @@ public class GameViewModel : ViewModelBase
 
 
     private readonly Account _account;
-    private readonly AppSettings _settings;
     private readonly PuzzleRepository _repository = new();
     private readonly List<Puzzle> _puzzles;
     private readonly GameStateService _state;
@@ -48,10 +48,9 @@ public class GameViewModel : ViewModelBase
 
     /// <param name="account">Tài khoản đang đăng nhập; quyết định file lưu tiến trình.</param>
     /// <param name="settings">Tùy chọn chung, dùng để nhớ chế độ sáng/tối.</param>
-    public GameViewModel(Account account, AppSettings settings)
+    public GameViewModel(Account account, AppSettings settings) : base(settings)
     {
         _account = account;
-        _settings = settings;
         _state = new GameStateService(account.Id);
         _profile = _state.LoadProfile();
 
@@ -73,10 +72,10 @@ public class GameViewModel : ViewModelBase
 
         _puzzles = _repository.LoadAll();
         _baseOrder = _puzzles.ToList();
-        Arrange(_puzzles, _profile.RunSeed, _profile.RunOrder);
+        Arrange(_profile.RunSeed, _profile.RunOrder);
         _profile.PlayerName = account.DisplayName;
         AudioService.Instance.IsEnabled = _profile.IsSoundEnabled;
-        ThemeService.Apply(_settings.IsDarkTheme);
+        ThemeService.Apply(IsDarkTheme);
 
         _delay.Tick += (_, _) =>
         {
@@ -102,7 +101,6 @@ public class GameViewModel : ViewModelBase
         RestartCommand = new RelayCommand(_ => Restart());
         ConfirmHelpCommand = new RelayCommand(_ => ConfirmHelp());
         CancelHelpCommand = new RelayCommand(_ => CancelHelp());
-        ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
         ChooseOrderCommand = new RelayCommand(p => ChooseOrder(p));
 
         // Ván mới thì hỏi lối chơi trước đã, chọn xong mới nạp câu đầu; ván
@@ -126,9 +124,7 @@ public class GameViewModel : ViewModelBase
             && _profile.CurrentPuzzleId == savedPuzzleId)
         {
             _secondsLeft = savedSeconds;
-            OnPropertyChanged(nameof(TimeText));
-            OnPropertyChanged(nameof(TimeFraction));
-            OnPropertyChanged(nameof(IsTimeLow));
+            NotifyClock();
             IsPaused = true;
         }
     }
@@ -179,7 +175,7 @@ public class GameViewModel : ViewModelBase
             : Enum.TryParse(parameter?.ToString(), out RunOrder parsed) ? parsed
             : RunOrder.Random;
 
-        Arrange(_puzzles, _profile.RunSeed, _profile.RunOrder);
+        Arrange(_profile.RunSeed, _profile.RunOrder);
         OnPropertyChanged(nameof(RunOrderText));
 
         IsChoosingOrder = false;
@@ -201,56 +197,36 @@ public class GameViewModel : ViewModelBase
         PuzzleRound.ToSlotText(p.Answer).Count(char.IsLetter);
 
     /// <summary>
-    /// Xếp bộ câu theo lối chơi: về thứ tự gốc, xáo theo hạt giống, rồi nếu là
-    /// "từ dễ đến khó" thì sắp lại theo độ khó. OrderBy của .NET là sắp xếp
-    /// ổn định nên hai câu cùng độ khó giữ nguyên thứ tự vừa xáo — trong mỗi
-    /// bậc vẫn ngẫu nhiên, và vẫn dựng lại được y nguyên từ hạt giống.
+    /// Xếp bộ câu theo lối chơi: xáo thứ tự gốc theo hạt giống của ván, rồi nếu
+    /// là "từ dễ đến khó" thì sắp lại theo độ khó.
+    ///
+    /// Cùng một hạt giống luôn cho ra cùng một thứ tự, nên chỉ cần lưu đúng con
+    /// số đó là dựng lại được ván đang dở — khỏi phải lưu cả danh sách. Hạt
+    /// giống mới mỗi ván nên chơi lại không bao giờ gặp lại đúng thứ tự cũ.
+    ///
+    /// OrderBy của .NET là sắp xếp ổn định nên hai câu cùng độ khó giữ nguyên
+    /// thứ tự vừa xáo — trong mỗi bậc vẫn ngẫu nhiên, và vẫn dựng lại được y
+    /// nguyên từ hạt giống.
     /// </summary>
-    private void Arrange(List<Puzzle> puzzles, int seed, RunOrder order)
+    private void Arrange(int seed, RunOrder order)
     {
-        puzzles.Clear();
-        puzzles.AddRange(_baseOrder);
-        Shuffle(puzzles, seed);
+        var shuffled = _baseOrder.ToList();
+        new Random(seed).Shuffle(CollectionsMarshal.AsSpan(shuffled));
 
-        if (order != RunOrder.EasyFirst) return;
-
-        // Trong cùng một bậc, câu dài (ca dao, khẩu hiệu…) xếp sau: "dễ" mà
-        // mở màn bằng 27 chữ / 31 phím thì người mới nhìn đã nản, còn về mặt
-        // đoán thì nó không khó hơn — chỉ mất công gõ hơn
-        List<Puzzle> sorted = puzzles
-            .OrderBy(p => p.Difficulty)
-            .ThenBy(p => LetterCount(p) > LongAnswer ? 1 : 0)
-            .ToList();
-        puzzles.Clear();
-        puzzles.AddRange(sorted);
+        _puzzles.Clear();
+        _puzzles.AddRange(order == RunOrder.EasyFirst
+            // Trong cùng một bậc, câu dài (ca dao, khẩu hiệu…) xếp sau: "dễ" mà
+            // mở màn bằng 27 chữ / 31 phím thì người mới nhìn đã nản, còn về
+            // mặt đoán thì nó không khó hơn — chỉ mất công gõ hơn
+            ? shuffled.OrderBy(p => p.Difficulty)
+                      .ThenBy(p => LetterCount(p) > LongAnswer ? 1 : 0)
+            : shuffled);
     }
 
     /// <summary>
     /// Hạt giống cho một ván mới. Tránh số 0 vì 0 là dấu hiệu "chưa có ván nào".
     /// </summary>
     private static int NewSeed() => Random.Shared.Next(1, int.MaxValue);
-
-    /// <summary>
-    /// Xáo bộ câu theo hạt giống của ván.
-    ///
-    /// Cùng một hạt giống luôn cho ra cùng một thứ tự, nên chỉ cần lưu đúng con
-    /// số đó là dựng lại được ván đang dở — khỏi phải lưu cả danh sách. Hạt
-    /// giống mới mỗi ván nên chơi lại không bao giờ gặp lại đúng thứ tự cũ.
-    ///
-    /// Fisher-Yates: mỗi hoán vị có xác suất như nhau.
-    /// </summary>
-    private static List<Puzzle> Shuffle(List<Puzzle> puzzles, int seed)
-    {
-        var rng = new Random(seed);
-
-        for (int i = puzzles.Count - 1; i > 0; i--)
-        {
-            int j = rng.Next(i + 1);
-            (puzzles[i], puzzles[j]) = (puzzles[j], puzzles[i]);
-        }
-
-        return puzzles;
-    }
 
     /// <summary>
     /// Vào lại chỗ cũ của ván đang dở. Hồ sơ giữ MÃ câu chứ không phải số thứ
@@ -282,7 +258,6 @@ public class GameViewModel : ViewModelBase
     public RelayCommand RestartCommand { get; }
     public RelayCommand ConfirmHelpCommand { get; }
     public RelayCommand CancelHelpCommand { get; }
-    public RelayCommand ToggleThemeCommand { get; }
 
     // ----- Dữ liệu hiển thị -----
     public ObservableCollection<AnswerSlot> Slots { get; } = new();
@@ -296,44 +271,17 @@ public class GameViewModel : ViewModelBase
     public string DifficultyText => $"{Current.Difficulty}/5";
 
     /// <summary>
-    /// Chủ đề của đáp án ("Đồ vật", "Ca dao - tục ngữ"…). Cho không, hiện ngay
-    /// dưới câu hỏi: nhìn hình mà không ra thì ít ra cũng biết đang tìm cái gì,
-    /// đỡ phải tiêu kim cương chỉ để có hướng nghĩ.
-    /// </summary>
-    public string CategoryText => Current.Category;
-
-    /// <summary>
-    /// Câu dẫn trên đầu màn chơi ("Đây là một con vật"…), dựng từ chủ đề.
+    /// Câu dẫn trên đầu màn chơi ("Đây là một con vật"…), dựng từ chủ đề của
+    /// đáp án — gợi ý cho không, thu hẹp hướng nghĩ mà không nói ra đáp án.
     /// Bảng câu nằm ở <see cref="CategoryPrompt"/> vì màn Đấu cũng dùng.
     /// </summary>
     public string PromptText => CategoryPrompt.For(Current.Category);
 
-    /// <summary>Số ô chữ cái của đáp án (không tính khoảng trắng).</summary>
-    public string LetterCountText => $"{Slots.Count(x => !x.IsSpace)} chữ cái";
-
     /// <summary>Số câu đã giải trên tổng số câu.</summary>
     public string SolvedText => $"{_profile.SolvedPuzzleIds.Count}/{_puzzles.Count}";
 
-    /// <summary>true = đang ở chế độ tối.</summary>
-    public bool IsDarkTheme
-    {
-        get => _settings.IsDarkTheme;
-        private set
-        {
-            _settings.IsDarkTheme = value;
-            OnPropertyChanged();
-        }
-    }
-
     /// <summary>Tên hiện ở cột trái, để giữa trận vẫn biết đang chơi bằng tài khoản nào.</summary>
     public string PlayerName => _account.DisplayName;
-
-    private void ToggleTheme()
-    {
-        IsDarkTheme = !IsDarkTheme;
-        ThemeService.Apply(IsDarkTheme);
-        _settings.Save();
-    }
 
     public int Score
     {
@@ -385,14 +333,7 @@ public class GameViewModel : ViewModelBase
     {
         if (_profile.Score > _profile.BestScore) _profile.BestScore = _profile.Score;
         _state.SaveEndOfRun(_profile);
-
-        var fresh = new PlayerProfile();
-        _profile.Score = 0;
-        _profile.CorrectStreak = 0;
-        _profile.Lives = fresh.Lives;
-        _profile.RunSeed = 0;
-        _profile.RunOrder = RunOrder.Random;
-        _profile.CurrentPuzzleId = "";
+        _profile.ResetRun();
     }
 
     /// <summary>
@@ -535,6 +476,14 @@ public class GameViewModel : ViewModelBase
     /// <summary>Số giây đã dùng cho câu đang chơi, để tính điểm thưởng tốc độ.</summary>
     private double SecondsUsed => SoloScoring.MaxSeconds - _secondsLeft;
 
+    /// <summary>Ba con số của đồng hồ luôn đổi cùng lúc, nên báo cùng một chỗ.</summary>
+    private void NotifyClock()
+    {
+        OnPropertyChanged(nameof(TimeText));
+        OnPropertyChanged(nameof(TimeFraction));
+        OnPropertyChanged(nameof(IsTimeLow));
+    }
+
     /// <summary>
     /// Một nhịp đồng hồ. Đang khóa (chờ hiệu ứng đúng/sai, hết mạng, hết bộ câu)
     /// thì không trừ giờ — không ai đáng bị mất thời gian vì đang xem chữ
@@ -545,53 +494,18 @@ public class GameViewModel : ViewModelBase
         if (_locked || IsPaused || IsChoosingOrder) return;
 
         _secondsLeft -= _clock.Interval.TotalSeconds;
+        NotifyClock();
 
-        OnPropertyChanged(nameof(TimeText));
-        OnPropertyChanged(nameof(TimeFraction));
-        OnPropertyChanged(nameof(IsTimeLow));
+        if (_secondsLeft > 0) return;
 
-        if (_secondsLeft <= 0) OnTimeout();
-    }
-
-    /// <summary>Hết giờ: mất một mạng như trả lời sai, nhưng không cho làm lại câu đó.</summary>
-    private void OnTimeout()
-    {
         _secondsLeft = 0;
-        _locked = true;
-        // Hộp hỏi lại kim cương có thể đang mở (đồng hồ vẫn chạy lúc hỏi). Câu
-        // đã kết thúc thì phải đóng nó, không thì bấm "Dùng" là mất kim cương
-        // cho một câu không còn tồn tại
-        IsPickingReveal = false;
-        CancelHelp();
-        AudioService.Instance.PlayWrong();
-
-        Lives--;
-        CorrectStreak = 0;
-        IsFeedbackGood = false;
-        FeedbackText = "Hết giờ!";
-        _state.SaveProfile(_profile);
-
-        RunAfter(1.6, () =>
-        {
-            if (Lives <= 0)
-            {
-                IsGameOver = true;
-                _locked = true;
-                EndRun();
-                return;
-            }
-
-            GoNext();
-        });
+        LoseLife("Hết giờ!");
     }
 
     private void ResetClock()
     {
         _secondsLeft = SoloScoring.MaxSeconds;
-
-        OnPropertyChanged(nameof(TimeText));
-        OnPropertyChanged(nameof(TimeFraction));
-        OnPropertyChanged(nameof(IsTimeLow));
+        NotifyClock();
     }
 
     // ----- Nạp câu đố -----
@@ -623,25 +537,15 @@ public class GameViewModel : ViewModelBase
 
         OnPropertyChanged(nameof(ProgressText));
         OnPropertyChanged(nameof(DifficultyText));
-        OnPropertyChanged(nameof(CategoryText));
         OnPropertyChanged(nameof(PromptText));
-        OnPropertyChanged(nameof(LetterCountText));
         _state.SaveProfile(_profile);
     }
 
     /// <summary>Mỗi ký tự của đáp án thành một ô; khoảng trắng thành ô ngăn cách hai từ.</summary>
     private void BuildSlots(string answer)
     {
-        int i = 0;
         foreach (char c in answer)
-        {
-            Slots.Add(new AnswerSlot
-            {
-                Index = i++,
-                TargetChar = c,
-                IsSpace = char.IsWhiteSpace(c),
-            });
-        }
+            Slots.Add(new AnswerSlot { TargetChar = c, IsSpace = char.IsWhiteSpace(c) });
     }
 
     /// <summary>Đổ ngân hàng phím chữ mà máy chủ (hoặc PuzzleRound) đã dựng sẵn.</summary>
@@ -731,7 +635,7 @@ public class GameViewModel : ViewModelBase
     }
 
     /// <summary>Enter: trả lời nếu đã điền kín.</summary>
-    public void SubmitFromKeyboard()
+    public void Submit()
     {
         if (CanType && CanSubmit) SubmitAnswer();
     }
@@ -1052,8 +956,23 @@ public class GameViewModel : ViewModelBase
     private void Skip()
     {
         if (_locked || IsPaused) return;
+        LoseLife($"Bỏ qua - mất 1 mạng. Đáp án: {Current.Answer}");
+    }
 
+    /// <summary>
+    /// Câu kết thúc mà không trả lời đúng: hết giờ hoặc bỏ qua.
+    ///
+    /// Hai việc này giá y như nhau — 1 mạng và mất cả chuỗi đang có — chỉ khác
+    /// dòng chữ báo ra, nên đi chung một đường. Hết mạng thì chốt sổ ván, còn
+    /// mạng thì nghỉ một nhịp cho người chơi đọc rồi sang câu sau.
+    /// </summary>
+    private void LoseLife(string message)
+    {
         _locked = true;
+
+        // Hộp hỏi lại kim cương có thể đang mở (đồng hồ vẫn chạy lúc hỏi). Câu
+        // đã kết thúc thì phải đóng nó, không thì bấm "Dùng" là mất kim cương
+        // cho một câu không còn tồn tại
         IsPickingReveal = false;
         CancelHelp();
         AudioService.Instance.PlayWrong();
@@ -1061,20 +980,15 @@ public class GameViewModel : ViewModelBase
         Lives--;
         CorrectStreak = 0;
         IsFeedbackGood = false;
-        FeedbackText = $"Bỏ qua - mất 1 mạng. Đáp án: {Current.Answer}";
+        FeedbackText = message;
         _state.SaveProfile(_profile);
 
         RunAfter(1.6, () =>
         {
-            if (Lives <= 0)
-            {
-                IsGameOver = true;
-                _locked = true;
-                EndRun();
-                return;
-            }
+            if (Lives > 0) { GoNext(); return; }
 
-            GoNext();
+            IsGameOver = true;
+            EndRun();
         });
     }
 

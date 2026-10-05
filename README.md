@@ -224,12 +224,15 @@ ViewModels/
                      đồng hồ, trợ giúp, xáo câu, chốt sổ ván
   MatchViewModel     phòng đấu: nhận sự kiện từ máy chủ, hiện câu và bảng điểm
   LoginViewModel / ModeViewModel / MenuViewModel
+  ViewModelBase      INotifyPropertyChanged, ThemedViewModel (nút sáng/tối dùng
+                     chung cho mọi màn) và ILetterTyping (màn nào nhận chữ gõ)
 Models/              AnswerSlot (ô đáp án), LetterTile (phím chữ)
 Services/
   MatchClient        kết nối SignalR tới GameHub (mở lười lúc tạo / vào phòng)
   ServerClient       gọi REST: tự đăng nhập máy chủ, tải ảnh câu đố
   ThemeService       đổi Light/Dark (Themes/Light.xaml, Dark.xaml)
-  AudioService       hiệu ứng âm thanh, nhạc nền
+  AudioService       hiệu ứng âm thanh
+  LetterKeys         bàn phím vật lý, dùng chung cho màn Cổ điển và màn Đấu
   AppSettings        cài đặt máy này
 Converters/          BoolToVisibilityConverter
 ```
@@ -238,7 +241,7 @@ Converters/          BoolToVisibilityConverter
 
 ```
 Models/
-  Puzzle             một câu đố: Id, Answer, Category, Difficulty, Hint, AcceptedAnswers
+  Puzzle             một câu đố: Id, Answer, Category, Difficulty, AcceptedAnswers
   PuzzleRound        dựng ô đáp án + bộ phím cho một câu (chữ không dấu)
   PlayerProfile      tiến trình người chơi (điểm ván, kỷ lục, mạng, kim cương, RunSeed...)
   Account            tài khoản

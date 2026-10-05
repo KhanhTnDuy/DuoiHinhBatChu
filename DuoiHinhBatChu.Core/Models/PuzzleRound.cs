@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using DuoiHinhBatChu.Services;
 
 namespace DuoiHinhBatChu.Models;
@@ -88,12 +89,8 @@ public sealed class PuzzleRound
         while (letters.Count < total)
             letters.Add(pool[rng.Next(pool.Length)]);
 
-        // Xáo trộn Fisher-Yates để vị trí phím không đoán được
-        for (int i = letters.Count - 1; i > 0; i--)
-        {
-            int j = rng.Next(i + 1);
-            (letters[i], letters[j]) = (letters[j], letters[i]);
-        }
+        // Xáo để vị trí phím không đoán được
+        rng.Shuffle(CollectionsMarshal.AsSpan(letters));
 
         // Đúng số lượng chữ cần cho đáp án được đánh dấu "chữ thật", phần dư là chữ nhiễu
         var remaining = slotText.Where(char.IsLetter)

@@ -79,17 +79,12 @@ public class GameStateService
             CurrentPuzzleId = state.CurrentPuzzleId,
             SecondsLeft = state.SecondsLeft,
             IsSoundEnabled = state.IsSoundEnabled,
-            IsBgmEnabled = state.IsBgmEnabled,
-            IsTimerEnabled = state.IsTimerEnabled,
+            SolvedPuzzleIds = db.PuzzleResults
+                .AsNoTracking()
+                .Where(r => r.AccountId == _accountId)
+                .Select(r => r.PuzzleId)
+                .ToHashSet(),
         };
-
-        foreach (PuzzleResult r in db.PuzzleResults
-                                    .AsNoTracking()
-                                    .Where(r => r.AccountId == _accountId))
-        {
-            profile.SolvedPuzzleIds.Add(r.PuzzleId);
-            if (r.Stars > 0) profile.PuzzleStars[r.PuzzleId] = r.Stars;
-        }
 
         return profile;
     }
@@ -124,8 +119,6 @@ public class GameStateService
         state.CurrentPuzzleId = profile.CurrentPuzzleId;
         state.SecondsLeft = profile.SecondsLeft;
         state.IsSoundEnabled = profile.IsSoundEnabled;
-        state.IsBgmEnabled = profile.IsBgmEnabled;
-        state.IsTimerEnabled = profile.IsTimerEnabled;
         state.UpdatedAt = DateTime.Now;
 
         SaveSolvedPuzzles(db, profile);
@@ -134,8 +127,8 @@ public class GameStateService
     }
 
     /// <summary>
-    /// Đồng bộ danh sách câu đã giải: thêm câu mới, sửa số sao, và xóa câu nào
-    /// không còn trong hồ sơ (lúc người chơi bấm chơi lại từ đầu).
+    /// Đồng bộ danh sách câu đã giải: thêm câu mới, xóa câu nào không còn trong
+    /// hồ sơ (lúc người chơi bấm chơi lại từ đầu).
     /// </summary>
     private void SaveSolvedPuzzles(GameDbContext db, PlayerProfile profile)
     {
@@ -143,29 +136,15 @@ public class GameStateService
             .Where(r => r.AccountId == _accountId)
             .ToList();
 
-        var solved = new HashSet<string>(profile.SolvedPuzzleIds);
+        // Có trong bảng mà hồ sơ không còn khai thì bỏ đi
+        db.PuzzleResults.RemoveRange(
+            stored.Where(r => !profile.SolvedPuzzleIds.Contains(r.PuzzleId)));
 
-        foreach (PuzzleResult r in stored)
-        {
-            if (!solved.Contains(r.PuzzleId))
-            {
-                db.PuzzleResults.Remove(r);
-                continue;
-            }
+        // Hồ sơ khai mà bảng chưa có thì thêm vào
+        var have = stored.Select(r => r.PuzzleId).ToHashSet();
 
-            r.Stars = profile.PuzzleStars.TryGetValue(r.PuzzleId, out int s) ? s : r.Stars;
-            solved.Remove(r.PuzzleId);   // đã có sẵn, khỏi thêm lần nữa
-        }
-
-        foreach (string puzzleId in solved)
-        {
-            db.PuzzleResults.Add(new PuzzleResult
-            {
-                AccountId = _accountId,
-                PuzzleId = puzzleId,
-                Stars = profile.PuzzleStars.TryGetValue(puzzleId, out int s) ? s : 0,
-            });
-        }
+        foreach (string id in profile.SolvedPuzzleIds.Where(id => !have.Contains(id)))
+            db.PuzzleResults.Add(new PuzzleResult { AccountId = _accountId, PuzzleId = id });
     }
 
     /// <summary>
@@ -182,31 +161,7 @@ public class GameStateService
     /// </summary>
     public void SaveEndOfRun(PlayerProfile profile)
     {
-        if (_isGuest) return;
-
-        var fresh = new PlayerProfile();
-
-        SaveProfile(new PlayerProfile
-        {
-            PlayerName = profile.PlayerName,
-            BestScore = profile.BestScore,      // thành tích: giữ
-            Rubies = profile.Rubies,            // kim cương: của tài khoản, không phải của ván
-            SolvedPuzzleIds = profile.SolvedPuzzleIds,
-            PuzzleStars = profile.PuzzleStars,
-            IsSoundEnabled = profile.IsSoundEnabled,
-            IsBgmEnabled = profile.IsBgmEnabled,
-            IsTimerEnabled = profile.IsTimerEnabled,
-
-            RunSeed = 0,                        // ván sau xáo lại thứ tự câu
-            RunOrder = RunOrder.Random,         // và hỏi lại lối chơi
-            // Đi cùng RunSeed: ván sau xáo lại thì câu đang dở của ván cũ không
-            // còn nghĩa gì, giữ lại là ván mới nhảy vào giữa danh sách vừa xáo
-            CurrentPuzzleId = "",
-            Score = 0,                          // ván sau bắt đầu từ 0
-            CorrectStreak = 0,
-            Lives = fresh.Lives,
-            MaxLives = profile.MaxLives,
-        });
+        if (!_isGuest) SaveProfile(profile.ForNextRun());
     }
 
     /// <summary>

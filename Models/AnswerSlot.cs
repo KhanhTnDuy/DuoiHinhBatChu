@@ -8,8 +8,6 @@ namespace DuoiHinhBatChu.Models;
 /// </summary>
 public class AnswerSlot : ViewModelBase
 {
-    public int Index { get; set; }
-
     /// <summary>Ký tự đúng của ô này (đã viết hoa).</summary>
     public char TargetChar { get; set; }
 

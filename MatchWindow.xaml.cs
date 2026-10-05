@@ -79,23 +79,7 @@ public partial class MatchWindow : Window
         if (!_vm.IsPlaying) return;
         if (Keyboard.FocusedElement is TextBox or PasswordBox) return;
 
-        Key key = e.Key == Key.ImeProcessed ? e.ImeProcessedKey : e.Key;   // bộ gõ tiếng Việt đang bật
-
-        if (key is >= Key.A and <= Key.Z)
-        {
-            _vm.TypeLetter((char)('A' + (key - Key.A)));
-            e.Handled = true;
-        }
-        else if (key == Key.Back)
-        {
-            _vm.EraseLast();
-            e.Handled = true;
-        }
-        else if (key == Key.Enter)
-        {
-            _vm.Submit();
-            e.Handled = true;
-        }
+        LetterKeys.Handle(e, _vm);
     }
 
     /// <summary>

@@ -90,11 +90,8 @@ public class GameHub : Hub
         if (room.HasAccount(account.Id))
             throw new HubException("Tài khoản này đã ở trong phòng rồi.");
 
-        // Kiểm tra ngay trước khi thêm: hai người cùng vào chỗ cuối thì người
-        // sau vẫn có thể lọt — Room.Add sẽ chặn lần nữa bên trong khóa
-        if (room.IsFull)
-            throw new HubException($"Phòng đã đủ {Room.MaxPlayers} người.");
-
+        // Kiểm tra sức chứa nằm TRONG Room.Add, cùng một khóa với lúc thêm: hỏi
+        // trước rồi mới thêm thì hai người cùng nhắm chỗ cuối vẫn lọt cả hai
         if (!room.Add(new Player
         {
             ConnectionId = Context.ConnectionId,
@@ -156,7 +153,7 @@ public class GameHub : Hub
     }
 
     /// <summary>Chủ phòng bắt đầu ván. Cần ít nhất hai người.</summary>
-    public async Task StartMatch(string token, int rounds)
+    public async Task StartMatch(string token)
     {
         Room room = HostedRoom(Authenticate(token));
 
@@ -169,7 +166,6 @@ public class GameHub : Hub
         if (room.IsPlaying)
             throw new HubException("Ván này đang chạy rồi.");
 
-        // rounds giữ lại cho khớp client cũ, nhưng ván nay chạy tới khi hết mạng
         _rooms.StartMatch(room);
         await Clients.Group(room.Code).SendAsync("RoomChanged", room.ToState());
 

@@ -44,8 +44,7 @@ public record PlayerInfo(string AccountId, string DisplayName, bool IsHost, bool
 /// <param name="Mode">Kiểu chơi chủ phòng đã chọn; người vào sau nhìn thấy nhưng không đổi được.</param>
 /// <param name="MaxPlayers">Sức chứa của phòng, tính cả chủ phòng.</param>
 public record RoomState(string Code, string Name, string HostAccountId, MatchMode Mode, bool IsPlaying,
-                        int RoundNumber, int TotalRounds, int MaxPlayers,
-                        IReadOnlyList<PlayerInfo> Players);
+                        int RoundNumber, int MaxPlayers, IReadOnlyList<PlayerInfo> Players);
 
 /// <summary>
 /// Một câu phát cho người chơi. Cố ý KHÔNG có đáp án: client vẽ ô trống theo
@@ -67,7 +66,7 @@ public record RoomState(string Code, string Name, string HostAccountId, MatchMod
 /// Chế độ Đố nhau: người ra đề của câu này (người kia là người đoán). Rỗng ở
 /// chế độ Thi đấu, nơi cả hai cùng đoán.
 /// </param>
-public record RoundInfo(int RoundNumber, int TotalRounds, string ImageName,
+public record RoundInfo(int RoundNumber, string ImageName,
                         int[] WordLengths, string Tiles, int Difficulty,
                         double SecondsAllowed, string Category = "",
                         string AskerAccountId = "", string AskerName = "");

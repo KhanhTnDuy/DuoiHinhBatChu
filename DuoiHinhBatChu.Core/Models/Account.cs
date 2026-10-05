@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace DuoiHinhBatChu.Models;
 
 /// <summary>
@@ -42,6 +44,41 @@ public class Account
     /// không lưu tiến trình, không lên bảng xếp hạng, không đấu online.
     /// </summary>
     public const string GuestId = "khach";
+
+    /// <summary>
+    /// Chữ cái đầu của tên, hiện trong ô vuông thay cho ảnh đại diện: "Nguyễn
+    /// An" ra "NA", tên một chữ thì lấy một chữ cái.
+    ///
+    /// [NotMapped]: đây là chữ tính ra từ <see cref="DisplayName"/>, không phải
+    /// một cột trong bảng.
+    /// </summary>
+    [NotMapped]
+    public string Initials
+    {
+        get
+        {
+            string[] words = DisplayName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            return words.Length switch
+            {
+                0 => "?",
+                1 => words[0][..1].ToUpperInvariant(),
+                _ => (words[0][..1] + words[^1][..1]).ToUpperInvariant(),
+            };
+        }
+    }
+
+    /// <summary>
+    /// Lời chào ở đầu màn chế độ và màn menu — một câu cho cả hai màn, để chúng
+    /// nối nhau đọc liền mạch.
+    ///
+    /// Người quay lại được chào khác người mới: "Chào mừng trở lại" chỉ đúng khi
+    /// tài khoản đã có tiến trình lưu. Khách thì lần nào cũng là lần đầu, vì hồ
+    /// sơ khách bị dọn sạch mỗi lần khởi động nên không có "lần trước" để nhớ.
+    /// </summary>
+    public string Greeting(bool hasPlayedBefore) => hasPlayedBefore
+        ? $"Chào mừng trở lại, {DisplayName}!"
+        : $"Chào mừng, {DisplayName}!";
 
     public static Account Guest() => new()
     {

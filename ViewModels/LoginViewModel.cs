@@ -11,18 +11,16 @@ namespace DuoiHinhBatChu.ViewModels;
 ///   - Đấu nhiều người: cần tài khoản và cần máy chủ, sẽ mở ở phần sau
 ///     (xem Docs/MULTIPLAYER.md).
 /// </summary>
-public class LoginViewModel : ViewModelBase
+public class LoginViewModel : ThemedViewModel
 {
     private readonly AccountService _accounts;
-    private readonly AppSettings _settings;
 
     /// <summary>Bắn lên khi đã xác định được người chơi, để cửa sổ mở màn chơi.</summary>
     public event Action<Account>? LoggedIn;
 
-    public LoginViewModel(AccountService accounts, AppSettings settings)
+    public LoginViewModel(AccountService accounts, AppSettings settings) : base(settings)
     {
         _accounts = accounts;
-        _settings = settings;
 
         UserName = settings.LastUserName;
         // Chưa có tài khoản nào thì mở thẳng thẻ Đăng ký cho đỡ phải bấm thêm
@@ -35,7 +33,6 @@ public class LoginViewModel : ViewModelBase
         ShowLoginCommand = new RelayCommand(_ => Mode = LoginMode.Login);
         ShowRegisterCommand = new RelayCommand(_ => Mode = LoginMode.Register);
         ShowForgotCommand = new RelayCommand(_ => Mode = LoginMode.Forgot);
-        ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
         ShowHelpCommand = new RelayCommand(_ => IsHelpOpen = true);
         HideHelpCommand = new RelayCommand(_ => IsHelpOpen = false);
     }
@@ -47,7 +44,6 @@ public class LoginViewModel : ViewModelBase
     public RelayCommand ShowLoginCommand { get; }
     public RelayCommand ShowRegisterCommand { get; }
     public RelayCommand ShowForgotCommand { get; }
-    public RelayCommand ToggleThemeCommand { get; }
     public RelayCommand ShowHelpCommand { get; }
     public RelayCommand HideHelpCommand { get; }
 
@@ -137,8 +133,6 @@ public class LoginViewModel : ViewModelBase
         private set => SetProperty(ref _error, value);
     }
 
-    public bool IsDarkTheme => _settings.IsDarkTheme;
-
     // ----- Hành động -----
 
     private void Login()
@@ -191,16 +185,7 @@ public class LoginViewModel : ViewModelBase
 
     private void Remember(Account account)
     {
-        _settings.LastUserName = account.UserName;
-        _settings.Save();
-    }
-
-    private void ToggleTheme()
-    {
-        _settings.IsDarkTheme = !_settings.IsDarkTheme;
-        _settings.Save();
-        ThemeService.Apply(_settings.IsDarkTheme);
-
-        OnPropertyChanged(nameof(IsDarkTheme));
+        Settings.LastUserName = account.UserName;
+        Settings.Save();
     }
 }

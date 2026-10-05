@@ -78,13 +78,15 @@ public class PickCard : ViewModelBase
 /// không ai đọc trước được đáp án, và thời gian trả lời do máy chủ đo chứ không
 /// phải máy người chơi tự khai.
 /// </summary>
-public class MatchViewModel : ViewModelBase
+public class MatchViewModel : ThemedViewModel, ILetterTyping
 {
     /// <summary>Đoán sai thì tô đỏ chừng này rồi trả ô về trống cho ghép lại.</summary>
     private static readonly TimeSpan WrongFlash = TimeSpan.FromMilliseconds(700);
 
+    /// <summary>Máy chủ chạy ngay trên máy này — mặc định, và luôn đúng với người TẠO phòng.</summary>
+    private static string LocalAddress => $"localhost:{LocalServer.DefaultPort}";
+
     private readonly Account _account;
-    private readonly AppSettings _settings;
     private readonly ServerClient _server = new();
 
     /// <summary>
@@ -113,10 +115,9 @@ public class MatchViewModel : ViewModelBase
     /// <summary>Bắn lên khi người chơi bấm quay lại ở phòng chờ.</summary>
     public event Action? GoBack;
 
-    public MatchViewModel(Account account, AppSettings settings, LobbyMode mode)
+    public MatchViewModel(Account account, AppSettings settings, LobbyMode mode) : base(settings)
     {
         _account = account;
-        _settings = settings;
         _lobbyMode = mode;
         PlayerName = account.DisplayName;
 
@@ -134,7 +135,6 @@ public class MatchViewModel : ViewModelBase
         PlaceLetterCommand = new RelayCommand(p => PlaceLetter(p as LetterTile));
         TakeBackCommand = new RelayCommand(p => TakeBack(p as AnswerSlot));
         SubmitCommand = new RelayCommand(_ => Submit(), _ => CanSubmit);
-        ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
         SwitchLobbyModeCommand = new RelayCommand(_ => IsCreating = !IsCreating);
         BackCommand = new RelayCommand(_ => GoBack?.Invoke(), _ => IsInLobby);
         ToggleReadyCommand = new RelayCommand(async _ => await ToggleReadyAsync(), _ => IsInRoom && !IsPlaying && !IsBusy);
@@ -149,7 +149,6 @@ public class MatchViewModel : ViewModelBase
     public RelayCommand PlaceLetterCommand { get; }
     public RelayCommand TakeBackCommand { get; }
     public RelayCommand SubmitCommand { get; }
-    public RelayCommand ToggleThemeCommand { get; }
     public RelayCommand SwitchLobbyModeCommand { get; }
     public RelayCommand BackCommand { get; }
     public RelayCommand ToggleReadyCommand { get; }
@@ -162,8 +161,6 @@ public class MatchViewModel : ViewModelBase
     public ObservableCollection<ScoreRow> Players { get; } = new();
 
     public string PlayerName { get; }
-
-    public bool IsDarkTheme => _settings.IsDarkTheme;
 
     private string _status = "";
     public string Status
@@ -226,12 +223,12 @@ public class MatchViewModel : ViewModelBase
     /// </summary>
     public string ServerAddressInput
     {
-        get => _settings.ServerAddress == $"localhost:{LocalServer.DefaultPort}" ? "" : _settings.ServerAddress;
+        get => Settings.ServerAddress == LocalAddress ? "" : Settings.ServerAddress;
         set
         {
             string v = (value ?? "").Trim();
-            _settings.ServerAddress = v.Length == 0 ? $"localhost:{LocalServer.DefaultPort}" : v;
-            _settings.Save();
+            Settings.ServerAddress = v.Length == 0 ? LocalAddress : v;
+            Settings.Save();
             OnPropertyChanged();
         }
     }
@@ -527,14 +524,18 @@ public class MatchViewModel : ViewModelBase
     public string PickLeftText =>
         $"{Math.Max(0, Math.Ceiling((_pickDeadline - DateTime.UtcNow).TotalSeconds)):0}s";
 
-    /// <summary>Máy chủ báo đầu câu Đố nhau: ai ra đề, và (nếu là mình) danh sách câu để chọn.</summary>
-    private void OnPickStarted(PickInfo info)
+    /// <summary>Dừng cả ba nhịp đồng hồ: câu xong, ván xong hay đứt dây đều phải dừng hết.</summary>
+    private void StopTimers()
     {
-        // Dọn màn của câu trước
         _tick.Stop();
         _flash.Stop();
         _cooldown.Stop();
         IsCoolingDown = false;
+    }
+
+    /// <summary>Dọn hàng ô, bàn phím, ảnh và mấy dòng chữ của câu vừa rồi.</summary>
+    private void ClearBoard()
+    {
         Slots.Clear();
         Tiles.Clear();
         ImageSource = null;
@@ -543,7 +544,15 @@ public class MatchViewModel : ViewModelBase
         FeedbackText = "";
         PromptText = CategoryPrompt.Fallback;
         DifficultyText = "";
+
         foreach (ScoreRow row in Players) row.HasAnswered = false;
+    }
+
+    /// <summary>Máy chủ báo đầu câu Đố nhau: ai ra đề, và (nếu là mình) danh sách câu để chọn.</summary>
+    private void OnPickStarted(PickInfo info)
+    {
+        StopTimers();
+        ClearBoard();
 
         IsPlaying = true;
         IsMatchOver = false;
@@ -668,9 +677,9 @@ public class MatchViewModel : ViewModelBase
         Status = "Đang nối máy chủ...";
 
         // Tạo phòng: máy chủ luôn ở máy này. Vào phòng: địa chỉ người chơi đã gõ
-        string address = IsCreating || _settings.ServerAddress.Trim().Length == 0
-            ? $"localhost:{LocalServer.DefaultPort}"
-            : _settings.ServerAddress;
+        string address = IsCreating || Settings.ServerAddress.Trim().Length == 0
+            ? LocalAddress
+            : Settings.ServerAddress;
 
         // Máy chủ ở chính máy này mà chưa bật thì bật giúp, khỏi bắt người chơi
         // mở cửa sổ dòng lệnh
@@ -711,8 +720,7 @@ public class MatchViewModel : ViewModelBase
     {
         if (_client == null) return;
 
-        // Ván chạy tới khi một người hết mạng, không còn số câu cố định
-        await _client.StartMatchAsync(0);
+        await _client.StartMatchAsync();
         Status = "Bắt đầu!";
     });
 
@@ -764,9 +772,7 @@ public class MatchViewModel : ViewModelBase
     {
         if (_leaving) return;   // tự đóng cửa sổ thì dây đứt là chuyện đương nhiên
 
-        _tick.Stop();
-        _flash.Stop();
-        _cooldown.Stop();
+        StopTimers();
 
         IsPlaying = false;
         IsMatchOver = false;
@@ -774,17 +780,12 @@ public class MatchViewModel : ViewModelBase
         IsPicking = false;
         IsWaitingPick = false;
         IsAsker = false;
-        IsCoolingDown = false;
         IsHost = false;
         IsReady = false;
         RoomCode = "";
         RoomName = "";
         Players.Clear();
-        Slots.Clear();
-        Tiles.Clear();
-        ImageSource = null;
-        FeedbackText = "";
-        RevealedAnswer = "";
+        ClearBoard();
 
         OnPropertyChanged(nameof(PlayerCountText));
         RaiseCommandStates();
@@ -987,9 +988,7 @@ public class MatchViewModel : ViewModelBase
 
     private void EndRound(RoundEnded ended)
     {
-        _tick.Stop();
-        _flash.Stop();
-        _cooldown.Stop();
+        StopTimers();
 
         RevealedAnswer = ended.Answer;
         ApplyScores(ended.Scores);
@@ -1010,9 +1009,7 @@ public class MatchViewModel : ViewModelBase
 
     private void EndMatch(MatchEnded ended)
     {
-        _tick.Stop();
-        _flash.Stop();
-        _cooldown.Stop();
+        StopTimers();
 
         ApplyScores(ended.Scores);
         IsPlaying = false;
@@ -1089,14 +1086,13 @@ public class MatchViewModel : ViewModelBase
     private void BuildSlots(int[] wordLengths)
     {
         Slots.Clear();
-        int index = 0;
 
         for (int w = 0; w < wordLengths.Length; w++)
         {
-            if (w > 0) Slots.Add(new AnswerSlot { Index = index++, IsSpace = true });
+            if (w > 0) Slots.Add(new AnswerSlot { IsSpace = true });
 
             for (int i = 0; i < wordLengths[w]; i++)
-                Slots.Add(new AnswerSlot { Index = index++ });
+                Slots.Add(new AnswerSlot());
         }
     }
 
@@ -1202,15 +1198,6 @@ public class MatchViewModel : ViewModelBase
         }
     }
 
-    private void ToggleTheme()
-    {
-        _settings.IsDarkTheme = !_settings.IsDarkTheme;
-        _settings.Save();
-        ThemeService.Apply(_settings.IsDarkTheme);
-
-        OnPropertyChanged(nameof(IsDarkTheme));
-    }
-
     private void RaiseCommandStates()
     {
         OnPropertyChanged(nameof(CanStart));
@@ -1232,9 +1219,7 @@ public class MatchViewModel : ViewModelBase
     public async Task LeaveAsync()
     {
         _leaving = true;
-        _tick.Stop();
-        _flash.Stop();
-        _cooldown.Stop();
+        StopTimers();
 
         try
         {

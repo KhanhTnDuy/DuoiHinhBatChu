@@ -10,10 +10,9 @@ namespace DuoiHinhBatChu.ViewModels;
 /// chỗ nào để xem mình đang ở đâu, chơi lại từ đầu hay xem bảng xếp hạng.
 /// Menu này là chỗ đó; màn chơi chỉ mở khi bấm Chơi tiếp hoặc Chơi mới.
 /// </summary>
-public class MenuViewModel : ViewModelBase
+public class MenuViewModel : ThemedViewModel
 {
     private readonly Account _account;
-    private readonly AppSettings _settings;
     private readonly GameStateService _state;
     /// <summary>
     /// Có ván nào đang chơi dở không.
@@ -25,15 +24,6 @@ public class MenuViewModel : ViewModelBase
     /// </summary>
     private bool _hasRun;
 
-    /// <summary>
-    /// Hỏi một lần lúc dựng màn, TRƯỚC khi người chơi kịp bấm gì.
-    ///
-    /// Phải chốt sớm như vậy vì chơi xong một ván là bảng có dòng tiến trình:
-    /// hỏi lại lúc đó thì người mới chơi lần đầu quay về menu đã thành "người
-    /// quen", lời chào đổi ngay trước mắt họ.
-    /// </summary>
-    private readonly bool _hasPlayedBefore;
-
     private PlayerProfile _profile;
 
     /// <summary>Bắn lên khi người chơi muốn vào màn chơi.</summary>
@@ -42,12 +32,16 @@ public class MenuViewModel : ViewModelBase
     /// <summary>Bắn lên khi người chơi muốn quay lại màn chọn chế độ.</summary>
     public event Action? GoBack;
 
-    public MenuViewModel(Account account, AppSettings settings)
+    public MenuViewModel(Account account, AppSettings settings) : base(settings)
     {
         _account = account;
-        _settings = settings;
         _state = new GameStateService(account.Id);
-        _hasPlayedBefore = _state.HasPlayedBefore();
+
+        // Lời chào chốt một lần lúc dựng màn, TRƯỚC khi người chơi kịp bấm gì:
+        // chơi xong một ván là bảng có dòng tiến trình, hỏi lại lúc đó thì
+        // người mới chơi lần đầu quay về menu đã thành "người quen" và lời chào
+        // đổi ngay trước mắt họ
+        Greeting = account.Greeting(_state.HasPlayedBefore());
         _profile = _state.LoadProfile();
 
         _hasRun = _profile.RunSeed != 0;
@@ -59,7 +53,6 @@ public class MenuViewModel : ViewModelBase
         ShowLeaderboardCommand = new RelayCommand(_ => ShowLeaderboard());
         HideLeaderboardCommand = new RelayCommand(_ => IsLeaderboardOpen = false);
         BackCommand = new RelayCommand(_ => GoBack?.Invoke());
-        ToggleThemeCommand = new RelayCommand(_ => ToggleTheme());
     }
 
     public RelayCommand ContinueCommand { get; }
@@ -69,37 +62,13 @@ public class MenuViewModel : ViewModelBase
     public RelayCommand ShowLeaderboardCommand { get; }
     public RelayCommand HideLeaderboardCommand { get; }
     public RelayCommand BackCommand { get; }
-    public RelayCommand ToggleThemeCommand { get; }
 
     // ----- Người chơi -----
 
-    /// <summary>
-    /// Lời chào ở đầu màn menu, thay cho nhãn "NGƯỜI CHƠI" khô khan trước đây.
-    ///
-    /// Người quay lại được chào khác người mới: "Chào mừng trở lại" chỉ đúng khi
-    /// tài khoản đã có tiến trình lưu. Khách thì lần nào cũng là lần đầu — hồ sơ
-    /// khách bị dọn sạch mỗi lần khởi động nên không có "lần trước" để nhớ.
-    /// </summary>
-    public string Greeting => _hasPlayedBefore
-        ? $"Chào mừng trở lại, {_account.DisplayName}!"
-        : $"Chào mừng, {_account.DisplayName}!";
+    /// <summary>Lời chào ở đầu màn menu, thay cho nhãn "NGƯỜI CHƠI" khô khan trước đây.</summary>
+    public string Greeting { get; }
 
-    /// <summary>Chữ cái đầu của tên, hiện trong ô vuông thay cho ảnh đại diện.</summary>
-    public string Initials
-    {
-        get
-        {
-            string[] words = _account.DisplayName
-                .Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-            return words.Length switch
-            {
-                0 => "?",
-                1 => words[0][..1].ToUpperInvariant(),
-                _ => (words[0][..1] + words[^1][..1]).ToUpperInvariant(),
-            };
-        }
-    }
+    public string Initials => _account.Initials;
 
     // ----- Tiến trình -----
 
@@ -160,14 +129,10 @@ public class MenuViewModel : ViewModelBase
         _profile = _state.LoadProfile();
         _hasRun = _profile.RunSeed != 0;
 
-        OnPropertyChanged(nameof(HasProgress));
-        OnPropertyChanged(nameof(ContinueTitle));
-        OnPropertyChanged(nameof(ContinueDetail));
-        OnPropertyChanged(nameof(ContinuePill));
-        OnPropertyChanged(nameof(BestScoreText));
-        OnPropertyChanged(nameof(RubiesText));
-        OnPropertyChanged(nameof(LivesText));
-        OnPropertyChanged(nameof(SolvedText));
+        // Tên thuộc tính rỗng = "mọi thứ trên màn này đổi hết": cả tám con số
+        // và dòng chữ đều lấy từ hồ sơ vừa đọc lại, nên liệt kê từng cái chỉ là
+        // một danh sách phải nhớ cập nhật mỗi lần thêm thuộc tính mới
+        OnPropertyChanged("");
     }
 
     // ----- Chơi mới -----
@@ -221,18 +186,5 @@ public class MenuViewModel : ViewModelBase
         Leaderboard = GameStateService.TopPlayers();
         OnPropertyChanged(nameof(IsLeaderboardEmpty));
         IsLeaderboardOpen = true;
-    }
-
-    // ----- Sáng / tối -----
-
-    public bool IsDarkTheme => _settings.IsDarkTheme;
-
-    private void ToggleTheme()
-    {
-        _settings.IsDarkTheme = !_settings.IsDarkTheme;
-        _settings.Save();
-        ThemeService.Apply(_settings.IsDarkTheme);
-
-        OnPropertyChanged(nameof(IsDarkTheme));
     }
 }

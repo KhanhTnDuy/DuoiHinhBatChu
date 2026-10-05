@@ -71,25 +71,7 @@ public partial class MainWindow : Window
         // Bàn phím vật lý: chữ điền vào ô, Backspace lấy ra, Enter trả lời —
         // giống màn Đấu. View model tự từ chối khi đang tạm dừng, đang hỏi
         // kim cương, đang chọn ô để mở…
-        // Bộ gõ tiếng Việt (Telex/VNI của Windows) đang bật thì phím tới dưới dạng
-        // ImeProcessed; lấy phím thật ra, không thì chữ đi vào ô ghép của bộ gõ
-        Key key = e.Key == Key.ImeProcessed ? e.ImeProcessedKey : e.Key;
-
-        if (key is >= Key.A and <= Key.Z)
-        {
-            _vm.TypeLetter((char)('A' + (key - Key.A)));
-            e.Handled = true;
-        }
-        else if (key == Key.Back)
-        {
-            _vm.EraseLast();
-            e.Handled = true;
-        }
-        else if (key == Key.Enter)
-        {
-            _vm.SubmitFromKeyboard();
-            e.Handled = true;
-        }
+        LetterKeys.Handle(e, _vm);
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();

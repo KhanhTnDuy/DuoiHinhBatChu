@@ -86,17 +86,12 @@ public static class PuzzleSync
                 ? DefaultCategory(answer)
                 : extra!.Category.Trim();
 
-            string hint = string.IsNullOrWhiteSpace(extra?.Hint)
-                ? DefaultHint(answer)
-                : extra!.Hint;
-
             int difficulty = extra is { Difficulty: >= 1 and <= 5 }
                 ? extra.Difficulty
                 : DefaultDifficulty(answer);
 
             bool metaChanged = row.Answer != answer
                 || row.Category != category
-                || row.Hint != hint
                 || row.Difficulty != difficulty
                 || row.Order != order;
 
@@ -112,7 +107,6 @@ public static class PuzzleSync
 
             row.Answer = answer;
             row.Category = category;
-            row.Hint = hint;
             row.Difficulty = difficulty;
             row.Order = order++;
 
@@ -209,17 +203,6 @@ public static class PuzzleSync
     {
         int words = answer.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
         return words >= 6 ? "Ca dao - tục ngữ" : "Cụm từ";
-    }
-
-    /// <summary>Gợi ý mặc định khi puzzles.json chưa khai báo gì cho câu này.</summary>
-    private static string DefaultHint(string answer)
-    {
-        int letters = answer.Count(char.IsLetter);
-        int words = answer.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
-
-        return words > 1
-            ? $"Đáp án gồm {words} tiếng, tất cả {letters} chữ cái."
-            : $"Đáp án là một tiếng gồm {letters} chữ cái.";
     }
 
     /// <summary>Đáp án càng dài thì càng khó, dùng khi puzzles.json không ghi độ khó.</summary>
