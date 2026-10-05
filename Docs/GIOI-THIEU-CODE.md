@@ -47,10 +47,9 @@ thích và dòng trống** (code giải thích "vì sao", không chỉ "làm gì
 | Dữ liệu câu đố (`puzzles.json`) | 1 | 55 | 54 |
 | Công cụ sinh ảnh (`tools/*.js`) | 2 | 189 | 147 |
 | Tài liệu Markdown (README, Docs…) | 6 | 960 | 733 |
-| **Tổng, trừ BMad** | **93** | **14.342** | **9.988** |
+| **Tổng** | **93** | **14.342** | **9.988** |
 
-\* Dòng code thực = bỏ dòng trống và dòng chú thích. Chưa tính thư mục `_bmad/` (19 file,
-công cụ quản lý quy trình, không phải code game) và 52 ảnh câu đố.
+\* Dòng code thực = bỏ dòng trống và dòng chú thích. Chưa tính 52 ảnh câu đố.
 
 **Nói gọn khi pitch:** khoảng **6.800 dòng code viết tay** (C# + XAML), hoặc khoảng
 **10.000 dòng** nếu tính cả migration tự sinh, cấu hình, dữ liệu và tài liệu.
