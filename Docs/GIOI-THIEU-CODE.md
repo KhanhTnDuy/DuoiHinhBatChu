@@ -35,6 +35,26 @@ Thêm: **2.943 dòng XAML** (5 cửa sổ + `App.xaml` + 3 file theme/style), 52
 8 bước migration, 77 commit từ 04/09 đến 05/10/2026. Khoảng **40% dòng .cs là chú
 thích và dòng trống** (code giải thích "vì sao", không chỉ "làm gì").
 
+### Tổng số dòng toàn dự án (các file git theo dõi, đo 05/10/2026)
+
+| Loại | File | Dòng thô | Dòng code thực* |
+|---|---:|---:|---:|
+| **C# viết tay** (App + Core + Server) | 50 | 7.261 | **4.311** |
+| **XAML** (giao diện + theme) | 9 | 2.943 | **2.525** |
+| **→ Code game viết tay (C# + XAML)** | **59** | **10.204** | **6.836** |
+| C# EF Migrations (công cụ tự sinh) | 17 | 2.697 | 2.027 |
+| Cấu hình (`csproj`, `slnx`, `appsettings`…) | 8 | 237 | 191 |
+| Dữ liệu câu đố (`puzzles.json`) | 1 | 55 | 54 |
+| Công cụ sinh ảnh (`tools/*.js`) | 2 | 189 | 147 |
+| Tài liệu Markdown (README, Docs…) | 6 | 960 | 733 |
+| **Tổng, trừ BMad** | **93** | **14.342** | **9.988** |
+
+\* Dòng code thực = bỏ dòng trống và dòng chú thích. Chưa tính thư mục `_bmad/` (19 file,
+công cụ quản lý quy trình, không phải code game) và 52 ảnh câu đố.
+
+**Nói gọn khi pitch:** khoảng **6.800 dòng code viết tay** (C# + XAML), hoặc khoảng
+**10.000 dòng** nếu tính cả migration tự sinh, cấu hình, dữ liệu và tài liệu.
+
 **Độ phức tạp từng hàm (cyclomatic)** — 291 hàm:
 
 | Mức | Số hàm |
