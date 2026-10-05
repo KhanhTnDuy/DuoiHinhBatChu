@@ -188,6 +188,15 @@
                                    TextTrimming="CharacterEllipsis"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    Visibility="{Binding RoomName, Converter={StaticResource StrVis}}"/>
+
+                        <!-- Chỉ máy đã tạo phòng: địa chỉ để bạn bè ở máy khác gõ vào ô "Địa chỉ máy chủ" -->
+                        <TextBlock Text="BẠN Ở MÁY KHÁC GÕ ĐỊA CHỈ" Style="{StaticResource SectionLabel}"
+                                   Margin="0,14,0,0"
+                                   Visibility="{Binding LanHintText, Converter={StaticResource StrVis}}"/>
+                        <TextBlock Text="{Binding LanHintText}" FontSize="14" FontWeight="SemiBold"
+                                   TextWrapping="Wrap" Margin="0,4,0,0"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   Visibility="{Binding LanHintText, Converter={StaticResource StrVis}}"/>
                     </StackPanel>
                 </Border>
 

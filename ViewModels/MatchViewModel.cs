@@ -223,7 +223,8 @@ public class MatchViewModel : ThemedViewModel, ILetterTyping
     /// </summary>
     public string ServerAddressInput
     {
-        get => Settings.ServerAddress == LocalAddress ? "" : Settings.ServerAddress;
+        // Mọi dạng trỏ về máy này (localhost, 127.0.0.1, [::1]) đều là "để trống"
+        get => LocalServer.IsLocal(Settings.ServerAddress) ? "" : Settings.ServerAddress;
         set
         {
             string v = (value ?? "").Trim();
@@ -266,6 +267,19 @@ public class MatchViewModel : ThemedViewModel, ILetterTyping
     }
 
     public bool IsInRoom => RoomCode.Length > 0;
+
+    private string _lanHintText = "";
+    /// <summary>
+    /// Địa chỉ máy chủ để người tạo phòng đọc cho bạn bè ở máy khác ("192.168.1.85:5180").
+    /// Chỉ có ở máy đã tạo phòng — máy chủ chạy ở đó; rỗng thì không hiện gì.
+    /// Trước đây người tạo phòng chỉ được báo mã + mật khẩu, còn địa chỉ thì phải
+    /// tự mò bằng ipconfig, mà không có nó bạn bè không vào được.
+    /// </summary>
+    public string LanHintText
+    {
+        get => _lanHintText;
+        private set => SetProperty(ref _lanHintText, value);
+    }
 
     private string _roomName = "";
     /// <summary>Tên phòng đang ở; rỗng nếu chủ phòng không đặt.</summary>
@@ -632,7 +646,11 @@ public class MatchViewModel : ThemedViewModel, ILetterTyping
     {
         MatchClient client = await EnsureConnectedAsync();
         ApplyRoom(await client.CreateRoomAsync(RoomNameInput, RoomPassword));
-        Status = $"Đã mở phòng. Đọc mã {RoomCode} và mật khẩu cho bạn bè; đủ người và ai cũng sẵn sàng thì bấm bắt đầu.";
+        LanHintText = string.Join("  ·  ", LocalServer.LanAddresses());
+
+        Status = $"Đã mở phòng. Đọc mã {RoomCode} và mật khẩu cho bạn bè" +
+                 (LanHintText.Length > 0 ? " (bạn ở máy khác thì đọc thêm địa chỉ máy chủ bên trái)" : "") +
+                 "; đủ người và ai cũng sẵn sàng thì bấm bắt đầu.";
     });
 
     private async Task JoinRoomAsync() => await CallAsync(async () =>
@@ -784,6 +802,7 @@ public class MatchViewModel : ThemedViewModel, ILetterTyping
         IsReady = false;
         RoomCode = "";
         RoomName = "";
+        LanHintText = "";
         Players.Clear();
         ClearBoard();
 

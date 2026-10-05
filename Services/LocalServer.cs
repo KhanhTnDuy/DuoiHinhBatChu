@@ -52,11 +52,21 @@ public static class LocalServer
         // chục mili giây. Hỏi thẳng bằng HttpClient thì lần đầu mất tới ~4 giây
         // (khởi tạo HttpClient, thử cả ::1 lẫn 127.0.0.1) chỉ để nhận "không
         // nối được" — người chơi ngồi nhìn "Đang nối máy chủ..." vô ích.
-        if (await IsPortOpenAsync(address) && (await probe.CheckAsync(address)).Ok) return "";
+        if (await IsPortOpenAsync(address))
+        {
+            ServerStatus status = await probe.CheckAsync(address);
+            if (status.Ok) return "";
+
+            // Cổng CÓ người nghe mà không phải máy chủ của game (hoặc nó không
+            // trả lời): bật máy chủ mới ở cổng đó chỉ thất bại, nên báo thẳng lý do.
+            return status.Message;
+        }
 
         if (!IsLocal(address))
             return $"Không nối được máy chủ ở {ServerClient.Normalize(address)}. " +
-                   "Máy đó phải đang chạy DuoiHinhBatChu.Server.";
+                   "Kiểm tra: máy tạo phòng đã bấm Tạo phòng chưa, hai máy cùng một mạng chưa, " +
+                   "và tường lửa Windows của máy đó có cho phép (nếu Wi-Fi ở chế độ Public thì " +
+                   "phải tích cả mạng công cộng).";
 
         if (_process is { HasExited: false })
             return "Máy chủ đã được bật nhưng chưa trả lời. Thử lại sau vài giây.";
@@ -123,8 +133,13 @@ public static class LocalServer
 
         try
         {
+            // Máy này: cổng không ai nghe thì bị từ chối ngay, nửa giây là dư. Máy
+            // khác qua Wi-Fi: tường lửa chặn thì gói tin bị NUỐT chứ không bị từ
+            // chối, và lần chạm đầu qua Wi-Fi có thể mất hơn nửa giây để thức dậy
+            // — cho 2 giây để khỏi báo "không nối được" oan.
+            var wait = TimeSpan.FromMilliseconds(IsLocal(address) ? 500 : 2000);
             using var tcp = new System.Net.Sockets.TcpClient();
-            using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+            using var cts = new CancellationTokenSource(wait);
             await tcp.ConnectAsync(uri.Host, uri.Port, cts.Token);
             return tcp.Connected;
         }
@@ -132,6 +147,40 @@ public static class LocalServer
         {
             return false;   // từ chối, hết giờ, tên máy sai… đều là "không có ai"
         }
+    }
+
+    /// <summary>
+    /// Địa chỉ LAN của máy này để đọc cho bạn bè gõ vào ("192.168.1.85:5180").
+    ///
+    /// Máy thường có nhiều card: Wi-Fi thật cùng card ảo của VirtualBox / Hyper-V /
+    /// VPN, và đưa nhầm IP ảo thì bạn bè gõ mãi không vào. Card thật là card có
+    /// cổng ra (gateway); không card nào có (mạng nội bộ không qua router) thì mới
+    /// liệt kê hết các card đang chạy.
+    /// </summary>
+    public static List<string> LanAddresses(int port = DefaultPort)
+    {
+        var up = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()
+            .Where(n => n.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up
+                     && n.NetworkInterfaceType is not (System.Net.NetworkInformation.NetworkInterfaceType.Loopback
+                                                     or System.Net.NetworkInformation.NetworkInterfaceType.Tunnel))
+            .ToList();
+
+        static bool HasGateway(System.Net.NetworkInformation.NetworkInterface n) =>
+            n.GetIPProperties().GatewayAddresses.Any(g =>
+                g.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
+                && !g.Address.Equals(System.Net.IPAddress.Any));
+
+        List<System.Net.NetworkInformation.NetworkInterface> real = up.Where(HasGateway).ToList();
+
+        return (real.Count > 0 ? real : up)
+            .SelectMany(n => n.GetIPProperties().UnicastAddresses)
+            .Select(a => a.Address)
+            .Where(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
+                     && !System.Net.IPAddress.IsLoopback(a)
+                     && !a.ToString().StartsWith("169.254."))     // địa chỉ tự gán, không có mạng thật
+            .Select(a => $"{a}:{port}")
+            .Distinct()
+            .ToList();
     }
 
     /// <summary>Tắt máy chủ nếu là app này bật. Gọi lúc app thoát.</summary>

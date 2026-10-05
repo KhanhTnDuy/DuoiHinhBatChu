@@ -30,7 +30,7 @@ app.Logger.LogInformation("Đã nạp {Count} câu đố", rooms.PuzzleCount);
 // ===== Kiểm tra máy chủ sống =====
 
 app.MapGet("/api/health", (RoomManager rooms) => Results.Ok(new HealthResponse(
-    "Đuổi hình bắt chữ",
+    HealthResponse.AppName,
     typeof(Program).Assembly.GetName().Version?.ToString() ?? "1.0",
     rooms.PuzzleCount,
     rooms.RoomCount)));

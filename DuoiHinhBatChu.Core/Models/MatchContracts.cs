@@ -21,7 +21,16 @@ public record AuthResponse(string Token, string AccountId, string UserName, stri
 
 public record ErrorResponse(string Error);
 
-public record HealthResponse(string App, string Version, int PuzzleCount, int RoomCount);
+public record HealthResponse(string App, string Version, int PuzzleCount, int RoomCount)
+{
+    /// <summary>
+    /// Tên mà máy chủ của game tự xưng. Client so với nó để biết người nghe ở
+    /// cổng đó có đúng là máy chủ của game không: một chương trình khác (đã gặp
+    /// SmartBusTicketing.Api giữ cổng 5180) cũng trả JSON hợp lệ ở /api/health,
+    /// và đọc được JSON thôi thì chưa chứng minh được gì.
+    /// </summary>
+    public const string AppName = "Đuổi hình bắt chữ";
+}
 
 // ===== Phòng chơi (SignalR) =====
 

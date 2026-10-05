@@ -1,5 +1,6 @@
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.RegularExpressions;
 using DuoiHinhBatChu.Models;
 
 namespace DuoiHinhBatChu.Services;
@@ -26,13 +27,39 @@ public class ServerClient
     /// <summary>Địa chỉ đã chuẩn hóa của lần gọi gần nhất, ví dụ "http://192.168.1.10:5180".</summary>
     public string BaseAddress { get; private set; } = "";
 
+    /// <summary>Host là "localhost" (có thể có "http://" đứng trước), theo sau là cổng, đường dẫn hoặc hết chuỗi.</summary>
+    private static readonly Regex Localhost =
+        new(@"^(http://)?localhost(?=[:/]|$)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    /// <summary>Địa chỉ không ghi cổng: "host" hoặc "http://host", sau host không có ":số".</summary>
+    private static readonly Regex NoPort =
+        new(@"^(?:http://)?(\[[^\]]+\]|[^:/\s]+)(?=/|$)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     /// <summary>
     /// Thêm "http://" nếu người chơi chỉ gõ "192.168.1.10:5180", và bỏ dấu "/" cuối.
+    ///
+    /// Không ghi cổng thì dùng cổng của máy chủ game (5180). Không làm vậy thì
+    /// "192.168.1.10" thành http://192.168.1.10 — cổng 80, nơi máy chủ của game
+    /// không bao giờ nghe — và người chơi nhận "Không nối được" dù gõ đúng IP.
     /// </summary>
     public static string Normalize(string address)
     {
         address = address.Trim().TrimEnd('/');
         if (address.Length == 0) return "";
+
+        if (address.StartsWith("https", StringComparison.OrdinalIgnoreCase)) return address;
+
+        // "localhost" -> 127.0.0.1. Máy chủ do app bật nghe ở 0.0.0.0 (chỉ IPv4, để
+        // máy khác trong LAN nối được), mà .NET thử "localhost" bằng ::1 trước, và
+        // ::1 ở đây không bị từ chối mà TREO: đo 2026-10-05 thấy mỗi request tới
+        // localhost mất 2,05 giây (127.0.0.1: 1-5 ms), còn thăm dò cổng thì luôn hết
+        // 500ms nên tưởng máy chủ không chạy. ServerClient tạo HttpClient mới cho
+        // từng lời gọi, nên chủ phòng chịu 2 giây đó ở MỖI ảnh câu đố — trong khi
+        // bạn bè nối bằng IP lại nhanh.
+        address = Localhost.Replace(address, m => m.Groups[1].Value + "127.0.0.1", 1);
+
+        if (NoPort.IsMatch(address))
+            address = NoPort.Replace(address, m => $"{m.Groups[1].Value}:{LocalServer.DefaultPort}", 1);
 
         return address.StartsWith("http", StringComparison.OrdinalIgnoreCase)
             ? address
@@ -77,6 +104,15 @@ public class ServerClient
 
             if (health == null)
                 return new ServerStatus(false, "Máy chủ trả lời nhưng không đọc được nội dung.");
+
+            // Đọc được JSON chưa đủ: chương trình khác cũng có /api/health. Thiếu
+            // bước này, một API lạ giữ cổng 5180 bị nhận nhầm là máy chủ của game
+            // ("Máy chủ có 0 câu đố"), game không bật máy chủ của mình, rồi đăng
+            // nhập báo "Máy chủ từ chối (404)" mà không ai hiểu vì sao.
+            if (health.App != HealthResponse.AppName)
+                return new ServerStatus(false,
+                    $"Cổng {new Uri(BaseAddress).Port} đang bị một chương trình khác dùng, " +
+                    "không phải máy chủ của game. Tắt chương trình đó đi rồi thử lại.");
 
             return new ServerStatus(true,
                 $"Nối được. Máy chủ có {health.PuzzleCount} câu đố, " +
@@ -132,7 +168,27 @@ public class ServerClient
         if (reg.Ok || account.Phone.Length == 0) return reg;
 
         ServerAuth reset = await ResetPasswordAsync(address, account.UserName, account.Phone, secret);
-        return reset.Ok ? reset : reg;   // lấy lại không được thì lỗi đăng ký mới là lỗi thật
+        if (reset.Ok) return reset;
+
+        // Lấy lại không được thì lỗi đăng ký mới là lỗi thật. Nhưng nguyên văn của nó
+        // ("Tên đăng nhập này đã có người dùng") khó hiểu với người vừa vào phòng của
+        // bạn: họ chưa hề đăng ký gì trên máy chủ này. Hay gặp nhất khi tự thử bằng
+        // hai máy cùng dùng tài khoản "test" — mỗi máy có một "test" riêng.
+        if (reg.Message.StartsWith("Tên đăng nhập này đã có"))
+            return reg with
+            {
+                Message = $"Trên máy chủ này đã có người khác dùng tên đăng nhập \"{account.UserName}\" " +
+                          "(tài khoản trên mỗi máy là riêng nhau). Đổi sang tên đăng nhập khác ở máy bạn rồi thử lại.",
+            };
+
+        if (reg.Message.StartsWith("Số điện thoại này đã dùng"))
+            return reg with
+            {
+                Message = "Số điện thoại của tài khoản bạn đã được một tài khoản khác dùng trên máy chủ này. " +
+                          "Dùng tài khoản có số điện thoại khác rồi thử lại.",
+            };
+
+        return reg;
     }
 
     public Task<ServerAuth> ResetPasswordAsync(

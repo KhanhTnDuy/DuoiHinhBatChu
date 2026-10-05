@@ -81,7 +81,10 @@ dùng để tính điểm và để sắp thứ tự khi chọn "Từ dễ đế
 - Không phải đăng nhập máy chủ: app **tự nối** lúc bấm tạo / vào phòng. Người
   **tạo phòng** thì máy chủ tự bật ngay trên máy họ (nghe mọi card mạng, cổng
   5180). Người **vào phòng** gõ IP máy tạo phòng vào ô "Địa chỉ máy chủ" (để
-  trống = máy này); địa chỉ lưu ở `Data/app-settings.json`.
+  trống = máy này); địa chỉ lưu ở `Data/app-settings.json`. Không gõ cổng thì
+  dùng 5180. Máy tạo phòng **tự hiện địa chỉ LAN** của mình ở thẻ mã phòng
+  (`LocalServer.LanAddresses`: chỉ lấy card có cổng ra, bỏ card ảo của
+  VirtualBox/Hyper-V) để đọc cho bạn bè.
 - Trong phòng, **chỉ chủ phòng** chọn **kiểu chơi** (ván không còn số câu cố định);
   người vào sau ở sảnh chờ, thấy lựa chọn của chủ phòng nhưng không đổi được. Hai kiểu chơi:
   - **Thi đấu** — hai người cùng nhận một ảnh (câu bốc ngẫu nhiên từ bộ câu), ai ghép chữ nhanh hơn được nhiều điểm hơn. Mỗi người **5 ♥**, hết câu mà chưa trả lời đúng thì mất 1 ♥. Một người hết mạng (hoặc đối thủ rời phòng) là **ván dừng**, ai **điểm cao hơn** thắng, bằng điểm thì hòa
@@ -160,7 +163,17 @@ Vẫn mở tay được nếu muốn xem log:
 dotnet run --project DuoiHinhBatChu.Server
 ```
 
-Đấu qua LAN: người tạo phòng cứ bấm Tạo phòng (app tự bật máy chủ ở máy họ), cho phép Windows Firewall ở mạng Riêng tư; người vào gõ IP máy đó vào ô Địa chỉ máy chủ. Chạy máy chủ tay thì (`dotnet run --project
+Đấu qua LAN: người tạo phòng cứ bấm Tạo phòng (app tự bật máy chủ ở máy họ) rồi đọc **mã phòng, mật khẩu và địa chỉ hiện ở thẻ MÃ PHÒNG**; người vào gõ địa chỉ đó vào ô Địa chỉ máy chủ.
+
+**Tường lửa (hay gặp nhất khi bạn bè không vào được).** Windows hỏi một lần lúc máy chủ bật, và mặc định chỉ tích *Mạng riêng tư*. Nếu Wi-Fi của máy tạo phòng đang ở chế độ **Public** (xem `Get-NetConnectionProfile`) thì phải tích cả *Mạng công cộng*, hoặc đổi Wi-Fi sang Private. Cách chắc ăn, chạy một lần bằng PowerShell quyền Admin trên máy tạo phòng (luật theo cổng nên không phụ thuộc đường dẫn file .exe):
+
+```powershell
+New-NetFirewallRule -DisplayName "Duoi Hinh Bat Chu" -Direction Inbound -Protocol TCP -LocalPort 5180 -Action Allow -Profile Private,Public
+```
+
+Cổng 5180 mà đang bị chương trình khác giữ (đã gặp `SmartBusTicketing.Api`) thì app báo "Cổng 5180 đang bị một chương trình khác dùng" — tắt chương trình đó đi.
+
+Chạy máy chủ tay thì (`dotnet run --project
 DuoiHinhBatChu.Server --launch-profile lan`), còn máy client sửa `ServerAddress`
 trong `Data/app-settings.json` thành địa chỉ máy đó (ví dụ `192.168.1.10:5180`)
 — địa chỉ không phải máy này thì app không tự bật gì cả.
